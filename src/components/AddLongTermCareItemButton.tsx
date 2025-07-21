@@ -6,7 +6,7 @@ import AddIcon from "@mui/icons-material/Add";
 export const AddLongTermCareItemButton = () => {
   const { add } = useSimpleFormIterator();
   const translate = useTranslate();
-  
+
   return (
     <Button
       variant="outlined"

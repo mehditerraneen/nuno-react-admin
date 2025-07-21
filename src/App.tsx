@@ -1,13 +1,20 @@
 import { Admin, Resource } from "react-admin";
 import { Layout } from "./Layout";
 import { dataProvider } from "./dataProvider";
+import { authProvider } from "./authProvider";
+import { LoginPage } from "./components/LoginPage";
 import { CarePlanList, CarePlanEdit, CarePlanCreate } from "./careplans";
 import { CnsCarePlanList } from "./cnsCarePlans";
 import { CnsCarePlanShow } from "./CnsCarePlanShow";
 import { CarePlanShow } from "./CarePlanShow";
 
 export const App = () => (
-  <Admin layout={Layout} dataProvider={dataProvider}>
+  <Admin
+    layout={Layout}
+    dataProvider={dataProvider}
+    authProvider={authProvider}
+    loginPage={LoginPage}
+  >
     <Resource
       name="careplans"
       list={CarePlanList}

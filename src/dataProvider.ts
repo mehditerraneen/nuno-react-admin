@@ -8,6 +8,7 @@ import {
   type GetOneResult,
   type Identifier,
 } from "react-admin";
+import { authService } from "./services/authService";
 
 // Define interfaces for the CNS Care Plan data structure
 interface MedicalCareSummaryPerPatient {
@@ -110,6 +111,21 @@ export interface MedicalCareSummaryPerPatientDetail {
 
 const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
 console.log("🔧 API URL configured:", apiUrl);
+
+// Helper function to create authenticated headers
+const getAuthHeaders = (): HeadersInit => {
+  const token = authService.getAccessToken();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = token;
+  }
+
+  return headers;
+};
+
 const baseDataProvider: DataProvider = simpleRestProvider(apiUrl);
 
 // Define a custom data provider type that includes our new method
@@ -157,24 +173,29 @@ export const dataProvider: MyDataProvider = {
       // Check if we need to filter by CNS item IDs
       if (params.filter && params.filter.id) {
         const cnsItemIds = params.filter.id;
-        console.log("🔍 Filtering long term care items by CNS item IDs:", cnsItemIds);
-        
+        console.log(
+          "🔍 Filtering long term care items by CNS item IDs:",
+          cnsItemIds,
+        );
+
         // If CNS item IDs filter is empty array, return empty result
         if (Array.isArray(cnsItemIds) && cnsItemIds.length === 0) {
           console.log("⚠️ No CNS item IDs provided, returning empty result");
           return {
             data: [],
-            total: 0
+            total: 0,
           };
         }
-        
+
         // Otherwise, proceed with the filtered request
         // The backend API should handle the filtering by these IDs
         return baseDataProvider.getList(resource, params);
       }
-      
+
       // If no CNS filter is provided, log a warning
-      console.log("⚠️ Warning: Fetching all long term care items without CNS filtering");
+      console.log(
+        "⚠️ Warning: Fetching all long term care items without CNS filtering",
+      );
     }
 
     if (resource === "cnscareplans") {
@@ -190,7 +211,9 @@ export const dataProvider: MyDataProvider = {
         const url = `${apiUrl}/cnscareplans/${patient_id}?${query}`;
 
         try {
-          const response = await fetch(url);
+          const response = await fetch(url, {
+            headers: getAuthHeaders(),
+          });
           if (!response.ok) {
             throw new Error(response.statusText);
           }
@@ -266,8 +289,10 @@ export const dataProvider: MyDataProvider = {
   },
   getCnsCarePlanDetails: (planId: Identifier) => {
     const url = `${apiUrl}/fast/cnscareplans/${planId}/details`;
-    console.log("🔗 Fetching CNS care plan details from:", url);
-    return fetch(url).then((response) => {
+    console.log(" Fetching CNS care plan details from:", url);
+    return fetch(url, {
+      headers: getAuthHeaders(),
+    }).then((response) => {
       if (!response.ok) {
         return response.json().then((error) => {
           throw new Error(error.detail || "Failed to fetch details");
@@ -279,7 +304,9 @@ export const dataProvider: MyDataProvider = {
 
   getCarePlanDetails: (carePlanId: Identifier) => {
     const url = `${apiUrl}/careplans/${carePlanId}/details`;
-    return fetch(url).then((response) => {
+    return fetch(url, {
+      headers: getAuthHeaders(),
+    }).then((response) => {
       if (!response.ok) {
         return response.json().then((error) => {
           throw new Error(error.detail || "Failed to fetch care plan details");
@@ -290,31 +317,31 @@ export const dataProvider: MyDataProvider = {
   },
 
   createCarePlanDetail: async (carePlanId, data) => {
-    console.log("🌐 DATA PROVIDER - createCarePlanDetail called!");
-    console.log("📋 Care Plan ID:", carePlanId);
-    console.log("📦 Data to send:", JSON.stringify(data, null, 2));
-    
+    console.log(" DATA PROVIDER - createCarePlanDetail called!");
+    console.log(" Care Plan ID:", carePlanId);
+    console.log(" Data to send:", JSON.stringify(data, null, 2));
+
     const url = `${apiUrl}/careplans/${carePlanId}/details`;
-    console.log("🔗 API URL:", url);
-    
+    console.log(" API URL:", url);
+
     const options = {
       method: "POST",
       body: JSON.stringify(data),
-      headers: new Headers({ "Content-Type": "application/json" }),
+      headers: getAuthHeaders(),
     };
-    
-    console.log("📤 Making API request...");
+
+    console.log(" Making API request...");
     const response = await fetch(url, options);
-    console.log("📥 Response status:", response.status);
-    
+    console.log(" Response status:", response.status);
+
     if (!response.ok) {
       const error = await response.json();
-      console.error("❌ API Error:", error);
+      console.error(" API Error:", error);
       throw new Error(error.detail || "Failed to create care plan detail");
     }
-    
+
     const result = await response.json();
-    console.log("✅ API Success:", result);
+    console.log(" API Success:", result);
     return result;
   },
 
@@ -323,7 +350,7 @@ export const dataProvider: MyDataProvider = {
     const options = {
       method: "PUT",
       body: JSON.stringify(data),
-      headers: new Headers({ "Content-Type": "application/json" }),
+      headers: getAuthHeaders(),
     };
     const response = await fetch(url, options);
     if (!response.ok) {
@@ -339,28 +366,28 @@ export const dataProvider: MyDataProvider = {
         // If no specific CNS care plan ID, return empty array (no items available)
         return [];
       }
-      
+
       // Get details for the specific CNS care plan
       const details = await dataProvider.getCnsCarePlanDetails(cnsCarePlanId);
       console.log("🔍 CNS care plan details:", details);
-      
+
       // Extract unique item IDs from this specific CNS care plan
       // Filter to only include "Prestations Aidant" items
       const itemIds = new Set<number>();
-      details.forEach(detail => {
+      details.forEach((detail) => {
         if (detail.item?.id) {
           // Check if the item is of type "Prestations Aidant" or related to aide services
           const item = detail.item;
           console.log("🔎 Checking item:", item);
-          
+
           // Multiple possible ways to identify "Prestations Aidant" items:
-          const isAidantItem = 
+          const isAidantItem =
             item.type === "Prestations Aidant" ||
             item.category === "Prestations Aidant" ||
             item.prestataire_type === "Aidant" ||
             item.code?.toLowerCase().includes("aidant") ||
             item.description?.toLowerCase().includes("aidant");
-          
+
           if (isAidantItem) {
             console.log("✅ Item is Prestations Aidant type:", item);
             itemIds.add(detail.item.id);
@@ -369,7 +396,7 @@ export const dataProvider: MyDataProvider = {
           }
         }
       });
-      
+
       console.log("🎯 Filtered Aidant item IDs:", Array.from(itemIds));
       return Array.from(itemIds);
     } catch (error) {

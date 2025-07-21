@@ -184,13 +184,13 @@ export const CarePlanEdit = () => (
 );
 
 export const CarePlanCreate = () => (
-  <Create 
+  <Create
     redirect="show"
     mutationOptions={{
       onSuccess: (data) => {
         // This will trigger after successful creation and redirect
-        console.log('Care plan created successfully:', data);
-      }
+        console.log("Care plan created successfully:", data);
+      },
     }}
   >
     <SimpleForm>

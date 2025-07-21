@@ -31,7 +31,10 @@ import {
 } from "./dataProvider";
 import { CarePlanDetailCreateDialog } from "./CarePlanDetailCreateDialog";
 import { CarePlanDetailEditDialog } from "./CarePlanDetailEditDialog";
-import { DurationSummary, CarePlanDetailsSummary } from "./components/DurationSummary";
+import {
+  DurationSummary,
+  CarePlanDetailsSummary,
+} from "./components/DurationSummary";
 import { formatDurationDisplay } from "./utils/timeUtils";
 
 // Custom field to display package duration with daily calculation
@@ -40,13 +43,13 @@ const PackageDurationField = ({ record }: { record: any }) => {
   if (weeklyPackage === 0) {
     return <span>—</span>;
   }
-  
+
   const dailyDuration = weeklyPackage / 7;
   return (
     <span>
       {formatDurationDisplay(weeklyPackage)}/week
       <br />
-      <small style={{ color: '#666' }}>
+      <small style={{ color: "#666" }}>
         ({formatDurationDisplay(dailyDuration)}/day)
       </small>
     </span>
@@ -57,7 +60,9 @@ const PackageDurationField = ({ record }: { record: any }) => {
 const CarePlanDetails = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
-  const [detailToEdit, setDetailToEdit] = React.useState<CarePlanDetail | null>(null);
+  const [detailToEdit, setDetailToEdit] = React.useState<CarePlanDetail | null>(
+    null,
+  );
   const record = useRecordContext();
   const dataProvider = useDataProvider<MyDataProvider>();
   const [details, setDetails] = useState<CarePlanDetail[]>([]);
@@ -67,8 +72,8 @@ const CarePlanDetails = () => {
 
   // Function to manually trigger a refresh of care plan details
   const refreshDetails = () => {
-    console.log('🔄 Manually refreshing care plan details...');
-    setRefreshTrigger(prev => prev + 1);
+    console.log("🔄 Manually refreshing care plan details...");
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   useEffect(() => {
@@ -77,7 +82,7 @@ const CarePlanDetails = () => {
       dataProvider
         .getCarePlanDetails(record.id)
         .then((data: CarePlanDetail[]) => {
-          console.log('✅ Care plan details fetched:', data);
+          console.log("✅ Care plan details fetched:", data);
           setDetails(data);
           setLoading(false);
         })
@@ -119,7 +124,10 @@ const CarePlanDetails = () => {
   };
 
   return (
-    <Paper sx={{ padding: 2, marginTop: 2 }} data-testid="care-plan-details-section">
+    <Paper
+      sx={{ padding: 2, marginTop: 2 }}
+      data-testid="care-plan-details-section"
+    >
       <Box
         display="flex"
         justifyContent="space-between"
@@ -136,78 +144,94 @@ const CarePlanDetails = () => {
           Add New Detail
         </Button>
       </Box>
-      
-      {(!details || details.length === 0) ? (
-        <Box sx={{ py: 4, textAlign: 'center' }}>
+
+      {!details || details.length === 0 ? (
+        <Box sx={{ py: 4, textAlign: "center" }}>
           <Typography variant="body1" color="text.secondary" gutterBottom>
             No details found for this care plan.
           </Typography>
-          <Typography variant="body2" color="primary" sx={{ fontWeight: 'medium' }}>
-            👆 Click "Add New Detail" above to start adding care plan details, occurrences, and long-term care items.
+          <Typography
+            variant="body2"
+            color="primary"
+            sx={{ fontWeight: "medium" }}
+          >
+            👆 Click "Add New Detail" above to start adding care plan details,
+            occurrences, and long-term care items.
           </Typography>
         </Box>
       ) : (
         <>
           {details.map((detail) => (
-        <Paper key={detail.id} sx={{ p: 2, mb: 2 }}>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Typography variant="subtitle1" gutterBottom sx={{ flexGrow: 1 }}>
-              {detail.name}
-            </Typography>
-            <IconButton
-              onClick={() => handleOpenEditDialog(detail)}
-              size="small"
-            >
-              <EditIcon />
-            </IconButton>
-          </Box>
-          <Box sx={{ display: "flex", gap: 4, mb: 2 }}>
-            <TextField record={detail} source="time_start" label="Start Time" />
-            <TextField record={detail} source="time_end" label="End Time" />
-          </Box>
-          <TextField
-            record={detail}
-            source="care_actions"
-            label="Care Actions"
-            fullWidth
-          />
-
-          <Typography variant="subtitle2" sx={{ mt: 2 }}>
-            Occurrences:
-          </Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-            {detail.params_occurrence.map((occ: CareOccurrence) => (
-              <Chip key={occ.id} label={`${occ.str_name}: ${occ.value}`} />
-            ))}
-          </Box>
-
-          <Typography variant="subtitle2">Care Items:</Typography>
-          <ArrayField record={detail} source="longtermcareitemquantity_set">
-            <Datagrid bulkActionButtons={false} optimized>
-              <TextField source="long_term_care_item.code" label="Item Code" />
+            <Paper key={detail.id} sx={{ p: 2, mb: 2 }}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ flexGrow: 1 }}
+                >
+                  {detail.name}
+                </Typography>
+                <IconButton
+                  onClick={() => handleOpenEditDialog(detail)}
+                  size="small"
+                >
+                  <EditIcon />
+                </IconButton>
+              </Box>
+              <Box sx={{ display: "flex", gap: 4, mb: 2 }}>
+                <TextField
+                  record={detail}
+                  source="time_start"
+                  label="Start Time"
+                />
+                <TextField record={detail} source="time_end" label="End Time" />
+              </Box>
               <TextField
-                source="long_term_care_item.description"
-                label="Item Description"
+                record={detail}
+                source="care_actions"
+                label="Care Actions"
+                fullWidth
               />
-              <NumberField source="quantity" label="Quantity" />
-              <PackageDurationField label="Package Duration" />
-            </Datagrid>
-          </ArrayField>
-          
-          {/* Duration Summary for this detail */}
-          <DurationSummary detail={detail} />
-        </Paper>
+
+              <Typography variant="subtitle2" sx={{ mt: 2 }}>
+                Occurrences:
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                {detail.params_occurrence.map((occ: CareOccurrence) => (
+                  <Chip key={occ.id} label={`${occ.str_name}: ${occ.value}`} />
+                ))}
+              </Box>
+
+              <Typography variant="subtitle2">Care Items:</Typography>
+              <ArrayField record={detail} source="longtermcareitemquantity_set">
+                <Datagrid bulkActionButtons={false} optimized>
+                  <TextField
+                    source="long_term_care_item.code"
+                    label="Item Code"
+                  />
+                  <TextField
+                    source="long_term_care_item.description"
+                    label="Item Description"
+                  />
+                  <NumberField source="quantity" label="Quantity" />
+                  <PackageDurationField label="Package Duration" />
+                </Datagrid>
+              </ArrayField>
+
+              {/* Duration Summary for this detail */}
+              <DurationSummary detail={detail} />
+            </Paper>
           ))}
-          
+
           {/* Overall Care Plan Duration Summary */}
           <CarePlanDetailsSummary details={details} />
         </>
       )}
-      
+
       {record && (
         <CarePlanDetailCreateDialog
           open={isCreateDialogOpen}
@@ -240,9 +264,9 @@ export const CarePlanShow = () => (
       <DateField source="plan_start_date" />
       <DateField source="plan_end_date" />
       <DateField source="plan_decision_date" />
-      <ReferenceField 
-        source="medical_care_summary_per_patient_id" 
-        reference="cnscareplans" 
+      <ReferenceField
+        source="medical_care_summary_per_patient_id"
+        reference="cnscareplans"
         label="Linked CNS Care Plan"
         emptyText="No CNS care plan linked"
       />

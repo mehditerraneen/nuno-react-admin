@@ -12,14 +12,16 @@ export const STRICT_TIME_FORMAT_REGEX = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
  * @param timeString - Input time string (e.g., "7:30", "07:30", "15:45")
  * @returns Formatted time string in HH:MM format (e.g., "07:30", "15:45")
  */
-export function formatTimeString(timeString: string | null | undefined): string {
+export function formatTimeString(
+  timeString: string | null | undefined,
+): string {
   if (!timeString) {
-    return '';
+    return "";
   }
 
   // Remove any whitespace
   const cleanTime = timeString.trim();
-  
+
   // If already in correct format, return as is
   if (STRICT_TIME_FORMAT_REGEX.test(cleanTime)) {
     return cleanTime;
@@ -30,10 +32,10 @@ export function formatTimeString(timeString: string | null | undefined): string 
   if (timeMatch) {
     const hours = parseInt(timeMatch[1], 10);
     const minutes = parseInt(timeMatch[2], 10);
-    
+
     // Validate ranges
     if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
     }
   }
 
@@ -42,9 +44,9 @@ export function formatTimeString(timeString: string | null | undefined): string 
   if (partialMatch) {
     const hours = parseInt(partialMatch[1], 10);
     const minutes = partialMatch[2] ? parseInt(partialMatch[2], 10) : 0;
-    
+
     if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
     }
   }
 
@@ -58,7 +60,9 @@ export function formatTimeString(timeString: string | null | undefined): string 
  * @param timeString - Time string to validate
  * @returns true if valid, false otherwise
  */
-export function isValidTimeFormat(timeString: string | null | undefined): boolean {
+export function isValidTimeFormat(
+  timeString: string | null | undefined,
+): boolean {
   if (!timeString) {
     return false;
   }
@@ -70,12 +74,14 @@ export function isValidTimeFormat(timeString: string | null | undefined): boolea
  * @param timeString - Time string in HH:MM format
  * @returns Object with hours and minutes, or null if invalid
  */
-export function parseTimeString(timeString: string): { hours: number; minutes: number } | null {
+export function parseTimeString(
+  timeString: string,
+): { hours: number; minutes: number } | null {
   const match = timeString.match(/^(\d{2}):(\d{2})$/);
   if (match) {
     const hours = parseInt(match[1], 10);
     const minutes = parseInt(match[2], 10);
-    
+
     if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
       return { hours, minutes };
     }
@@ -91,9 +97,9 @@ export function parseTimeString(timeString: string): { hours: number; minutes: n
  */
 export function createTimeString(hours: number, minutes: number): string {
   if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-    throw new Error('Invalid time values');
+    throw new Error("Invalid time values");
   }
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 }
 
 /**
@@ -129,27 +135,27 @@ export function timeStringToDate(timeString: string): Date | null {
 export function isValidTimeRange(startTime: string, endTime: string): boolean {
   const start = parseTimeString(startTime);
   const end = parseTimeString(endTime);
-  
+
   if (!start || !end) {
     return false;
   }
-  
+
   const startMinutes = start.hours * 60 + start.minutes;
   const endMinutes = end.hours * 60 + end.minutes;
-  
+
   return startMinutes < endMinutes;
 }
 
 /**
  * Get user-friendly time format examples for validation messages
  */
-export const TIME_FORMAT_EXAMPLES = ['07:00', '09:30', '14:15', '23:59'];
+export const TIME_FORMAT_EXAMPLES = ["07:00", "09:30", "14:15", "23:59"];
 
 /**
  * Get a helpful error message for invalid time format
  */
-export function getTimeFormatErrorMessage(fieldName: string = 'Time'): string {
-  return `${fieldName} must be in HH:MM format (e.g., ${TIME_FORMAT_EXAMPLES.join(', ')})`;
+export function getTimeFormatErrorMessage(fieldName: string = "Time"): string {
+  return `${fieldName} must be in HH:MM format (e.g., ${TIME_FORMAT_EXAMPLES.join(", ")})`;
 }
 
 /**
@@ -160,48 +166,79 @@ export function getTimeFormatErrorMessage(fieldName: string = 'Time'): string {
  */
 export function formatTimeFieldsInFormData<T extends Record<string, any>>(
   formData: T,
-  timeFields: (keyof T)[]
+  timeFields: (keyof T)[],
 ): T {
   const result = { ...formData };
-  
-  timeFields.forEach(fieldName => {
+
+  timeFields.forEach((fieldName) => {
     const value = result[fieldName];
     if (value) {
       console.log(`🔧 Processing ${String(fieldName)}:`, value, typeof value);
-      
+
       // Handle Date objects
       if (value instanceof Date) {
-        const hours = value.getHours().toString().padStart(2, '0');
-        const minutes = value.getMinutes().toString().padStart(2, '0');
+        const hours = value.getHours().toString().padStart(2, "0");
+        const minutes = value.getMinutes().toString().padStart(2, "0");
         result[fieldName] = `${hours}:${minutes}` as T[keyof T];
-        console.log(`📅 Date converted:`, value, '→', result[fieldName]);
+        console.log(`📅 Date converted:`, value, "→", result[fieldName]);
       }
       // Handle ISO datetime strings
-      else if (typeof value === 'string' && value.includes('T')) {
+      else if (typeof value === "string" && value.includes("T")) {
         const date = new Date(value);
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
         result[fieldName] = `${hours}:${minutes}` as T[keyof T];
-        console.log(`🕐 ISO string converted:`, value, '→', result[fieldName]);
+        console.log(`🕐 ISO string converted:`, value, "→", result[fieldName]);
       }
       // Handle simple time strings
-      else if (typeof value === 'string') {
+      else if (typeof value === "string") {
         result[fieldName] = formatTimeString(value) as T[keyof T];
-        console.log(`⏰ String formatted:`, value, '→', result[fieldName]);
+        console.log(`⏰ String formatted:`, value, "→", result[fieldName]);
       }
     }
   });
-  
+
   return result;
 }
 
 // Common time presets for quick selection
 export const COMMON_TIMES = [
-  '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
-  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-  '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30',
-  '22:00', '22:30', '23:00', '23:30'
+  "06:00",
+  "06:30",
+  "07:00",
+  "07:30",
+  "08:00",
+  "08:30",
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
+  "19:30",
+  "20:00",
+  "20:30",
+  "21:00",
+  "21:30",
+  "22:00",
+  "22:30",
+  "23:00",
+  "23:30",
 ];
 
 /**
@@ -210,17 +247,20 @@ export const COMMON_TIMES = [
  * @param endTime - End time in HH:MM format
  * @returns Duration in minutes, or 0 if invalid times
  */
-export function calculateDurationInMinutes(startTime: string, endTime: string): number {
+export function calculateDurationInMinutes(
+  startTime: string,
+  endTime: string,
+): number {
   const start = parseTimeString(startTime);
   const end = parseTimeString(endTime);
-  
+
   if (!start || !end) {
     return 0;
   }
-  
+
   const startMinutes = start.hours * 60 + start.minutes;
   const endMinutes = end.hours * 60 + end.minutes;
-  
+
   // Handle negative duration (invalid time range)
   const duration = endMinutes - startMinutes;
   return duration > 0 ? duration : 0;
@@ -233,20 +273,20 @@ export function calculateDurationInMinutes(startTime: string, endTime: string): 
  */
 export function formatDurationDisplay(totalMinutes: number): string {
   if (totalMinutes === 0) {
-    return '0min';
+    return "0min";
   }
-  
+
   // Round to 2 decimal places
   const roundedMinutes = Math.round(totalMinutes * 100) / 100;
-  
+
   const hours = Math.floor(roundedMinutes / 60);
   const minutes = roundedMinutes % 60;
-  
+
   // Format minutes to 2 decimal places if needed
   const formatMinutes = (mins: number) => {
     return mins % 1 === 0 ? mins.toString() : mins.toFixed(2);
   };
-  
+
   if (hours === 0) {
     return `${formatMinutes(minutes)}min`;
   } else if (minutes === 0) {
@@ -262,7 +302,10 @@ export function formatDurationDisplay(totalMinutes: number): string {
  * @param timeEnd - End time in HH:MM format
  * @returns Session duration in minutes
  */
-export function calculateSessionDuration(timeStart: string, timeEnd: string): number {
+export function calculateSessionDuration(
+  timeStart: string,
+  timeEnd: string,
+): number {
   return calculateDurationInMinutes(timeStart, timeEnd);
 }
 
@@ -275,23 +318,23 @@ export function calculateCareItemsDailyDuration(
   careItems: Array<{
     long_term_care_item: { weekly_package?: number };
     quantity: number;
-  }>
+  }>,
 ): number {
-  console.log('📊 calculateCareItemsDailyDuration called with:', careItems);
-  
+  console.log("📊 calculateCareItemsDailyDuration called with:", careItems);
+
   return careItems.reduce((total, item, index) => {
     const weeklyPackage = item.long_term_care_item.weekly_package || 0;
     const dailyPackage = weeklyPackage / 7; // Convert weekly to daily
     const itemDailyDuration = dailyPackage * item.quantity;
-    
+
     console.log(`📊 Item ${index}:`, {
       weekly_package: weeklyPackage,
       daily_package: dailyPackage,
       quantity: item.quantity,
       itemDailyDuration,
-      runningTotal: total + itemDailyDuration
+      runningTotal: total + itemDailyDuration,
     });
-    
+
     return total + itemDailyDuration;
   }, 0);
 }
@@ -301,29 +344,32 @@ export function calculateCareItemsDailyDuration(
  * @param occurrences - Array of occurrence objects or simple count
  * @returns Number of days per week (7 if "tous les jours" is found, otherwise array length)
  */
-export function calculateActualDaysPerWeek(occurrences: any[] | number): number {
+export function calculateActualDaysPerWeek(
+  occurrences: any[] | number,
+): number {
   // If it's already a number, return it (backward compatibility)
-  if (typeof occurrences === 'number') {
+  if (typeof occurrences === "number") {
     return occurrences;
   }
-  
+
   // Check if any occurrence represents "tous les jours" / daily
-  const hasTousLesJours = occurrences.some(occ => 
-    occ.str_name?.toLowerCase().includes('tous les jours') || 
-    occ.str_name?.toLowerCase().includes('daily') ||
-    occ.value?.toLowerCase().includes('daily') ||
-    occ.str_name === '*' ||
-    occ.value === '*'
+  const hasTousLesJours = occurrences.some(
+    (occ) =>
+      occ.str_name?.toLowerCase().includes("tous les jours") ||
+      occ.str_name?.toLowerCase().includes("daily") ||
+      occ.value?.toLowerCase().includes("daily") ||
+      occ.str_name === "*" ||
+      occ.value === "*",
   );
-  
+
   if (hasTousLesJours) {
     console.log('📊 Found "tous les jours" occurrence, using 7 days/week');
     return 7;
   }
-  
+
   // Otherwise, return the count of specific days
   const daysCount = occurrences.length;
-  console.log('📊 Specific days selected:', daysCount);
+  console.log("📊 Specific days selected:", daysCount);
   return daysCount;
 }
 
@@ -338,19 +384,21 @@ export function calculateCareItemsActualWeeklyDuration(
     long_term_care_item: { weekly_package?: number };
     quantity: number;
   }>,
-  occurrences: any[] | number
+  occurrences: any[] | number,
 ): number {
   const dailyDuration = calculateCareItemsDailyDuration(careItems);
   const actualDaysPerWeek = calculateActualDaysPerWeek(occurrences);
   const actualWeeklyDuration = dailyDuration * actualDaysPerWeek;
-  
-  console.log('📊 calculateCareItemsActualWeeklyDuration:', {
+
+  console.log("📊 calculateCareItemsActualWeeklyDuration:", {
     dailyDuration,
-    occurrences: Array.isArray(occurrences) ? occurrences.map(o => o.str_name || o.value) : occurrences,
+    occurrences: Array.isArray(occurrences)
+      ? occurrences.map((o) => o.str_name || o.value)
+      : occurrences,
     actualDaysPerWeek,
-    actualWeeklyDuration
+    actualWeeklyDuration,
   });
-  
+
   return actualWeeklyDuration;
 }
 
@@ -361,7 +409,7 @@ export function calculateCareItemsWeeklyDuration(
   careItems: Array<{
     long_term_care_item: { weekly_package?: number };
     quantity: number;
-  }>
+  }>,
 ): number {
   // Keep old function for backward compatibility, but it returns daily duration now
   return calculateCareItemsDailyDuration(careItems);
@@ -378,7 +426,7 @@ export function calculatePlannedWeeklyDuration(
     long_term_care_item: { weekly_package?: number };
     quantity: number;
   }>,
-  occurrenceCount: number
+  occurrenceCount: number,
 ): number {
   const careItemsWeeklyDuration = calculateCareItemsWeeklyDuration(careItems);
   return careItemsWeeklyDuration * (occurrenceCount / 7); // Normalize based on actual occurrences
@@ -397,7 +445,7 @@ export function calculateSuggestedEndTime(
     long_term_care_item: { weekly_package?: number };
     quantity: number;
   }>,
-  occurrences: any[] | number
+  occurrences: any[] | number,
 ): string | null {
   if (!startTime || careItems.length === 0) {
     return null;
@@ -405,7 +453,7 @@ export function calculateSuggestedEndTime(
 
   // Calculate daily duration needed
   const dailyDuration = calculateCareItemsDailyDuration(careItems);
-  
+
   if (dailyDuration === 0) {
     return null;
   }
@@ -419,7 +467,7 @@ export function calculateSuggestedEndTime(
   // Calculate end time
   const startMinutes = startParsed.hours * 60 + startParsed.minutes;
   const endMinutes = startMinutes + dailyDuration;
-  
+
   // Handle overflow past midnight
   if (endMinutes >= 24 * 60) {
     return null; // Don't suggest times that go past midnight
@@ -434,7 +482,7 @@ export function calculateSuggestedEndTime(
 /**
  * Check if current session duration matches expected care package duration
  * @param startTime - Start time in HH:MM format
- * @param endTime - End time in HH:MM format  
+ * @param endTime - End time in HH:MM format
  * @param careItems - Array of care items with weekly_package and quantity
  * @returns Object with match status and suggested end time
  */
@@ -444,7 +492,7 @@ export function checkSessionDurationMatch(
   careItems: Array<{
     long_term_care_item: { weekly_package?: number };
     quantity: number;
-  }>
+  }>,
 ): {
   matches: boolean;
   actualDuration: number;
@@ -462,6 +510,6 @@ export function checkSessionDurationMatch(
     actualDuration,
     expectedDuration,
     suggestedEndTime,
-    difference
+    difference,
   };
 }

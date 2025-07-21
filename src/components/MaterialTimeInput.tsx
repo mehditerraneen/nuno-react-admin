@@ -1,10 +1,14 @@
-import React from 'react';
-import { useInput, useTranslate } from 'react-admin';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { TextField } from '@mui/material';
-import { formatTimeString, timeStringToDate, dateToTimeString } from '../utils/timeUtils';
+import React from "react";
+import { useInput, useTranslate } from "react-admin";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { TextField } from "@mui/material";
+import {
+  formatTimeString,
+  timeStringToDate,
+  dateToTimeString,
+} from "../utils/timeUtils";
 
 interface MaterialTimeInputProps {
   source: string;
@@ -47,7 +51,7 @@ export const MaterialTimeInput: React.FC<MaterialTimeInputProps> = ({
       const formattedTime = formatTimeString(timeString);
       onChange(formattedTime);
     } else {
-      onChange('');
+      onChange("");
     }
   };
 
@@ -62,7 +66,7 @@ export const MaterialTimeInput: React.FC<MaterialTimeInputProps> = ({
         onChange={handleChange}
         disabled={disabled}
         ampm={false} // Use 24-hour format for consistency
-        views={['hours', 'minutes']}
+        views={["hours", "minutes"]}
         timeSteps={{ hours: 1, minutes: 5 }} // 5-minute steps
         renderInput={(params) => (
           <TextField
@@ -84,7 +88,9 @@ export const MaterialTimeInput: React.FC<MaterialTimeInputProps> = ({
  * Simplified wrapper that provides LocalizationProvider context
  * Use this if you don't have LocalizationProvider in your app root
  */
-export const MaterialTimeInputWithProvider: React.FC<MaterialTimeInputProps> = (props) => {
+export const MaterialTimeInputWithProvider: React.FC<MaterialTimeInputProps> = (
+  props,
+) => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <MaterialTimeInput {...props} />

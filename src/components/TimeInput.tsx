@@ -1,21 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { TextInput, TextInputProps } from 'react-admin';
-import { 
-  formatTimeString, 
-  isValidTimeFormat, 
+import React, { useState, useEffect } from "react";
+import { TextInput, TextInputProps } from "react-admin";
+import {
+  formatTimeString,
+  isValidTimeFormat,
   getTimeFormatErrorMessage,
-  COMMON_TIMES 
-} from '../utils/timeUtils';
-import { 
-  Autocomplete, 
-  TextField, 
-  Chip,
-  Box,
-  Typography 
-} from '@mui/material';
-import { useInput, useTranslate } from 'react-admin';
+  COMMON_TIMES,
+} from "../utils/timeUtils";
+import { Autocomplete, TextField, Chip, Box, Typography } from "@mui/material";
+import { useInput, useTranslate } from "react-admin";
 
-interface TimeInputProps extends Omit<TextInputProps, 'source'> {
+interface TimeInputProps extends Omit<TextInputProps, "source"> {
   source: string;
   showCommonTimes?: boolean;
   validate24Hour?: boolean;
@@ -32,21 +26,21 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   const {
     field,
     fieldState: { error },
-    formState: { isSubmitted }
+    formState: { isSubmitted },
   } = useInput({ source, ...props });
 
-  const [localValue, setLocalValue] = useState(field.value || '');
+  const [localValue, setLocalValue] = useState(field.value || "");
   const [formatError, setFormatError] = useState<string | null>(null);
 
   // Sync with form value
   useEffect(() => {
-    setLocalValue(field.value || '');
+    setLocalValue(field.value || "");
   }, [field.value]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setLocalValue(value);
-    
+
     // Clear format error when user starts typing
     if (formatError) {
       setFormatError(null);
@@ -56,18 +50,18 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   const handleBlur = () => {
     if (localValue) {
       const formattedTime = formatTimeString(localValue);
-      
+
       if (isValidTimeFormat(formattedTime)) {
         field.onChange(formattedTime);
         setLocalValue(formattedTime);
         setFormatError(null);
       } else {
-        setFormatError(getTimeFormatErrorMessage(props.label || 'Time'));
+        setFormatError(getTimeFormatErrorMessage(props.label || "Time"));
         // Still update the field to trigger validation
         field.onChange(localValue);
       }
     } else {
-      field.onChange('');
+      field.onChange("");
       setFormatError(null);
     }
     field.onBlur();
@@ -111,12 +105,15 @@ export const TimeInput: React.FC<TimeInputProps> = ({
             <li {...props}>
               <Box display="flex" alignItems="center" gap={1}>
                 <Typography variant="body2">{option}</Typography>
-                <Chip 
-                  label={new Date(`2000-01-01 ${option}`).toLocaleTimeString([], { 
-                    hour: 'numeric', 
-                    minute: '2-digit' 
-                  })} 
-                  size="small" 
+                <Chip
+                  label={new Date(`2000-01-01 ${option}`).toLocaleTimeString(
+                    [],
+                    {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    },
+                  )}
+                  size="small"
                   variant="outlined"
                 />
               </Box>
@@ -138,9 +135,9 @@ export const TimeInput: React.FC<TimeInputProps> = ({
       helperText={currentHelperText}
       placeholder="HH:MM (e.g., 09:30)"
       inputProps={{
-        pattern: '[0-2][0-9]:[0-5][0-9]',
+        pattern: "[0-2][0-9]:[0-5][0-9]",
         maxLength: 5,
-        ...props.inputProps
+        ...props.inputProps,
       }}
     />
   );
@@ -158,9 +155,9 @@ export const SimpleTimeInput: React.FC<TextInputProps> = (props) => {
       transform={handleTransform}
       placeholder="HH:MM (e.g., 09:30)"
       inputProps={{
-        pattern: '[0-2][0-9]:[0-5][0-9]',
+        pattern: "[0-2][0-9]:[0-5][0-9]",
         maxLength: 5,
-        ...props.inputProps
+        ...props.inputProps,
       }}
     />
   );

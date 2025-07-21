@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Card,
@@ -17,8 +17,8 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Divider
-} from '@mui/material';
+  Divider,
+} from "@mui/material";
 import {
   ExpandMore as ExpandMoreIcon,
   Schedule as ScheduleIcon,
@@ -27,41 +27,49 @@ import {
   CalendarToday as CalendarIcon,
   ViewWeek as WeekIcon,
   Add as AddIcon,
-  Info as InfoIcon
-} from '@mui/icons-material';
-import { TextInput, ArrayInput, SimpleFormIterator } from 'react-admin';
-import { SmartTimeInput } from './SmartTimeInput';
-import { SmartOccurrenceInput } from './SmartOccurrenceInput';
-import { LiveDurationCalculator } from './LiveDurationCalculator';
+  Info as InfoIcon,
+} from "@mui/icons-material";
+import { TextInput, ArrayInput, SimpleFormIterator } from "react-admin";
+import { SmartTimeInput } from "./SmartTimeInput";
+import { SmartOccurrenceInput } from "./SmartOccurrenceInput";
+import { LiveDurationCalculator } from "./LiveDurationCalculator";
 
 interface ImprovedCareFormLayoutProps {
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
 }
 
-export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ mode }) => {
+export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({
+  mode,
+}) => {
   const [activeTab, setActiveTab] = useState(0);
-  const [expandedSection, setExpandedSection] = useState<string | false>('basic');
+  const [expandedSection, setExpandedSection] = useState<string | false>(
+    "basic",
+  );
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
-  const handleAccordionChange = (panel: string) => (
-    event: React.SyntheticEvent,
-    isExpanded: boolean
-  ) => {
-    setExpandedSection(isExpanded ? panel : false);
-  };
+  const handleAccordionChange =
+    (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+      setExpandedSection(isExpanded ? panel : false);
+    };
 
   return (
-    <Box sx={{ width: '100%', maxWidth: '1200px', mx: 'auto' }}>
+    <Box sx={{ width: "100%", maxWidth: "1200px", mx: "auto" }}>
       {/* Header with Progress Steps */}
-      <Paper elevation={1} sx={{ p: 2, mb: 3, backgroundColor: '#f8f9fa' }}>
-        <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Paper elevation={1} sx={{ p: 2, mb: 3, backgroundColor: "#f8f9fa" }}>
+        <Typography
+          variant="h5"
+          gutterBottom
+          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+        >
           <CareIcon color="primary" />
-          {mode === 'create' ? 'Create Care Plan Detail' : 'Edit Care Plan Detail'}
+          {mode === "create"
+            ? "Create Care Plan Detail"
+            : "Edit Care Plan Detail"}
         </Typography>
-        
+
         <Stepper activeStep={activeTab} sx={{ mt: 2 }}>
           <Step>
             <StepLabel icon={<InfoIcon />}>Basic Info</StepLabel>
@@ -77,24 +85,24 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
 
       {/* Tab Navigation */}
       <Card elevation={2}>
-        <Tabs 
-          value={activeTab} 
+        <Tabs
+          value={activeTab}
           onChange={handleTabChange}
           variant="fullWidth"
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
+          sx={{ borderBottom: 1, borderColor: "divider" }}
         >
-          <Tab 
-            label="Basic Information" 
+          <Tab
+            label="Basic Information"
             icon={<InfoIcon />}
             iconPosition="start"
           />
-          <Tab 
-            label="Schedule & Timing" 
+          <Tab
+            label="Schedule & Timing"
             icon={<ScheduleIcon />}
             iconPosition="start"
           />
-          <Tab 
-            label="Care Items & Actions" 
+          <Tab
+            label="Care Items & Actions"
             icon={<AssignmentIcon />}
             iconPosition="start"
           />
@@ -104,29 +112,33 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
           {/* Tab 1: Basic Information */}
           {activeTab === 0 && (
             <Box>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
                 <InfoIcon color="primary" />
                 Basic Care Plan Information
               </Typography>
-              
+
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <TextInput 
-                    source="name" 
+                  <TextInput
+                    source="name"
                     label="Care Plan Detail Name"
-                    fullWidth 
-                    required 
+                    fullWidth
+                    required
                     helperText="Enter a descriptive name for this care plan detail"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12}>
-                  <TextInput 
-                    source="care_actions" 
+                  <TextInput
+                    source="care_actions"
                     label="Care Actions & Instructions"
-                    multiline 
-                    fullWidth 
-                    rows={4} 
+                    multiline
+                    fullWidth
+                    rows={4}
                     required
                     helperText="Describe the specific care actions to be performed"
                   />
@@ -138,14 +150,25 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
           {/* Tab 2: Schedule & Timing */}
           {activeTab === 1 && (
             <Box>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
                 <ScheduleIcon color="primary" />
                 Schedule Configuration
               </Typography>
 
               {/* Horizontal Occurrences Display */}
-              <Paper variant="outlined" sx={{ p: 3, mb: 3, backgroundColor: '#f8f9fa' }}>
-                <Typography variant="subtitle1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Paper
+                variant="outlined"
+                sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
                   <WeekIcon color="secondary" />
                   Weekly Occurrence Pattern
                 </Typography>
@@ -158,11 +181,15 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
 
               {/* Time Configuration */}
               <Paper variant="outlined" sx={{ p: 3 }}>
-                <Typography variant="subtitle1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
                   <ScheduleIcon color="secondary" />
                   Session Timing
                 </Typography>
-                
+
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
                     <SmartTimeInput
@@ -173,10 +200,10 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <SmartTimeInput 
-                      source="time_end" 
-                      label="End Time" 
-                      required 
+                    <SmartTimeInput
+                      source="time_end"
+                      label="End Time"
+                      required
                       autoSuggest={true}
                       dependsOnCareItems={true}
                       helperText="End time (auto-suggested based on care items)"
@@ -195,47 +222,67 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
           {/* Tab 3: Care Items */}
           {activeTab === 2 && (
             <Box>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
                 <AssignmentIcon color="primary" />
                 Care Items & Quantities
               </Typography>
 
               {/* Accordion Layout for Care Items */}
-              <Accordion 
-                expanded={expandedSection === 'care-items'} 
-                onChange={handleAccordionChange('care-items')}
+              <Accordion
+                expanded={expandedSection === "care-items"}
+                onChange={handleAccordionChange("care-items")}
                 sx={{ mb: 2 }}
               >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      width: "100%",
+                    }}
+                  >
                     <CareIcon color="primary" />
                     <Typography variant="subtitle1">
                       Long Term Care Items Configuration
                     </Typography>
-                    <Chip 
-                      label="Expand to configure care items" 
-                      size="small" 
+                    <Chip
+                      label="Expand to configure care items"
+                      size="small"
                       variant="outlined"
                       color="primary"
                     />
                   </Box>
                 </AccordionSummary>
-                
+
                 <AccordionDetails>
-                  <Box sx={{ width: '100%' }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Add and configure the long-term care items needed for this care plan detail.
-                      Each item shows its daily duration requirement.
-                    </Typography>
-                    
-                    <ArrayInput
-                      source="long_term_care_items"
-                      label=""
+                  <Box sx={{ width: "100%" }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
                     >
-                      <SimpleFormIterator 
+                      Add and configure the long-term care items needed for this
+                      care plan detail. Each item shows its daily duration
+                      requirement.
+                    </Typography>
+
+                    <ArrayInput source="long_term_care_items" label="">
+                      <SimpleFormIterator
                         inline
                         addButton={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 2 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                              p: 2,
+                            }}
+                          >
                             <AddIcon />
                             <Typography>Add Care Item</Typography>
                           </Box>
@@ -255,14 +302,18 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
                     </ArrayInput>
 
                     <Divider sx={{ my: 3 }} />
-                    
+
                     {/* Duration Summary */}
-                    <Paper variant="outlined" sx={{ p: 2, backgroundColor: '#e3f2fd' }}>
+                    <Paper
+                      variant="outlined"
+                      sx={{ p: 2, backgroundColor: "#e3f2fd" }}
+                    >
                       <Typography variant="subtitle2" gutterBottom>
                         📊 Duration Summary
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        The total duration calculations will appear here as you add care items.
+                        The total duration calculations will appear here as you
+                        add care items.
                       </Typography>
                     </Paper>
                   </Box>
@@ -270,14 +321,23 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
               </Accordion>
 
               {/* Quick Tips */}
-              <Paper variant="outlined" sx={{ p: 2, backgroundColor: '#fff3e0' }}>
-                <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Paper
+                variant="outlined"
+                sx={{ p: 2, backgroundColor: "#fff3e0" }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
                   <InfoIcon color="warning" />
                   Tips for Care Item Configuration
                 </Typography>
                 <Box component="ul" sx={{ pl: 2, m: 0 }}>
                   <li>Daily duration is calculated from weekly package ÷ 7</li>
-                  <li>End time will auto-suggest based on care item durations</li>
+                  <li>
+                    End time will auto-suggest based on care item durations
+                  </li>
                   <li>Quantity defaults to 1 for new items</li>
                   <li>Use CNS filtering when available</li>
                 </Box>
@@ -292,30 +352,40 @@ export const ImprovedCareFormLayout: React.FC<ImprovedCareFormLayoutProps> = ({ 
 
 // Usage example component showing the layout options
 export const CareFormLayoutOptions: React.FC = () => {
-  const [layoutType, setLayoutType] = useState<'tabs' | 'accordion' | 'wizard'>('tabs');
+  const [layoutType, setLayoutType] = useState<"tabs" | "accordion" | "wizard">(
+    "tabs",
+  );
 
   const layouts = [
     {
-      type: 'tabs' as const,
-      title: 'Tabbed Layout',
-      description: 'Clean separation with horizontal navigation',
-      pros: ['Clear section separation', 'Easy navigation', 'Familiar UX pattern'],
-      cons: ['Requires clicks to switch', 'All data not visible at once']
+      type: "tabs" as const,
+      title: "Tabbed Layout",
+      description: "Clean separation with horizontal navigation",
+      pros: [
+        "Clear section separation",
+        "Easy navigation",
+        "Familiar UX pattern",
+      ],
+      cons: ["Requires clicks to switch", "All data not visible at once"],
     },
     {
-      type: 'accordion' as const,
-      title: 'Accordion Layout', 
-      description: 'Expandable sections with vertical flow',
-      pros: ['All sections visible', 'Progressive disclosure', 'Space efficient'],
-      cons: ['Can feel cramped', 'Scrolling required']
+      type: "accordion" as const,
+      title: "Accordion Layout",
+      description: "Expandable sections with vertical flow",
+      pros: [
+        "All sections visible",
+        "Progressive disclosure",
+        "Space efficient",
+      ],
+      cons: ["Can feel cramped", "Scrolling required"],
     },
     {
-      type: 'wizard' as const,
-      title: 'Wizard Steps',
-      description: 'Guided step-by-step process',
-      pros: ['Guided experience', 'Progress tracking', 'Less overwhelming'],
-      cons: ['Linear flow', 'More clicks required', 'No overview']
-    }
+      type: "wizard" as const,
+      title: "Wizard Steps",
+      description: "Guided step-by-step process",
+      pros: ["Guided experience", "Progress tracking", "Less overwhelming"],
+      cons: ["Linear flow", "More clicks required", "No overview"],
+    },
   ];
 
   return (
@@ -323,17 +393,18 @@ export const CareFormLayoutOptions: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         🎨 Care Form Layout Design Options
       </Typography>
-      
+
       <Grid container spacing={3}>
         {layouts.map((layout) => (
           <Grid item xs={12} md={4} key={layout.type}>
-            <Card 
-              variant={layoutType === layout.type ? 'elevation' : 'outlined'}
+            <Card
+              variant={layoutType === layout.type ? "elevation" : "outlined"}
               elevation={layoutType === layout.type ? 4 : 1}
-              sx={{ 
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                border: layoutType === layout.type ? '2px solid #1976d2' : undefined
+              sx={{
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                border:
+                  layoutType === layout.type ? "2px solid #1976d2" : undefined,
               }}
               onClick={() => setLayoutType(layout.type)}
             >
@@ -344,20 +415,28 @@ export const CareFormLayoutOptions: React.FC = () => {
                 <Typography variant="body2" color="text.secondary" paragraph>
                   {layout.description}
                 </Typography>
-                
-                <Typography variant="subtitle2" color="success.main" gutterBottom>
+
+                <Typography
+                  variant="subtitle2"
+                  color="success.main"
+                  gutterBottom
+                >
                   ✅ Pros:
                 </Typography>
-                <Box component="ul" sx={{ fontSize: '0.875rem', pl: 2, mb: 2 }}>
+                <Box component="ul" sx={{ fontSize: "0.875rem", pl: 2, mb: 2 }}>
                   {layout.pros.map((pro, index) => (
                     <li key={index}>{pro}</li>
                   ))}
                 </Box>
-                
-                <Typography variant="subtitle2" color="warning.main" gutterBottom>
+
+                <Typography
+                  variant="subtitle2"
+                  color="warning.main"
+                  gutterBottom
+                >
                   ⚠️ Considerations:
                 </Typography>
-                <Box component="ul" sx={{ fontSize: '0.875rem', pl: 2 }}>
+                <Box component="ul" sx={{ fontSize: "0.875rem", pl: 2 }}>
                   {layout.cons.map((con, index) => (
                     <li key={index}>{con}</li>
                   ))}
@@ -371,7 +450,7 @@ export const CareFormLayoutOptions: React.FC = () => {
       {layoutType && (
         <Box sx={{ mt: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Preview: {layouts.find(l => l.type === layoutType)?.title}
+            Preview: {layouts.find((l) => l.type === layoutType)?.title}
           </Typography>
           <ImprovedCareFormLayout mode="create" />
         </Box>

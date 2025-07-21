@@ -1,6 +1,6 @@
-import React from 'react';
-import { TextInput, TextInputProps } from 'react-admin';
-import { formatTimeString } from '../utils/timeUtils';
+import React from "react";
+import { TextInput, TextInputProps } from "react-admin";
+import { formatTimeString } from "../utils/timeUtils";
 
 /**
  * Time input component using HTML5 native time input
@@ -20,7 +20,7 @@ export const StandardTimeInput: React.FC<TextInputProps> = (props) => {
       transform={handleTransform}
       inputProps={{
         step: 300, // 5-minute intervals
-        ...props.inputProps
+        ...props.inputProps,
       }}
       helperText={props.helperText || "Select time in HH:MM format"}
     />
@@ -37,11 +37,5 @@ export const ReactAdminTimeInput: React.FC<TextInputProps> = (props) => {
     return formatTimeString(value);
   };
 
-  return (
-    <TextInput
-      {...props}
-      type="time"
-      transform={handleTransform}
-    />
-  );
+  return <TextInput {...props} type="time" transform={handleTransform} />;
 };
