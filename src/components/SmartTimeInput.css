@@ -1,0 +1,47 @@
+/* Smart Time Input Animations */
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes glow {
+  from { 
+    box-shadow: 0 0 5px rgba(25, 118, 210, 0.5);
+    border-color: rgba(25, 118, 210, 0.5);
+  }
+  to { 
+    box-shadow: 0 0 15px rgba(25, 118, 210, 0.8);
+    border-color: rgba(25, 118, 210, 0.8);
+  }
+}
+
+@keyframes slideIn {
+  from { 
+    transform: translateX(-20px); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateX(0); 
+    opacity: 1; 
+  }
+}
+
+@keyframes successGlow {
+  0% { box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.6); }
+  100% { box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); }
+}
+
+.smart-time-input-auto-updated {
+  animation: successGlow 2s ease-in-out;
+}
+
+.smart-time-input-suggestion {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.smart-time-input-notification {
+  animation: slideIn 0.5s ease-out;
+}
