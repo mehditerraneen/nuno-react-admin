@@ -1,61 +1,87 @@
-# React Admin Care Plan Management App - Features Overview
+# CLAUDE.md
 
-## 📋 App Features Recap
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Based on analysis of the React Admin codebase, this is a healthcare care management application with the following features:
+## Development Commands
 
-### **Core Functionality**
-- **Care Plan Management**: Create, edit, and manage comprehensive care plans for patients/clients
-- **Care Plan Details**: Detailed care items with time tracking, quantities, and long-term care components
-- **Authentication**: JWT-based system with dev credentials (`testdev`/`testpass123`) and automatic token refresh
+```bash
+# Development
+npm run dev          # Start Vite dev server (http://localhost:5173)
 
-### **Key Components & Features**
-- **CarePlanDetailEditDialog**: Modal for editing care plan details with form validation
-- **Time Management**: Custom time input components (`EnhancedTimeInput`, `SmartTimeInput`)
-- **Duration Tracking**: Live duration calculator for care activities
-- **Occurrence Scheduling**: Smart occurrence input for scheduling care activities
-- **Tabbed Interface**: Organized form layout with `TabbedCareFormLayout`
+# Build & Production
+npm run build        # Build for production
+npm run serve        # Preview production build
 
-### **Technical Stack**
-- **Frontend**: React Admin framework with Material-UI components
-- **Language**: TypeScript for type safety
-- **Data**: Custom data provider for API integration
-- **Auth**: JWT token management with automatic refresh
-- **Forms**: Advanced form validation and error handling
+# Code Quality
+npm run type-check   # Run TypeScript type checking
+npm run lint         # Run ESLint with auto-fix
+npm run format       # Format code with Prettier
 
-### **Data Models**
-- **CarePlanDetail**: Individual care plan items
-- **LongTermCareItem**: Care items with quantities
-- **CNS Integration**: Clinical Nurse Specialist care plan support
+# Testing
+npm run test:e2e           # Run Playwright E2E tests
+npm run test:e2e:ui        # Run Playwright tests with UI
+npm run test:e2e:headed    # Run Playwright tests in headed mode
+```
 
-## 🔧 Recent Changes
+## Architecture Overview
 
-### Lint Fixes
-- **Fixed**: Removed unused `Box` import from `CarePlanDetailEditDialog.tsx`
-- **Status**: Additional unused imports detected but not yet cleaned up:
-  - `SmartTimeInput`
-  - `SmartOccurrenceInput` 
-  - `LiveDurationCalculator`
+### Tech Stack
+- **Frontend**: React Admin v5.8.0 + React 19
+- **UI**: Material-UI v7
+- **Language**: TypeScript
+- **Build**: Vite
+- **Testing**: Playwright (E2E)
+- **API**: REST API with JWT authentication
 
-## 🎯 App Purpose
+### Key Architectural Patterns
 
-This appears to be a professional healthcare management system designed for care providers to efficiently manage and track patient care plans with detailed time and resource tracking. The application provides a comprehensive admin interface for healthcare professionals to:
+1. **Authentication Flow**
+   - JWT-based with access + refresh tokens
+   - Auto-refresh 5 minutes before expiry
+   - Dev credentials: `testdev` / `testpass123`
+   - Token storage in localStorage
+   - Automatic logout on 401/403
 
-1. Create and manage care plans
-2. Track care activities with precise timing
-3. Manage long-term care items and quantities
-4. Schedule recurring care occurrences
-5. Calculate care duration automatically
-6. Integrate with CNS (Clinical Nurse Specialist) workflows
+2. **Data Provider Pattern**
+   - Custom provider extends `ra-data-simple-rest`
+   - Authenticated requests with JWT tokens
+   - Specialized methods for care plan operations
+   - Base URL: `VITE_SIMPLE_REST_URL` env var
 
-## 🔐 Authentication
+3. **Resource Organization**
+   - Each resource has its own directory under `src/`
+   - Standard React Admin CRUD components
+   - Custom forms for complex operations (e.g., CarePlanDetailEditDialog)
 
-The app uses JWT-based authentication with:
-- **Dev Credentials**: `testdev` / `testpass123`
-- **Token Management**: Automatic refresh functionality
-- **Secure Storage**: Proper token handling and storage
-- **Auto Logout**: On token expiration
+### Core Data Models & Relationships
 
----
+```
+Patient
+  └── CarePlan (many)
+        ├── CarePlanDetail (many)
+        │     ├── LongTermCareItemQuantity (many)
+        │     └── CareOccurrence (many)
+        └── MedicalCareSummaryPerPatient (CNS Plan) (optional)
+```
 
-*Last Updated: 2025-07-21*
+### Important API Endpoints
+
+- Auth: `/api/v1/auth/login`, `/api/v1/auth/refresh`
+- Care Plans: Standard REST endpoints + custom methods
+- CNS Integration: `getCnsCarePlanDetails`, `getLatestCnsCarePlanForPatient`
+
+### Key Components
+
+- **App.tsx**: Resource definitions and admin configuration
+- **authProvider.ts**: JWT authentication logic
+- **dataProvider.ts**: API integration with custom methods
+- **CarePlanDetailEditDialog**: Complex form for care plan details
+- **Time Components**: EnhancedTimeInput, SmartTimeInput for time tracking
+
+### Development Tips
+
+1. **API Configuration**: Set `VITE_SIMPLE_REST_URL` in `.env` (copy from `.env.example`)
+2. **Token Management**: authService handles automatic refresh - don't manually manage tokens
+3. **Type Safety**: Use existing TypeScript interfaces in component directories
+4. **Form Validation**: React Admin's built-in validation + custom validators
+5. **Custom API Calls**: Add methods to dataProvider.ts, not direct fetch calls
