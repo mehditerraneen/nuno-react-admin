@@ -63,6 +63,11 @@ export const App = () => (
       create={EmployeeCreate}
       options={{ label: "Employees" }}
     />
+    <Resource
+      name="tours"
+      list={ToursDashboard}
+      options={{ label: "Tours Dashboard" }}
+    />
     <CustomRoutes>
       <Route path="/tours-dashboard" element={<ToursDashboard />} />
     </CustomRoutes>
