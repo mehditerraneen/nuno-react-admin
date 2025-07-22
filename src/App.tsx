@@ -1,4 +1,5 @@
-import { Admin, Resource } from "react-admin";
+import { Admin, Resource, CustomRoutes } from "react-admin";
+import { Route } from "react-router-dom";
 import { Layout } from "./Layout";
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
@@ -7,6 +8,13 @@ import { CarePlanList, CarePlanEdit, CarePlanCreate } from "./careplans";
 import { CnsCarePlanList } from "./cnsCarePlans";
 import { CnsCarePlanShow } from "./CnsCarePlanShow";
 import { CarePlanShow } from "./CarePlanShow";
+import { EventList, EventEdit, EventCreate } from "./components/tours/Events";
+import { ToursDashboard } from "./components/tours/ToursDashboard";
+import {
+  EmployeeList,
+  EmployeeEdit,
+  EmployeeCreate,
+} from "./components/tours/EmployeeManagement";
 
 export const App = () => (
   <Admin
@@ -41,5 +49,22 @@ export const App = () => (
       name="longtermcareitems"
       options={{ label: "Long Term Care Items" }}
     />
+    <Resource
+      name="events"
+      list={EventList}
+      edit={EventEdit}
+      create={EventCreate}
+      options={{ label: "Events" }}
+    />
+    <Resource
+      name="employees"
+      list={EmployeeList}
+      edit={EmployeeEdit}
+      create={EmployeeCreate}
+      options={{ label: "Employees" }}
+    />
+    <CustomRoutes>
+      <Route path="/tours-dashboard" element={<ToursDashboard />} />
+    </CustomRoutes>
   </Admin>
 );

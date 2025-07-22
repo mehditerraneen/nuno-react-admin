@@ -40,10 +40,8 @@ class AuthService {
 
   // Login with real backend API
   async login(credentials: LoginCredentials): Promise<User> {
-    const apiUrl =
-      import.meta.env.VITE_SIMPLE_REST_URL?.replace("/fast", "") ||
-      "http://127.0.0.1:8000";
-    const loginUrl = `${apiUrl}/api/v1/auth/login`;
+    const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL || "http://127.0.0.1:8000/fast";
+    const loginUrl = `${apiUrl}/mobile/api/v1/react-admin/auth/login`;
 
     console.log("🔐 Attempting login to:", loginUrl);
 
@@ -153,10 +151,8 @@ class AuthService {
       throw new Error("No refresh token available");
     }
 
-    const apiUrl =
-      import.meta.env.VITE_SIMPLE_REST_URL?.replace("/fast", "") ||
-      "http://127.0.0.1:8000";
-    const refreshUrl = `${apiUrl}/api/v1/auth/refresh`;
+    const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL || "http://127.0.0.1:8000/fast";
+    const refreshUrl = `${apiUrl}/mobile/api/v1/react-admin/auth/refresh`;
 
     try {
       const response = await fetch(refreshUrl, {

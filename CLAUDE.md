@@ -78,6 +78,28 @@ Patient
 - **CarePlanDetailEditDialog**: Complex form for care plan details
 - **Time Components**: EnhancedTimeInput, SmartTimeInput for time tracking
 
+### Tours Feature (Healthcare Visit Management)
+
+**Status**: ✅ **MIGRATED** - Complete React Admin implementation
+
+The Tours system manages healthcare visit scheduling and route optimization:
+
+- **Tours Dashboard**: `/tours-dashboard` - Calendar view, schedule list, route optimization
+- **Event CRUD**: Full create/read/update/delete for healthcare visits
+- **Employee Management**: Staff scheduling and assignment
+- **Route Optimization**: AI-powered route planning for healthcare visits
+
+**Key Components**:
+- `ToursDashboard` - Main interface with tabbed views (Calendar/List/Optimization)
+- `ToursCalendar` - Big Calendar integration with color-coded employee schedules
+- `RouteOptimization` - Tour optimization with efficiency metrics
+- `Events` - Full CRUD for healthcare visits with time tracking
+
+**API Integration**:
+- Custom dataProvider methods for tours operations
+- JWT-authenticated endpoints for events, tours, employees
+- Real-time tour optimization capabilities
+
 ### Development Tips
 
 1. **API Configuration**: Set `VITE_SIMPLE_REST_URL` in `.env` (copy from `.env.example`)
@@ -85,3 +107,4 @@ Patient
 3. **Type Safety**: Use existing TypeScript interfaces in component directories
 4. **Form Validation**: React Admin's built-in validation + custom validators
 5. **Custom API Calls**: Add methods to dataProvider.ts, not direct fetch calls
+6. **Tours Feature**: Access via `/tours-dashboard` or Events/Employees resources

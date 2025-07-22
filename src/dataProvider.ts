@@ -126,7 +126,30 @@ const getAuthHeaders = (): HeadersInit => {
   return headers;
 };
 
-const baseDataProvider: DataProvider = simpleRestProvider(apiUrl);
+// Create authenticated HTTP client
+const httpClient = async (url: string, options: any = {}) => {
+  const token = authService.getAccessToken();
+  console.log("🔑 Making request to:", url, "with token:", token ? "Present" : "Missing");
+  
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+  
+  if (token) {
+    headers.Authorization = token;
+  }
+  
+  const requestOptions = {
+    ...options,
+    headers,
+  };
+  
+  return fetch(url, requestOptions);
+};
+
+// Create base data provider with custom response handling
+const baseDataProvider: DataProvider = simpleRestProvider(apiUrl, httpClient);
 
 // Define a custom data provider type that includes our new method
 export interface MyDataProvider extends DataProvider {
@@ -147,14 +170,168 @@ export interface MyDataProvider extends DataProvider {
     detailId: Identifier,
     data: CarePlanDetailUpdatePayload,
   ) => Promise<CarePlanDetail>; // Returns the updated detail
+
+  // Tours-specific methods
+  getDailyEvents: (
+    date: string,
+    employeeId?: number,
+  ) => Promise<{ data: any[] }>;
+  optimizeTour: (employeeId: number, date: string) => Promise<void>;
+  updateEventTimes: (
+    eventId: number,
+    times: { real_start?: string; real_end?: string },
+  ) => Promise<any>;
+  getToursByEmployee: (
+    employeeId: number,
+    date: string,
+  ) => Promise<{ data: any }>;
 }
 
 export const dataProvider: MyDataProvider = {
-  ...baseDataProvider,
+  // Override all CRUD methods to handle Django array responses
+  getOne: async (resource: string, params: any) => {
+    console.log("🔍 Getting one for resource:", resource, "with params:", params);
+    
+    // Handle employees getOne with standard REST endpoint
+    if (resource === "employees") {
+      const url = `${apiUrl}/employees/${params.id}`;
+      console.log("🌐 Making getOne request to employees endpoint:", url);
+      
+      try {
+        const response = await httpClient(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log("📊 Employee getOne response:", data);
+        
+        return { data };
+      } catch (error: any) {
+        console.error("❌ Error getting one employee:", error);
+        throw error;
+      }
+    }
+    
+    // Handle all other resources with direct FastAPI integration
+    const url = `${apiUrl}/${resource}/${params.id}`;
+    console.log("🌐 Making getOne request to:", url);
+    
+    try {
+      const response = await httpClient(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("📊 GetOne response for", resource, ":", data);
+      
+      // Transform field names for events resource and wrap in React Admin format
+      if (data && typeof data === 'object' && !data.data) {
+        let transformedData = data;
+        
+        if (resource === "events") {
+          transformedData = {
+            ...data,
+            // Map FastAPI field names to React Admin expected names
+            date: data.day,
+            time_start: data.time_start_event,
+            time_end: data.time_end_event,
+            real_start: data.real_time_start_event,
+            real_end: data.real_time_end_event,
+            event_type: data.event_type || "GENERIC", // Add default if missing
+            event_address: data.event_address || "", // Add default if missing
+          };
+        }
+        
+        return { data: transformedData };
+      } else {
+        return data;
+      }
+    } catch (error: any) {
+      console.error("❌ Error getting one", resource, ":", error);
+      throw error;
+    }
+  },
+
+  getMany: async (resource: string, params: GetManyParams): Promise<GetManyResult> => {
+    console.log("🔍 Getting many for resource:", resource, "with params:", params);
+    const { ids } = params;
+    try {
+      const responses = await Promise.all(
+        ids.map((id: Identifier) => dataProvider.getOne(resource, { id }))
+      );
+      return {
+        data: responses.map((response: GetOneResult) => response.data),
+      };
+    } catch (error: any) {
+      console.error("❌ Error getting many", resource, ":", error);
+      throw error;
+    }
+  },
+
+  create: async (resource: string, params: any) => {
+    console.log("🔍 Creating for resource:", resource, "with params:", params);
+    try {
+      return await baseDataProvider.create(resource, params);
+    } catch (error: any) {
+      console.error("❌ Error creating", resource, ":", error);
+      throw error;
+    }
+  },
+
+  update: async (resource: string, params: any) => {
+    console.log("🔍 Updating for resource:", resource, "with params:", params);
+    try {
+      return await baseDataProvider.update(resource, params);
+    } catch (error: any) {
+      console.error("❌ Error updating", resource, ":", error);
+      throw error;
+    }
+  },
+
+  updateMany: async (resource: string, params: any) => {
+    console.log("🔍 Updating many for resource:", resource, "with params:", params);
+    try {
+      return await baseDataProvider.updateMany(resource, params);
+    } catch (error: any) {
+      console.error("❌ Error updating many", resource, ":", error);
+      throw error;
+    }
+  },
+
+  delete: async (resource: string, params: any) => {
+    console.log("🔍 Deleting for resource:", resource, "with params:", params);
+    try {
+      return await baseDataProvider.delete(resource, params);
+    } catch (error: any) {
+      console.error("❌ Error deleting", resource, ":", error);
+      throw error;
+    }
+  },
+
+  deleteMany: async (resource: string, params: any) => {
+    console.log("🔍 Deleting many for resource:", resource, "with params:", params);
+    try {
+      return await baseDataProvider.deleteMany(resource, params);
+    } catch (error: any) {
+      console.error("❌ Error deleting many", resource, ":", error);
+      throw error;
+    }
+  },
   getList: async (
     resource: string,
     params: GetListParams,
   ): Promise<GetListResult> => {
+    console.log("🔍 Getting list for resource:", resource, "with params:", params);
+
+    // Extract common parameters at the beginning
+    const { page, perPage } = params.pagination;
+    const { field, order } = params.sort;
+    const filter = params.filter || {};
+
     if (resource === "patients_with_cns_plan") {
       // This is a virtual resource. We add a permanent filter and call the real 'patients' resource.
       const newParams = {
@@ -164,9 +341,8 @@ export const dataProvider: MyDataProvider = {
           has_cns_plan: true,
         },
       };
-      // We need to call the 'patients' resource on the base provider
-      const patientDataProvider = simpleRestProvider(apiUrl);
-      return patientDataProvider.getList("patients", newParams);
+      // We need to call the 'patients' resource on the authenticated base provider
+      return dataProvider.getList("patients", newParams);
     }
 
     if (resource === "longtermcareitems") {
@@ -186,10 +362,6 @@ export const dataProvider: MyDataProvider = {
             total: 0,
           };
         }
-
-        // Otherwise, proceed with the filtered request
-        // The backend API should handle the filtering by these IDs
-        return baseDataProvider.getList(resource, params);
       }
 
       // If no CNS filter is provided, log a warning
@@ -240,27 +412,209 @@ export const dataProvider: MyDataProvider = {
           );
           throw error;
         }
-      } else {
-        // Otherwise, if not all specific filters are present, fetch the general list.
-        // The baseDataProvider will handle standard RA query params (_sort, _order, _start, _end).
-        // The data from this endpoint (e.g., /cnscareplans) is expected to be an array of
-        // MedicalCareSummaryPerPatient-like objects. Fields like request_start_date, request_end_date,
-        // and packageLevel (from RawCnsCarePlanItem structure) will be undefined for these records.
-        return baseDataProvider.getList(resource, params);
       }
     }
 
-    if (resource === "patients" && params.filter.q) {
+    if (resource === "patients" && params.filter?.q) {
       const url = `${apiUrl}/patients/search?query=${encodeURIComponent(params.filter.q)}`;
-      return fetch(url)
-        .then((response) => response.json())
-        .then((data) => ({
-          data,
-          total: data.length, // The search endpoint returns all results
-        }));
+      const response = await fetch(url, { headers: getAuthHeaders() });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return {
+        data,
+        total: data.length, // The search endpoint returns all results
+      };
     }
 
-    return baseDataProvider.getList(resource, params);
+    // Handle employees resource with Django endpoints
+    if (resource === "employees") {
+      let url;
+      
+      // Check if we need available employees (with date filters) or all employees
+      if (filter.available === true || filter.start || filter.end) {
+        // Use available employees endpoint with date range
+        const today = new Date().toISOString().split('T')[0];
+        const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        const startDate = filter.start || today;
+        const endDate = filter.end || nextWeek;
+        
+        url = `${apiUrl}/employees/available/?start=${startDate}&end=${endDate}`;
+      } else {
+        // Use standard employees list endpoint
+        url = `${apiUrl}/employees`;
+      }
+      
+      console.log("🌐 Making request to employees endpoint:", url);
+      
+      try {
+        const response = await httpClient(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log("📊 Employees response:", data);
+        
+        // FastAPI now returns proper React Admin format
+        if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) {
+          console.log("✅ FastAPI employees response in correct React Admin format");
+          return data;
+        } else {
+          console.error("❌ Unexpected employees response format:", data);
+          throw new Error(`Expected React Admin format {data: [...], total: number} for employees`);
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching employees:", error);
+        throw error;
+      }
+    }
+
+    // Handle event-types resource
+    if (resource === "event-types") {
+      const url = `${apiUrl}/event-types`;
+      console.log("🌐 Making request to event-types endpoint:", url);
+      
+      try {
+        const response = await httpClient(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log("📊 Event types response:", data);
+        
+        if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) {
+          return data;
+        } else if (Array.isArray(data)) {
+          // Handle simple arrays for reference data like event-types/states
+          return {
+            data: data,
+            total: data.length,
+          };
+        } else {
+          console.error("❌ Unexpected event-types response format:", data);
+          throw new Error(`Expected React Admin format {data: [...], total: number} for event-types`);
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching event-types:", error);
+        throw error;
+      }
+    }
+
+    // Handle event-states resource
+    if (resource === "event-states") {
+      const url = `${apiUrl}/event-states`;
+      console.log("🌐 Making request to event-states endpoint:", url);
+      
+      try {
+        const response = await httpClient(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log("📊 Event states response:", data);
+        
+        if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) {
+          return data;
+        } else if (Array.isArray(data)) {
+          // Handle simple arrays for reference data like event-types/states
+          return {
+            data: data,
+            total: data.length,
+          };
+        } else {
+          console.error("❌ Unexpected event-states response format:", data);
+          throw new Error(`Expected React Admin format {data: [...], total: number} for event-states`);
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching event-states:", error);
+        throw error;
+      }
+    }
+
+    // For all other standard resources, use direct fetch with FastAPI format
+    console.log("🔧 Using direct fetch for standard resource:", resource);
+    
+    // Build the URL with React Admin query parameters
+    
+    // Convert React Admin params to simple query params that Django can understand
+    const queryParams = new URLSearchParams();
+    
+    // Add pagination
+    const start = (page - 1) * perPage;
+    const end = page * perPage - 1;
+    queryParams.set('_start', start.toString());
+    queryParams.set('_end', (end + 1).toString()); // Django expects end to be exclusive
+    
+    // Add sorting
+    if (field) {
+      queryParams.set('_sort', field);
+      queryParams.set('_order', order.toUpperCase());
+    }
+    
+    // Add filters
+    Object.keys(filter).forEach(key => {
+      if (filter[key] !== undefined && filter[key] !== null) {
+        queryParams.set(key, filter[key].toString());
+      }
+    });
+    
+    const url = `${apiUrl}/${resource}?${queryParams.toString()}`;
+    console.log("🌐 Making request to:", url);
+    
+    try {
+      const response = await httpClient(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("📊 Direct fetch response for", resource, ":", data);
+      
+      // Handle different FastAPI response formats
+      if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) {
+        console.log("✅ FastAPI response in correct React Admin format");
+        return data;
+      } else if (data && typeof data === 'object' && data.items && Array.isArray(data.items)) {
+        // Handle paginated format: {items: [...], total: number, page: number, page_size: number}
+        console.log("✅ Converting FastAPI paginated response to React Admin format");
+        
+        // Transform field names for events resource
+        let transformedItems = data.items;
+        if (resource === "events") {
+          transformedItems = data.items.map((item: any) => ({
+            ...item,
+            // Map FastAPI field names to React Admin expected names
+            date: item.day,
+            time_start: item.time_start_event,
+            time_end: item.time_end_event,
+            real_start: item.real_time_start_event,
+            real_end: item.real_time_end_event,
+            event_type: item.event_type || "GENERIC", // Add default if missing
+            event_address: item.event_address || "", // Add default if missing
+          }));
+        }
+        
+        return {
+          data: transformedItems,
+          total: data.total,
+        };
+      } else {
+        console.error("❌ Unexpected response format:", data);
+        throw new Error(`Expected React Admin format {data: [...], total: number} for ${resource}`);
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching", resource, ":", error);
+      throw error;
+    }
   },
   getLatestCnsCarePlanForPatient: async (
     patientId: Identifier,
@@ -405,15 +759,71 @@ export const dataProvider: MyDataProvider = {
     }
   },
 
-  getMany: (
-    resource: string,
-    params: GetManyParams,
-  ): Promise<GetManyResult> => {
-    const { ids } = params;
-    return Promise.all(
-      ids.map((id: Identifier) => baseDataProvider.getOne(resource, { id })),
-    ).then((responses: GetOneResult[]) => ({
-      data: responses.map((response: GetOneResult) => response.data),
-    }));
+
+  // Tours-specific method implementations
+  getDailyEvents: async (date: string, employeeId?: number) => {
+    const params = new URLSearchParams({ date });
+    if (employeeId) {
+      params.append("employee_id", employeeId.toString());
+    }
+
+    const url = `${apiUrl}/events/daily?${params}`;
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch daily events");
+    }
+
+    const data = await response.json();
+    return { data };
+  },
+
+  optimizeTour: async (employeeId: number, date: string) => {
+    const url = `${apiUrl}/tours/optimize`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ employee_id: employeeId, date }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to optimize tour");
+    }
+
+    return response.json();
+  },
+
+  updateEventTimes: async (
+    eventId: number,
+    times: { real_start?: string; real_end?: string },
+  ) => {
+    const url = `${apiUrl}/events/${eventId}/times`;
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(times),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update event times");
+    }
+
+    return response.json();
+  },
+
+  getToursByEmployee: async (employeeId: number, date: string) => {
+    const url = `${apiUrl}/tours?employee_id=${employeeId}&date=${date}`;
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch tours");
+    }
+
+    const data = await response.json();
+    return { data };
   },
 };
