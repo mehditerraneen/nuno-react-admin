@@ -12,7 +12,7 @@ services:
         - VITE_DEBUG=${VITE_DEBUG:-false}
     restart: always
     expose:
-      - 3000
+      - 3001
     environment:
       - NODE_ENV=production
     networks:
