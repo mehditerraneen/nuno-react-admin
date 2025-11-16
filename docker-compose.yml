@@ -11,7 +11,7 @@ services:
         - VITE_ENV=${VITE_ENV:-production}
         - VITE_DEBUG=${VITE_DEBUG:-false}
     restart: always
-    ports:
+    expose:
       - 80
     environment:
       - NODE_ENV=production
