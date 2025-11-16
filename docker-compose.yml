@@ -17,6 +17,16 @@ services:
       - NODE_ENV=production
     networks:
       - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
+      - "traefik.http.routers.nuno-react-admin-web.rule=Host(`planning.opefitoo.com`)"
+      - "traefik.http.routers.nuno-react-admin-web.entrypoints=web"
+      - "traefik.http.routers.nuno-react-admin-web.middlewares=redirect-to-https@file"
+      - "traefik.http.routers.nuno-react-admin-websecure.rule=Host(`planning.opefitoo.com`)"
+      - "traefik.http.routers.nuno-react-admin-websecure.entrypoints=websecure"
+      - "traefik.http.routers.nuno-react-admin-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.nuno-react-admin.loadbalancer.server.port=3001"
 
 networks:
   dokploy-network:
