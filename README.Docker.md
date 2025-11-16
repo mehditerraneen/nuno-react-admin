@@ -30,7 +30,7 @@ Dokploy is a deployment platform that makes it easy to deploy Docker application
    VITE_JWT_SECRET=your-strong-secret-key
    VITE_ENV=production
    VITE_DEBUG=false
-   FRONTEND_PORT=8080
+   FRONTEND_PORT=8090
    ```
 
 3. **Deploy:**
