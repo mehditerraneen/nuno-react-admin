@@ -10,12 +10,11 @@ services:
         - VITE_JWT_SECRET=${VITE_JWT_SECRET:-your-secret-key-here}
         - VITE_ENV=${VITE_ENV:-production}
         - VITE_DEBUG=${VITE_DEBUG:-false}
-    container_name: nuno-react-admin
-    expose:
-      - "80"
+    restart: always
+    ports:
+      - 80
     environment:
       - NODE_ENV=production
-    restart: unless-stopped
     networks:
       - dokploy-network
     labels:
@@ -24,10 +23,6 @@ services:
       - "traefik.http.routers.nuno-react-admin.entrypoints=websecure"
       - "traefik.http.routers.nuno-react-admin.tls.certresolver=letsencrypt"
       - "traefik.http.services.nuno-react-admin.loadbalancer.server.port=80"
-      - "traefik.http.routers.nuno-react-admin-http.rule=Host(`planning.opefitoo.com`)"
-      - "traefik.http.routers.nuno-react-admin-http.entrypoints=web"
-      - "traefik.http.routers.nuno-react-admin-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
 networks:
   dokploy-network:
