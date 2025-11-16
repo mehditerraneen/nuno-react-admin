@@ -19,7 +19,7 @@ import {
   FunctionField,
 } from "react-admin";
 import { Chip } from "@mui/material";
-import { EVENT_STATES, EVENT_TYPES, type Event } from "../../types/tours";
+import { EVENT_STATES, type Event } from "../../types/tours";
 
 export const EventFilters = (props: any) => (
   <Filter {...props}>
@@ -31,13 +31,9 @@ export const EventFilters = (props: any) => (
       <SelectInput optionText="name" />
     </ReferenceInput>
     <SelectInput source="state" choices={EVENT_STATES} />
-    <SelectInput
-      source="event_type"
-      choices={EVENT_TYPES.map((type) => ({
-        id: type,
-        name: type.replace("_", " ").toUpperCase(),
-      }))}
-    />
+    <ReferenceInput source="event_type" reference="event-types">
+      <SelectInput optionText="name" />
+    </ReferenceInput>
   </Filter>
 );
 
@@ -64,13 +60,36 @@ export const EventList = (props: any) => (
       <FunctionField
         source="event_type"
         label="Type"
-        render={(record: Event) => (
-          <Chip
-            label={record.event_type ? record.event_type.replace("_", " ").toUpperCase() : "N/A"}
-            size="small"
-            variant="outlined"
-          />
-        )}
+        render={(record: Event) => {
+          if (!record.event_type) {
+            return (
+              <Chip
+                label="Unknown Type"
+                size="small"
+                variant="outlined"
+                color="default"
+              />
+            );
+          }
+          return (
+            <ReferenceField
+              source="event_type"
+              reference="event-types"
+              link={false}
+              record={record}
+            >
+              <FunctionField
+                render={(eventTypeRecord: any) => (
+                  <Chip
+                    label={eventTypeRecord?.name || record.event_type || "N/A"}
+                    size="small"
+                    variant="outlined"
+                  />
+                )}
+              />
+            </ReferenceField>
+          );
+        }}
       />
       <FunctionField
         source="duration"
@@ -104,30 +123,40 @@ export const EventEdit = (props: any) => (
       <DateInput source="date" />
       <TextInput source="time_start" type="time" />
       <TextInput source="time_end" type="time" />
-      <ReferenceInput 
-        source="patient_id" 
+      <ReferenceInput
+        source="patient_id"
         reference="patients"
         perPage={1000}
-        sort={{ field: 'name', order: 'ASC' }}
+        sort={{ field: "name", order: "ASC" }}
       >
-        <SelectInput optionText={(record) => `${record.first_name} ${record.name}`} />
+        <SelectInput
+          optionText={(record) => `${record.first_name} ${record.name}`}
+        />
       </ReferenceInput>
-      <ReferenceInput 
-        source="employee_id" 
+      <ReferenceInput
+        source="employee_id"
         reference="employees"
         perPage={100}
-        sort={{ field: 'name', order: 'ASC' }}
+        sort={{ field: "name", order: "ASC" }}
       >
         <SelectInput optionText="name" />
       </ReferenceInput>
+      <ReferenceInput
+        source="tour_id"
+        reference="tours"
+        perPage={100}
+        sort={{ field: "date", order: "DESC" }}
+      >
+        <SelectInput
+          optionText={(record) =>
+            `Tour ${record.date} - ${record.employee_name || "Employee"}`
+          }
+        />
+      </ReferenceInput>
       <SelectInput source="state" choices={EVENT_STATES} />
-      <SelectInput
-        source="event_type"
-        choices={EVENT_TYPES.map((type) => ({
-          id: type,
-          name: type.replace("_", " ").toUpperCase(),
-        }))}
-      />
+      <ReferenceInput source="event_type" reference="event-types">
+        <SelectInput optionText="name" />
+      </ReferenceInput>
       <TextInput source="notes" multiline rows={3} fullWidth />
       <TextInput source="event_address" fullWidth />
       <TextInput source="real_start" type="time" label="Actual Start Time" />
@@ -145,31 +174,40 @@ export const EventCreate = (props: any) => (
       />
       <TextInput source="time_start" type="time" defaultValue="08:00" />
       <TextInput source="time_end" type="time" defaultValue="09:00" />
-      <ReferenceInput 
-        source="patient_id" 
+      <ReferenceInput
+        source="patient_id"
         reference="patients"
         perPage={1000}
-        sort={{ field: 'name', order: 'ASC' }}
+        sort={{ field: "name", order: "ASC" }}
       >
-        <SelectInput optionText={(record) => `${record.first_name} ${record.name}`} />
+        <SelectInput
+          optionText={(record) => `${record.first_name} ${record.name}`}
+        />
       </ReferenceInput>
-      <ReferenceInput 
-        source="employee_id" 
+      <ReferenceInput
+        source="employee_id"
         reference="employees"
         perPage={100}
-        sort={{ field: 'name', order: 'ASC' }}
+        sort={{ field: "name", order: "ASC" }}
       >
         <SelectInput optionText="name" />
       </ReferenceInput>
+      <ReferenceInput
+        source="tour_id"
+        reference="tours"
+        perPage={100}
+        sort={{ field: "date", order: "DESC" }}
+      >
+        <SelectInput
+          optionText={(record) =>
+            `Tour ${record.date} - ${record.employee_name || "Employee"}`
+          }
+        />
+      </ReferenceInput>
       <SelectInput source="state" choices={EVENT_STATES} defaultValue={1} />
-      <SelectInput
-        source="event_type"
-        choices={EVENT_TYPES.map((type) => ({
-          id: type,
-          name: type.replace("_", " ").toUpperCase(),
-        }))}
-        defaultValue="assessment"
-      />
+      <ReferenceInput source="event_type" reference="event-types">
+        <SelectInput optionText="name" />
+      </ReferenceInput>
       <TextInput source="notes" multiline rows={3} fullWidth />
       <TextInput source="event_address" fullWidth />
     </SimpleForm>

@@ -27,12 +27,12 @@ export const EmployeeList = (props: any) => (
         render={(record: Employee) => (
           <Box
             sx={{
-              display: 'inline-block',
+              display: "inline-block",
               width: 20,
               height: 20,
               backgroundColor: record.color,
-              borderRadius: '50%',
-              border: '1px solid #ccc'
+              borderRadius: "50%",
+              border: "1px solid #ccc",
             }}
           />
         )}

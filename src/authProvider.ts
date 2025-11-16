@@ -22,11 +22,27 @@ export const authProvider: AuthProvider = {
   },
 
   // Called when the API returns an error
-  checkError: ({ status }: { status: number }) => {
-    if (status === 401 || status === 403) {
+  checkError: async ({ status }: { status: number }) => {
+    if (status === 401) {
+      // For 401 errors, try to refresh token first
+      try {
+        console.log("🔄 Attempting token refresh due to 401 error");
+        await authService.refreshToken();
+        console.log("✅ Token refreshed successfully, continuing request");
+        return Promise.resolve(); // Token refreshed, can continue
+      } catch (error) {
+        console.log("❌ Token refresh failed, logging out");
+        authService.logout();
+        return Promise.reject();
+      }
+    }
+
+    if (status === 403) {
+      // For 403 errors, immediately logout (permission denied)
       authService.logout();
       return Promise.reject();
     }
+
     return Promise.resolve();
   },
 

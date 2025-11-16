@@ -17,8 +17,13 @@ export interface Event {
 
 export interface Tour {
   id: number;
+  name?: string;
   employee_id: number;
+  employee_name?: string;
   date: string;
+  time_start?: string;
+  time_end?: string;
+  break_duration?: number; // minutes
   events: Event[];
   total_distance: number;
   estimated_duration: number;

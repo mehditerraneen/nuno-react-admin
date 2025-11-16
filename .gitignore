@@ -20,6 +20,11 @@ dist-ssr
 .env.production
 .env.production.local
 
+# Test artifacts
+playwright-report/
+test-results/
+screenshots/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
