@@ -1,5 +1,4 @@
 services:
-  # React Admin Frontend
   nuno-react-admin:
     build:
       context: .
@@ -12,20 +11,14 @@ services:
         - VITE_ENV=${VITE_ENV:-production}
         - VITE_DEBUG=${VITE_DEBUG:-false}
     container_name: nuno-react-admin
-    ports:
-      - "${FRONTEND_PORT:-8090}:80"
+    expose:
+      - "80"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
-    networks:
-      - nuno-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-networks:
-  nuno-network:
-    driver: bridge
