@@ -10,14 +10,17 @@ services:
         - VITE_JWT_SECRET=${VITE_JWT_SECRET:-your-secret-key-here}
         - VITE_ENV=${VITE_ENV:-production}
         - VITE_DEBUG=${VITE_DEBUG:-false}
-    restart: always
-    expose:
-      - 3001
+    restart: unless-stopped
+    ports:
+      - 3002:3001
     environment:
       - NODE_ENV=production
     networks:
+      - app-network
       - dokploy-network
 
 networks:
+  app-network:
+    driver: bridge
   dokploy-network:
     external: true
