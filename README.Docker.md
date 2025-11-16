@@ -7,21 +7,55 @@ This guide explains how to run the Nuno React Admin application using Docker.
 - Docker Engine 20.10.0 or higher
 - Docker Compose 2.0.0 or higher
 
-## Quick Start
+## Deployment with Dokploy (Recommended)
 
-1. **Configure Environment Variables**
+Dokploy is a deployment platform that makes it easy to deploy Docker applications.
 
-   Copy the production environment file and update with your actual values:
-   ```bash
-   cp .env.production .env.production.local
+### Setup Steps:
+
+1. **In Dokploy Dashboard:**
+   - Create a new application
+   - Select "Docker Compose" as the source type
+   - Connect your GitHub repository: `github.com/mehditerraneen/nuno-react-admin.git`
+   - Select the branch (usually `main`)
+
+2. **Configure Environment Variables:**
+
+   In Dokploy's environment variables section, add:
+
+   ```env
+   VITE_SIMPLE_REST_URL=http://your-backend-url:8000/fast
+   VITE_TEST_USERNAME=admin
+   VITE_TEST_PASSWORD=your-secure-password
+   VITE_JWT_SECRET=your-strong-secret-key
+   VITE_ENV=production
+   VITE_DEBUG=false
+   FRONTEND_PORT=3000
    ```
 
-   Edit `.env.production.local` and update:
-   - `VITE_SIMPLE_REST_URL`: Your backend API URL
-   - `VITE_TEST_USERNAME`: Admin username
-   - `VITE_TEST_PASSWORD`: Secure password
-   - `VITE_JWT_SECRET`: Strong secret key for JWT
-   - `FRONTEND_PORT`: Port to expose (default: 3000)
+3. **Deploy:**
+   - Click "Deploy" button
+   - Dokploy will automatically clone, build, and deploy your application
+   - The application will be available on the configured port
+
+**Note:** You don't need to create `.env.production` file. The `docker-compose.yml` now reads environment variables directly from Dokploy's environment configuration with sensible defaults.
+
+## Quick Start (Local Development)
+
+1. **Configure Environment Variables (Optional)**
+
+   Environment variables can be set via:
+   - Dokploy environment variables (recommended for production)
+   - Shell environment variables
+   - `.env.production` file (if you prefer)
+
+   Example `.env.production` (see `.env.production.example`):
+   ```env
+   VITE_SIMPLE_REST_URL=http://your-backend-url:8000/fast
+   VITE_TEST_USERNAME=admin
+   VITE_TEST_PASSWORD=your-secure-password
+   VITE_JWT_SECRET=your-strong-secret-key
+   ```
 
 2. **Build and Run with Docker Compose**
 
