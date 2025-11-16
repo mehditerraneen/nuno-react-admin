@@ -18,14 +18,6 @@ services:
     restart: unless-stopped
     networks:
       - dokploy-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.nuno-react-admin.rule=Host(`planning.opefitoo.com`)"
-      - "traefik.http.routers.nuno-react-admin.entrypoints=websecure"
-      - "traefik.http.routers.nuno-react-admin.tls=true"
-      - "traefik.http.routers.nuno-react-admin.tls.certresolver=letsencrypt"
-      - "traefik.http.services.nuno-react-admin.loadbalancer.server.port=80"
-      - "traefik.docker.network=dokploy-network"
 
 networks:
   dokploy-network:
