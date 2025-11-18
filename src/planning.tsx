@@ -125,14 +125,15 @@ const PlanningCalendarGrid = ({ planningId }: { planningId: string }) => {
                     <TableHead>
                         <TableRow>
                             <TableCell
-                                sx={{
+                                sx={(theme) => ({
                                     position: 'sticky',
                                     left: 0,
-                                    background: '#fff',
-                                    zIndex: 3,
+                                    backgroundColor: theme.palette.background.paper,
+                                    zIndex: 999,
                                     fontWeight: 'bold',
                                     minWidth: 120,
-                                }}
+                                    boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                                })}
                             >
                                 Employé
                             </TableCell>
@@ -166,13 +167,14 @@ const PlanningCalendarGrid = ({ planningId }: { planningId: string }) => {
                             return (
                                 <TableRow key={employee.employee_id} hover>
                                     <TableCell
-                                        sx={{
+                                        sx={(theme) => ({
                                             position: 'sticky',
                                             left: 0,
-                                            background: '#fff',
-                                            zIndex: 2,
+                                            backgroundColor: theme.palette.background.paper,
+                                            zIndex: 998,
                                             fontWeight: 'bold',
-                                        }}
+                                            boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                                        })}
                                     >
                                         <Box>
                                             <Typography variant="body2">

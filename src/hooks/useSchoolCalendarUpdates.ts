@@ -52,6 +52,12 @@ export const useSchoolCalendarUpdates = (): UseSchoolCalendarUpdatesReturn => {
       });
 
       if (!response.ok) {
+        // Silently fail if endpoint not implemented yet (404)
+        if (response.status === 404) {
+          setUpdateInfo(null);
+          setLoading(false);
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -64,9 +70,8 @@ export const useSchoolCalendarUpdates = (): UseSchoolCalendarUpdatesReturn => {
         setUpdateInfo(null);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to check for updates';
-      setError(errorMessage);
-      console.error('School calendar update check failed:', err);
+      // Silently fail - this feature is optional
+      setUpdateInfo(null);
     } finally {
       setLoading(false);
     }

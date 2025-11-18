@@ -52,6 +52,7 @@ import {
     TextField as MuiTextField,
     Grid,
     Fab,
+    Checkbox,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -203,6 +204,7 @@ const getSourceInfo = (source: string) => {
 interface ShiftCellProps {
     planningId: number;
     employeeId: number;
+    employeeName: string;  // Employee name for tooltip
     employeeDailyHours: number;  // Contract hours per day
     date: string;
     day: number;
@@ -215,6 +217,7 @@ interface ShiftCellProps {
 const ShiftCell: React.FC<ShiftCellProps> = ({
     planningId,
     employeeId,
+    employeeName,
     employeeDailyHours,
     date,
     day,
@@ -463,28 +466,29 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
     }
 
     return (
-        <TableCell
-            align="center"
-            sx={(theme) => ({
-                cursor: 'pointer',
-                '&:hover': {
-                    background: theme.palette.mode === 'dark'
-                        ? theme.palette.grey[700]
-                        : theme.palette.grey[200]
-                },
-                minWidth: 80,
-                border: isDragOver ? '2px dashed #2196f3' : undefined,
-                background: isDragOver
-                    ? theme.palette.mode === 'dark'
-                        ? 'rgba(33, 150, 243, 0.2)'
-                        : 'rgba(33, 150, 243, 0.1)'
-                    : undefined,
-            })}
-            onClick={() => !isDragging && setEditing(true)}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
+        <Tooltip title={employeeName} placement="top" arrow>
+            <TableCell
+                align="center"
+                sx={(theme) => ({
+                    cursor: 'pointer',
+                    '&:hover': {
+                        background: theme.palette.mode === 'dark'
+                            ? theme.palette.grey[700]
+                            : theme.palette.grey[200]
+                    },
+                    minWidth: 80,
+                    border: isDragOver ? '2px dashed #2196f3' : undefined,
+                    background: isDragOver
+                        ? theme.palette.mode === 'dark'
+                            ? 'rgba(33, 150, 243, 0.2)'
+                            : 'rgba(33, 150, 243, 0.1)'
+                        : undefined,
+                })}
+                onClick={() => !isDragging && setEditing(true)}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
             {shift ? (
                 <Tooltip title={
                     `${shift.shift_code} (${shift.hours || 0}h)${shift.source ? ' - ' + getSourceInfo(shift.source).label : ''} | Glisser-déposer pour copier | Cliquer pour modifier`
@@ -525,7 +529,8 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
                     </Typography>
                 </Tooltip>
             )}
-        </TableCell>
+            </TableCell>
+        </Tooltip>
     );
 };
 
@@ -1033,6 +1038,9 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     const [aiChatOpen, setAiChatOpen] = useState(false);
     const [optimizerFailureMessage, setOptimizerFailureMessage] = useState<string | undefined>(undefined);
 
+    // Selected employee for highlighting
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+
     useEffect(() => {
         loadData();
     }, [planningId]);
@@ -1457,14 +1465,15 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                 sx={(theme) => ({
                                     position: 'sticky',
                                     left: 0,
-                                    background: theme.palette.background.paper,
-                                    zIndex: 3,
+                                    backgroundColor: theme.palette.background.paper,
+                                    zIndex: 999,
                                     fontWeight: 'bold',
                                     minWidth: 220,
                                     maxWidth: 220,
                                     width: 220,
                                     borderRight: `2px solid ${theme.palette.divider}`,
                                     padding: '8px',
+                                    boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
                                 })}
                             >
                                 Employé
@@ -1558,23 +1567,34 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                             const isInactive = employee.is_inactive || false;
                             const textOpacity = isInactive ? 0.5 : 1;
 
+                            const isSelected = selectedEmployeeId === employee.employee_id;
+
                             return (
                                 <TableRow
                                     key={employee.employee_id}
                                     hover
                                     sx={(theme) => ({
-                                        backgroundColor: isInactive
+                                        backgroundColor: isSelected
                                             ? theme.palette.mode === 'dark'
-                                                ? theme.palette.grey[800]
-                                                : theme.palette.grey[200]
-                                            : theme.palette.background.paper,
-                                        opacity: textOpacity,
-                                        '&:hover': {
-                                            backgroundColor: isInactive
+                                                ? 'rgba(255, 193, 7, 0.15)'
+                                                : 'rgba(255, 243, 224, 0.8)'
+                                            : isInactive
                                                 ? theme.palette.mode === 'dark'
-                                                    ? theme.palette.grey[700]
-                                                    : theme.palette.grey[300]
-                                                : undefined
+                                                    ? theme.palette.grey[800]
+                                                    : theme.palette.grey[200]
+                                                : theme.palette.background.paper,
+                                        opacity: textOpacity,
+                                        borderLeft: isSelected ? '4px solid #FFA726' : 'none',
+                                        '&:hover': {
+                                            backgroundColor: isSelected
+                                                ? theme.palette.mode === 'dark'
+                                                    ? 'rgba(255, 193, 7, 0.25)'
+                                                    : 'rgba(255, 243, 224, 1)'
+                                                : isInactive
+                                                    ? theme.palette.mode === 'dark'
+                                                        ? theme.palette.grey[700]
+                                                        : theme.palette.grey[300]
+                                                    : undefined
                                         }
                                     })}
                                 >
@@ -1582,12 +1602,12 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                         sx={(theme) => ({
                                             position: 'sticky',
                                             left: 0,
-                                            background: isInactive
+                                            backgroundColor: isInactive
                                                 ? theme.palette.mode === 'dark'
                                                     ? theme.palette.grey[800]
                                                     : theme.palette.grey[200]
                                                 : theme.palette.background.paper,
-                                            zIndex: 2,
+                                            zIndex: 998,
                                             fontWeight: 'bold',
                                             minWidth: 220,
                                             maxWidth: 220,
@@ -1595,9 +1615,16 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             borderRight: `2px solid ${theme.palette.divider}`,
                                             verticalAlign: 'top',
                                             padding: '8px',
+                                            boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
                                         })}
                                     >
                                         <Box display="flex" alignItems="flex-start" gap={1}>
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onChange={() => setSelectedEmployeeId(isSelected ? null : employee.employee_id)}
+                                                size="small"
+                                                sx={{ padding: 0, marginRight: 0.5 }}
+                                            />
                                             <Avatar
                                                 src={employee.avatar_url || undefined}
                                                 alt={employee.abbreviation}
@@ -1664,6 +1691,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             key={day}
                                             planningId={planningId}
                                             employeeId={employee.employee_id}
+                                            employeeName={employee.name}
                                             employeeDailyHours={employee.daily_hours || 8}
                                             date={`${planning.year}-${String(planning.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`}
                                             day={day}
