@@ -11,13 +11,13 @@ services:
         - VITE_ENV=${VITE_ENV:-production}
         - VITE_DEBUG=${VITE_DEBUG:-false}
     restart: unless-stopped
-    ports:
-      - "${HOST_PORT:-3002}:3001"
+    expose:
+      - "3001"
     environment:
       - NODE_ENV=production
     networks:
-      - app-network
+      - dokploy-network
 
 networks:
-  app-network:
-    driver: bridge
+  dokploy-network:
+    external: true
