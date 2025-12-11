@@ -71,6 +71,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { SchoolCalendarUpdateBanner } from './components/SchoolCalendarUpdateBanner';
 import { OptimizerAIChat } from './components/OptimizerAIChat';
+import { authenticatedFetch } from './dataProvider';
 
 const statusChoices = [
     { id: 'DRAFT', name: 'Brouillon' },
@@ -266,9 +267,8 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
             }
 
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     employee_id: employeeId,
                     date,
@@ -418,9 +418,8 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
 
             console.log('📤 Sending to API:', `${apiUrl}/planning/monthly-planning/${planningId}/assignments`, payload);
 
-            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
 
@@ -572,9 +571,8 @@ const DayDetailView = ({
             const shiftType = shiftTypes.find(st => st.id === selectedShift);
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
 
-            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     employee_id: employeeId,
                     date: shiftDate,
@@ -1070,13 +1068,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
 
             // Fetch calendar data directly with auth token
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const token = localStorage.getItem('auth_access_token');
-            const calendarResponse = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/calendar`, {
-                headers: {
-                    'Authorization': token || '',
-                    'Content-Type': 'application/json',
-                },
-            });
+            const calendarResponse = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/calendar`);
             const calendarData = await calendarResponse.json();
 
             // Fetch shift types using dataProvider
@@ -1204,11 +1196,10 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
             // Adjust time limit based on algorithm
             const timeLimit = selectedAlgorithm === 'HYBRID' ? 300 : 60;  // 5 min for HYBRID, 60s otherwise
 
-            const response = await fetch(
+            const response = await authenticatedFetch(
                 `${apiUrl}/planning/monthly-planning/${planningId}/optimize`,
                 {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         min_daily_coverage: 4,  // Minimum 4 people/day (based on actual data: avg 4-5 employees/day)
                         morning_coverage_ratio: 0.63,  // 63% morning, 37% evening (based on Nov 2025 actual data)
@@ -1387,9 +1378,8 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
 
         try {
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const response = await fetch(`${apiUrl}/planning/shift-types`, {
+            const response = await authenticatedFetch(`${apiUrl}/planning/shift-types`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...newShift,
                     is_active: true
@@ -1542,9 +1532,8 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
 
             // Send to backend
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/import-csv`, {
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/import-csv`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ shifts })
             });
 
@@ -1579,7 +1568,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         try {
             setAnalyzing(true);
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/compare-alternatives`);
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/compare-alternatives`);
 
             if (!response.ok) {
                 throw new Error('Failed to analyze planning');
@@ -1602,9 +1591,8 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         try {
             setApplyingSuggestions(true);
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/apply-suggestions`, {
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/apply-suggestions`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     dry_run: dryRun,
                     max_shifts_to_create: 50,

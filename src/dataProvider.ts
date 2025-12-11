@@ -113,7 +113,7 @@ const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
 console.log("🔧 API URL configured:", apiUrl);
 
 // Helper function for authenticated fetch with automatic token refresh
-const authenticatedFetch = async (
+export const authenticatedFetch = async (
   url: string,
   options: any = {},
 ): Promise<Response> => {
