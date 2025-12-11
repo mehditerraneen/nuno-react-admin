@@ -1068,9 +1068,15 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         try {
             setLoading(true);
 
-            // Fetch calendar data directly
+            // Fetch calendar data directly with auth token
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const calendarResponse = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/calendar`);
+            const token = localStorage.getItem('auth_access_token');
+            const calendarResponse = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/calendar`, {
+                headers: {
+                    'Authorization': token || '',
+                    'Content-Type': 'application/json',
+                },
+            });
             const calendarData = await calendarResponse.json();
 
             // Fetch shift types using dataProvider
