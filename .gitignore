@@ -24,6 +24,14 @@ dist-ssr
 playwright-report/
 test-results/
 screenshots/
+*.png
+
+# Development/debug scripts (contain hardcoded paths/credentials)
+test-*.js
+test-*.py
+analyze-*.py
+check-*.py
+convert-*.py
 
 # Editor directories and files
 .vscode/*
