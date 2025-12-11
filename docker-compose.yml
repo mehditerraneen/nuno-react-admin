@@ -17,6 +17,8 @@ services:
       - NODE_ENV=production
     networks:
       - dokploy-network
+    labels:
+      - "traefik.enable=true"
 
 networks:
   dokploy-network:
