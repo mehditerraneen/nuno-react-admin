@@ -25,6 +25,10 @@ import {
   useDataProvider,
   useNotify,
   Identifier,
+  TopToolbar,
+  FilterButton,
+  CreateButton,
+  ExportButton,
 } from "react-admin";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
@@ -45,14 +49,34 @@ const carePlanFilters = [
     label="Patient"
     reference="patients"
     alwaysOn
-    filter={{ has_careplan: true }}
+    filter={{ has_careplan: "true" }}
   >
-    <AutocompleteInput />
+    <AutocompleteInput
+      optionText={(choice) =>
+        choice
+          ? `${choice.name} ${choice.first_name} (${choice.code_sn})`
+          : ""
+      }
+      filterToQuery={(searchText) => ({ q: searchText, has_careplan: "true" })}
+    />
   </ReferenceInput>,
+  <BooleanInput key="patient_is_active" source="patient_is_active" label="Active Patients Only" />,
+  <NumberInput key="plan_number" source="plan_number" label="Plan Number" />,
+  <DateInput key="plan_start_date_gte" source="plan_start_date_gte" label="Start Date From" />,
+  <DateInput key="plan_start_date_lte" source="plan_start_date_lte" label="Start Date To" />,
+  <BooleanInput key="last_valid_plan" source="last_valid_plan" label="Last Valid Plan Only" />,
 ];
 
+const CarePlanListActions = () => (
+  <TopToolbar>
+    <FilterButton />
+    <CreateButton />
+    <ExportButton />
+  </TopToolbar>
+);
+
 export const CarePlanList = () => (
-  <List filters={carePlanFilters}>
+  <List filters={carePlanFilters} actions={<CarePlanListActions />}>
     <Datagrid rowClick="show">
       <TextField source="id" />
       <ReferenceField source="patient_id" reference="patients" />

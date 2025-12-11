@@ -1714,7 +1714,7 @@ export const dataProvider: MyDataProvider = {
     }
   },
   getCnsCarePlanDetails: (planId: Identifier) => {
-    const url = `${apiUrl}/fast/cnscareplans/${planId}/details`;
+    const url = `${apiUrl}/cnscareplans/${planId}/details`;
     console.log(" Fetching CNS care plan details from:", url);
     return authenticatedFetch(url).then((response) => {
       if (!response.ok) {
@@ -1791,33 +1791,16 @@ export const dataProvider: MyDataProvider = {
       const details = await dataProvider.getCnsCarePlanDetails(cnsCarePlanId);
       console.log("🔍 CNS care plan details:", details);
 
-      // Extract unique item IDs from this specific CNS care plan
-      // Filter to only include "Prestations Aidant" items
+      // Extract ALL unique item IDs from this specific CNS care plan
       const itemIds = new Set<number>();
       details.forEach((detail) => {
         if (detail.item?.id) {
-          // Check if the item is of type "Prestations Aidant" or related to aide services
-          const item = detail.item;
-          console.log("🔎 Checking item:", item);
-
-          // Multiple possible ways to identify "Prestations Aidant" items:
-          const isAidantItem =
-            item.type === "Prestations Aidant" ||
-            item.category === "Prestations Aidant" ||
-            item.prestataire_type === "Aidant" ||
-            item.code?.toLowerCase().includes("aidant") ||
-            item.description?.toLowerCase().includes("aidant");
-
-          if (isAidantItem) {
-            console.log("✅ Item is Prestations Aidant type:", item);
-            itemIds.add(detail.item.id);
-          } else {
-            console.log("❌ Item is not Prestations Aidant type:", item);
-          }
+          console.log("✅ Including CNS item:", detail.item);
+          itemIds.add(detail.item.id);
         }
       });
 
-      console.log("🎯 Filtered Aidant item IDs:", Array.from(itemIds));
+      console.log("🎯 All CNS care plan item IDs:", Array.from(itemIds));
       return Array.from(itemIds);
     } catch (error) {
       console.error("Error fetching CNS available item IDs:", error);

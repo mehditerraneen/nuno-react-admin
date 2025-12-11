@@ -53,6 +53,8 @@ import {
     Grid,
     Fab,
     Checkbox,
+    ToggleButtonGroup,
+    ToggleButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -64,6 +66,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { SchoolCalendarUpdateBanner } from './components/SchoolCalendarUpdateBanner';
 import { OptimizerAIChat } from './components/OptimizerAIChat';
 
@@ -1038,8 +1043,22 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     const [aiChatOpen, setAiChatOpen] = useState(false);
     const [optimizerFailureMessage, setOptimizerFailureMessage] = useState<string | undefined>(undefined);
 
+    // Algorithm selection state
+    const [selectedAlgorithm, setSelectedAlgorithm] = useState<'CP-SAT' | 'GA' | 'HYBRID'>('CP-SAT');
+
     // Selected employee for highlighting
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+
+    // CSV Import state
+    const [csvImportDialog, setCsvImportDialog] = useState(false);
+    const [csvFile, setCsvFile] = useState<File | null>(null);
+    const [importing, setImporting] = useState(false);
+
+    // Analysis Dialog state
+    const [analysisDialog, setAnalysisDialog] = useState(false);
+    const [analysisData, setAnalysisData] = useState<any>(null);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [applyingSuggestions, setApplyingSuggestions] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -1175,16 +1194,21 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         try {
             setOptimizing(true);
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+
+            // Adjust time limit based on algorithm
+            const timeLimit = selectedAlgorithm === 'HYBRID' ? 300 : 60;  // 5 min for HYBRID, 60s otherwise
+
             const response = await fetch(
                 `${apiUrl}/planning/monthly-planning/${planningId}/optimize`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        min_daily_coverage: 2,  // Reduced from 3 to 2 for flexibility
-                        morning_coverage_ratio: 0.7,  // 70% morning, 30% evening (relaxed to 40-90% in solver)
-                        time_limit_seconds: 60,  // Increased from 30 to 60 seconds
-                        preserve_existing: false
+                        min_daily_coverage: 4,  // Minimum 4 people/day (based on actual data: avg 4-5 employees/day)
+                        morning_coverage_ratio: 0.63,  // 63% morning, 37% evening (based on Nov 2025 actual data)
+                        time_limit_seconds: timeLimit,
+                        preserve_existing: false,
+                        algorithm: selectedAlgorithm  // Use selected algorithm
                     })
                 }
             );
@@ -1198,10 +1222,12 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
             const orShiftsMsg = result.or_shifts_created > 0
                 ? ` | ${result.or_shifts_created} nouveau(x) shift(s) OR créé(s)`
                 : '';
+            const algorithmBadge = result.algorithm === 'GA' ? ' 🧬 GA' :
+                                   result.algorithm === 'HYBRID' ? ' 🔬 HYBRID' : ' 🤖 CP-SAT';
 
             // Show success notification
             notify(
-                `✅ ${result.message} (${result.assignments_created} affectations${orShiftsMsg} en ${result.optimization_time.toFixed(1)}s)`,
+                `✅ ${result.message} (${result.assignments_created} affectations${orShiftsMsg} en ${result.optimization_time.toFixed(1)}s)${algorithmBadge}`,
                 { type: 'success' }
             );
 
@@ -1388,6 +1414,219 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         }
     };
 
+    const handleCsvImport = async () => {
+        if (!csvFile) {
+            notify('Veuillez sélectionner un fichier CSV', { type: 'error' });
+            return;
+        }
+
+        try {
+            setImporting(true);
+
+            // Parse CSV file
+            const text = await csvFile.text();
+
+            // Helper to parse CSV properly (handles quoted fields)
+            const parseCSV = (text: string): string[][] => {
+                const lines: string[][] = [];
+                const rows = text.split('\n');
+
+                for (const row of rows) {
+                    if (!row.trim()) continue;
+
+                    const cells: string[] = [];
+                    let currentCell = '';
+                    let insideQuotes = false;
+
+                    for (let i = 0; i < row.length; i++) {
+                        const char = row[i];
+
+                        if (char === '"') {
+                            insideQuotes = !insideQuotes;
+                        } else if (char === ',' && !insideQuotes) {
+                            cells.push(currentCell.trim());
+                            currentCell = '';
+                        } else {
+                            currentCell += char;
+                        }
+                    }
+                    cells.push(currentCell.trim());
+                    lines.push(cells);
+                }
+
+                return lines;
+            };
+
+            const lines = parseCSV(text);
+
+            if (lines.length < 2) {
+                throw new Error('CSV file is empty or invalid');
+            }
+
+            // Detect format: simple (employee_id,date,shift_code) vs grid (employees as rows, days as columns)
+            const headers = lines[0].map(h => h.toLowerCase().trim());
+            const isSimpleFormat = headers.includes('employee_id') || headers.includes('abbreviation');
+
+            let shifts: any[] = [];
+
+            if (isSimpleFormat) {
+                // Simple format: employee_id/abbreviation,date,shift_code
+                console.log('📋 Detected simple format');
+
+                shifts = lines.slice(1).map(values => {
+                    const row: any = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index];
+                    });
+                    return row;
+                }).filter(row => (row.employee_id || row.abbreviation) && row.date && row.shift_code);
+
+            } else {
+                // Grid format: employees as rows, days as columns
+                console.log('📋 Detected grid format - parsing...');
+
+                // Employee rows start at line 9 (index 8)
+                for (let rowIdx = 8; rowIdx < Math.min(lines.length, 25); rowIdx++) {
+                    const row = lines[rowIdx];
+
+                    if (row.length < 10) continue;
+
+                    let abbreviation = row[1]?.trim();
+
+                    // Skip empty rows or rows with error messages
+                    if (!abbreviation || abbreviation === '' || abbreviation.includes('TOUTES LES CELLULES')) {
+                        continue;
+                    }
+
+                    // Clean abbreviation - remove text in parentheses
+                    // "AC (ANA)" -> "AC", "NK (Nadine)" -> "NK"
+                    abbreviation = abbreviation.split('(')[0].trim();
+
+                    console.log(`   Processing employee: ${abbreviation}`);
+
+                    // Extract shifts for each day (columns 5-35 for days 1-31)
+                    const daysInMonth = new Date(planning.year, planning.month, 0).getDate();
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const colIdx = 4 + day; // Column 5 is day 1
+                        if (colIdx >= row.length) continue;
+
+                        const shiftCode = row[colIdx]?.trim();
+
+                        // Skip only empty cells
+                        if (!shiftCode || shiftCode === '') {
+                            continue;
+                        }
+
+                        shifts.push({
+                            abbreviation: abbreviation,
+                            date: `${planning.year}-${String(planning.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+                            shift_code: shiftCode
+                        });
+                    }
+                }
+
+                console.log(`✅ Parsed ${shifts.length} shifts from grid format`);
+            }
+
+            if (shifts.length === 0) {
+                throw new Error('No valid shifts found in CSV');
+            }
+
+            console.log('📤 Sending to backend:', { count: shifts.length, sample: shifts.slice(0, 3) });
+
+            // Send to backend
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/import-csv`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shifts })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Import failed');
+            }
+
+            const result = await response.json();
+            console.log('✅ Import result:', result);
+
+            if (result.errors && result.errors.length > 0) {
+                console.warn('⚠️ Import errors:', result.errors);
+                notify(`⚠️ ${result.imported_count} shifts importés, ${result.errors.length} erreurs`, { type: 'warning' });
+            } else {
+                notify(`✅ ${result.imported_count} shifts importés avec succès!`, { type: 'success' });
+            }
+
+            setCsvImportDialog(false);
+            setCsvFile(null);
+            loadData();
+        } catch (error: any) {
+            console.error('❌ Error importing CSV:', error);
+            notify(`Erreur d'import: ${error.message}`, { type: 'error' });
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    // Analysis handlers
+    const handleAnalyzePlanning = async () => {
+        try {
+            setAnalyzing(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/compare-alternatives`);
+
+            if (!response.ok) {
+                throw new Error('Failed to analyze planning');
+            }
+
+            const data = await response.json();
+            setAnalysisData(data);
+            setAnalysisDialog(true);
+
+            notify('Analyse terminée', { type: 'success' });
+        } catch (error: any) {
+            console.error('❌ Error analyzing planning:', error);
+            notify(`Erreur d'analyse: ${error.message}`, { type: 'error' });
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
+    const handleApplySuggestions = async (dryRun: boolean = false) => {
+        try {
+            setApplyingSuggestions(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/apply-suggestions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dry_run: dryRun,
+                    max_shifts_to_create: 50,
+                    preferred_shift_types: ['M6.5-15', 'S13.5-22']
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to apply suggestions');
+            }
+
+            const result = await response.json();
+
+            if (dryRun) {
+                notify(`Aperçu: ${result.shifts_created} shifts seraient créés`, { type: 'info' });
+            } else {
+                notify(`✅ ${result.shifts_created} shifts créés avec succès!`, { type: 'success' });
+                setAnalysisDialog(false);
+                loadData();
+            }
+        } catch (error: any) {
+            console.error('❌ Error applying suggestions:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+        } finally {
+            setApplyingSuggestions(false);
+        }
+    };
+
     if (loading) return <Loading />;
     if (!calendarData) return <Typography>Aucune donnée</Typography>;
 
@@ -1445,6 +1684,21 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         variant="outlined"
                         disabled={clearing}
                         label={clearing ? "Effacement..." : "Effacer shifts auto"}
+                    />
+                    <Button
+                        startIcon={<UploadFileIcon />}
+                        onClick={() => setCsvImportDialog(true)}
+                        color="info"
+                        variant="outlined"
+                        label="Importer CSV"
+                    />
+                    <Button
+                        startIcon={<AssessmentIcon />}
+                        onClick={handleAnalyzePlanning}
+                        color="secondary"
+                        variant="contained"
+                        disabled={analyzing}
+                        label={analyzing ? "Analyse..." : "Analyser le planning"}
                     />
                 </Box>
             </Box>
@@ -1747,17 +2001,109 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 </DialogActions>
             </Dialog>
 
-            {/* OR-Tools Optimization Dialog */}
+            {/* Optimization Dialog */}
             <Dialog open={optimizeDialog} onClose={() => setOptimizeDialog(false)} maxWidth="md" fullWidth>
                 <DialogTitle>
                     <Box display="flex" alignItems="center" gap={1}>
                         <AutoAwesomeIcon color="success" />
-                        Optimiser le planning avec Google OR-Tools
+                        Optimiser le planning
                     </Box>
                 </DialogTitle>
                 <DialogContent>
                     <Box display="flex" flexDirection="column" gap={2} mt={2}>
-                        <Alert severity="info">
+                        {/* Algorithm Selector */}
+                        <Box>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Choisir l'algorithme:
+                            </Typography>
+                            <ToggleButtonGroup
+                                value={selectedAlgorithm}
+                                exclusive
+                                onChange={(event, newAlgorithm) => {
+                                    if (newAlgorithm !== null) {
+                                        setSelectedAlgorithm(newAlgorithm);
+                                    }
+                                }}
+                                fullWidth
+                                color="primary"
+                            >
+                                <ToggleButton value="CP-SAT">
+                                    <Box display="flex" flexDirection="column" alignItems="center" p={1}>
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                            <span>🤖</span>
+                                            <Typography variant="body1" fontWeight="bold">CP-SAT</Typography>
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Standard
+                                        </Typography>
+                                    </Box>
+                                </ToggleButton>
+                                <ToggleButton value="HYBRID">
+                                    <Box display="flex" flexDirection="column" alignItems="center" p={1}>
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                            <span>🔬</span>
+                                            <Typography variant="body1" fontWeight="bold">HYBRID</Typography>
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary">
+                                            GA + CP-SAT (Recommandé)
+                                        </Typography>
+                                    </Box>
+                                </ToggleButton>
+                                <ToggleButton value="GA">
+                                    <Box display="flex" flexDirection="column" alignItems="center" p={1}>
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                            <span>🧬</span>
+                                            <Typography variant="body1" fontWeight="bold">GA</Typography>
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Expérimental
+                                        </Typography>
+                                    </Box>
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                        </Box>
+
+                        {/* Algorithm Description */}
+                        {selectedAlgorithm === 'CP-SAT' && (
+                            <Alert severity="info">
+                                <Typography variant="subtitle2" gutterBottom>
+                                    <strong>CP-SAT (Constraint Programming)</strong> - Approche standard
+                                </Typography>
+                                <Typography variant="body2">
+                                    Utilise Google OR-Tools avec configuration par défaut. Rapide et fiable pour
+                                    la plupart des plannings. Temps d'exécution: ~60 secondes.
+                                </Typography>
+                            </Alert>
+                        )}
+
+                        {selectedAlgorithm === 'HYBRID' && (
+                            <Alert severity="success">
+                                <Typography variant="subtitle2" gutterBottom>
+                                    <strong>HYBRID (GA + CP-SAT)</strong> - Meilleure qualité (Recommandé)
+                                </Typography>
+                                <Typography variant="body2">
+                                    Combine les deux approches: l'algorithme génétique trouve les meilleurs paramètres,
+                                    puis CP-SAT génère la solution. Résultats optimaux mais plus lent (~5 minutes).
+                                </Typography>
+                                <Typography variant="body2" sx={{ mt: 1 }}>
+                                    <strong>⚡ Avantages:</strong> Meilleure qualité de solution, auto-optimisation des paramètres
+                                </Typography>
+                            </Alert>
+                        )}
+
+                        {selectedAlgorithm === 'GA' && (
+                            <Alert severity="warning">
+                                <Typography variant="subtitle2" gutterBottom>
+                                    <strong>GA (Algorithme Génétique Pur)</strong> - Expérimental
+                                </Typography>
+                                <Typography variant="body2">
+                                    Approche purement évolutionnaire. Non recommandé - utilisez HYBRID à la place.
+                                    Peut violer certaines contraintes.
+                                </Typography>
+                            </Alert>
+                        )}
+
+                        <Alert severity="success">
                             <Typography variant="subtitle2" gutterBottom>
                                 L'optimiseur va créer un planning optimal en respectant:
                             </Typography>
@@ -1767,17 +2113,18 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                 <li>✅ Maximum 6 jours consécutifs (loi 44h repos)</li>
                                 <li>✅ Pas de matin après soir</li>
                                 <li>✅ Demandes de congés</li>
-                                <li>✅ Couverture minimale de soignants</li>
-                                <li>📊 70% matin / 30% soir (ratio optimal)</li>
-                                <li>⚖️ Distribution équitable des heures</li>
-                                <li>✨ Création automatique de shifts OR si besoin</li>
+                                <li>🏥 <strong>Couverture CONSTANTE: 4 soignants/jour</strong> (TOUS les jours: semaine, weekend, fériés)</li>
+                                <li>👨‍⚕️ <strong>Au moins 1 infirmier(ère) en matin ET 1 en soir</strong> (chaque jour)</li>
+                                <li>⏰ Au moins 1 personne en matin ET 1 en soir (chaque jour)</li>
+                                <li>📊 63% matin / 37% soir (ratio mensuel optimal)</li>
+                                <li>⚖️ Distribution équitable et équilibrée (max 3:1 matin/soir)</li>
                             </ul>
                         </Alert>
 
                         <Alert severity="warning">
                             <strong>Attention:</strong> Cette opération remplacera toutes les affectations existantes!
                             <br />
-                            Temps d'optimisation: ~60 secondes (max)
+                            Temps d'optimisation: {selectedAlgorithm === 'HYBRID' ? '~5 minutes' : '~60 secondes'} (max)
                         </Alert>
 
                         <Box display="flex" justifyContent="center" mt={2}>
@@ -1790,7 +2137,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                 disabled={optimizing}
                                 fullWidth
                             >
-                                {optimizing ? 'Optimisation en cours...' : 'Lancer l\'optimisation'}
+                                {optimizing ? 'Optimisation en cours...' : `Lancer l'optimisation (${selectedAlgorithm})`}
                             </Button>
                         </Box>
                     </Box>
@@ -1969,6 +2316,329 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                     >
                         Créer le shift
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* CSV Import Dialog */}
+            <Dialog open={csvImportDialog} onClose={() => setCsvImportDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Importer des shifts depuis un fichier CSV</DialogTitle>
+                <DialogContent>
+                    <Box display="flex" flexDirection="column" gap={2} mt={2}>
+                        <Alert severity="info">
+                            <Typography variant="body2" gutterBottom>
+                                <strong>Formats CSV supportés:</strong>
+                            </Typography>
+
+                            <Typography variant="body2" sx={{ mt: 1, mb: 1 }}>
+                                <strong>1. Format simple (ID ou abréviation):</strong>
+                            </Typography>
+                            <Typography variant="caption" component="pre" sx={{ fontFamily: 'monospace', backgroundColor: '#f5f5f5', p: 1, borderRadius: 1 }}>
+{`abbreviation,date,shift_code
+AC,2025-12-01,M6.5-15
+BH,2025-12-01,S13.5-22`}
+                            </Typography>
+
+                            <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+                                <strong>2. Format grille (plannings officiels):</strong>
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>
+                                Format automatiquement détecté - employés en lignes, jours en colonnes
+                            </Typography>
+
+                            <Typography variant="body2" sx={{ mt: 2 }}>
+                                ℹ️ <strong>Notes:</strong><br/>
+                                • Vous pouvez utiliser <strong>abbreviation</strong> (ex: AC, BH) ou <strong>employee_id</strong><br/>
+                                • Format de date: YYYY-MM-DD<br/>
+                                • Les codes OFF, CP (congés), et "cours" sont ignorés<br/>
+                                • Les shifts importés seront <strong>protégés de l'optimiseur</strong>
+                            </Typography>
+                        </Alert>
+
+                        <input
+                            type="file"
+                            accept=".csv"
+                            onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                            style={{
+                                padding: '10px',
+                                border: '2px dashed #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                            }}
+                        />
+
+                        {csvFile && (
+                            <Alert severity="success">
+                                Fichier sélectionné: <strong>{csvFile.name}</strong>
+                            </Alert>
+                        )}
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => {
+                        setCsvImportDialog(false);
+                        setCsvFile(null);
+                    }}>
+                        Annuler
+                    </Button>
+                    <Button
+                        onClick={handleCsvImport}
+                        variant="contained"
+                        color="primary"
+                        disabled={!csvFile || importing}
+                        startIcon={importing ? null : <UploadFileIcon />}
+                    >
+                        {importing ? 'Import en cours...' : 'Importer'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Analysis Dialog */}
+            <Dialog open={analysisDialog} onClose={() => setAnalysisDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <AssessmentIcon />
+                        <Typography variant="h6">Analyse de Planning</Typography>
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {analysisData && (
+                        <Box display="flex" flexDirection="column" gap={3} mt={2}>
+                            {/* Efficiency Score */}
+                            <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                                <CardContent>
+                                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                                        <Box>
+                                            <Typography variant="h4" fontWeight="bold">
+                                                {analysisData.efficiency_score?.toFixed(1) || 0}%
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                                Score d'Efficacité
+                                            </Typography>
+                                        </Box>
+                                        <TrendingUpIcon sx={{ fontSize: 60, opacity: 0.3 }} />
+                                    </Box>
+                                </CardContent>
+                            </Card>
+
+                            {/* Current State Summary */}
+                            <Box>
+                                <Typography variant="h6" gutterBottom>État Actuel</Typography>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={6}>
+                                        <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                            <Typography variant="h5" color="primary">
+                                                {analysisData.current_state.total_assignments}
+                                            </Typography>
+                                            <Typography variant="caption">Affectations Totales</Typography>
+                                        </Paper>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                            <Typography variant="h5" color="success.main">
+                                                {analysisData.current_state.manual_assignments}
+                                            </Typography>
+                                            <Typography variant="caption">Affectations Manuelles</Typography>
+                                        </Paper>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                            <Typography variant="h5" color="info.main">
+                                                {analysisData.current_state.optimizer_assignments}
+                                            </Typography>
+                                            <Typography variant="caption">Affectations Auto</Typography>
+                                        </Paper>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                            <Typography variant="h5" color="warning.main">
+                                                {analysisData.current_state.total_hours?.toFixed(1) || 0}h
+                                            </Typography>
+                                            <Typography variant="caption">Heures Totales</Typography>
+                                        </Paper>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+
+                            {/* Optimization Opportunities */}
+                            {analysisData.unassigned_opportunities?.underutilized_employees?.length > 0 && (
+                                <Box>
+                                    <Typography variant="h6" gutterBottom color="warning.main">
+                                        💡 Opportunités d'amélioration ({analysisData.unassigned_opportunities.underutilized_employees.length})
+                                    </Typography>
+                                    <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
+                                        <Table size="small" stickyHeader>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>Nom</TableCell>
+                                                    <TableCell align="right">Utilisation</TableCell>
+                                                    <TableCell align="right">Heures</TableCell>
+                                                    <TableCell align="right">Jours consécutifs</TableCell>
+                                                    <TableCell>Problèmes</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {analysisData.unassigned_opportunities.underutilized_employees.map((emp: any) => (
+                                                    <TableRow key={emp.employee_id}>
+                                                        <TableCell>
+                                                            <strong>{emp.abbreviation}</strong> - {emp.name}
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            <Chip
+                                                                label={`${emp.utilization?.toFixed(0) || 0}%`}
+                                                                color={emp.utilization < 80 ? 'error' : 'warning'}
+                                                                size="small"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            {emp.current_hours?.toFixed(1) || 0}h / {emp.max_hours?.toFixed(1) || 0}h
+                                                            <br/>
+                                                            <Typography variant="caption" color="warning.main">
+                                                                +{emp.available_hours?.toFixed(1) || 0}h disponible
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            <Chip
+                                                                label={emp.max_consecutive_days || 0}
+                                                                color={emp.max_consecutive_days >= 6 ? 'error' : 'default'}
+                                                                size="small"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {emp.issues?.map((issue: string, idx: number) => (
+                                                                <Typography key={idx} variant="caption" display="block" color="text.secondary">
+                                                                    • {issue}
+                                                                </Typography>
+                                                            ))}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </Box>
+                            )}
+
+                            {/* Proposed Changes */}
+                            {analysisData.proposed_changes?.length > 0 && (
+                                <Box>
+                                    <Typography variant="h6" gutterBottom color="success.main">
+                                        🔧 Modifications Proposées ({analysisData.proposed_changes.length})
+                                    </Typography>
+                                    <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                                        <Table size="small" stickyHeader>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>Employé</TableCell>
+                                                    <TableCell>Action</TableCell>
+                                                    <TableCell align="right">Shifts</TableCell>
+                                                    <TableCell align="right">Heures</TableCell>
+                                                    <TableCell align="right">Utilisation cible</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {analysisData.proposed_changes.map((change: any, idx: number) => (
+                                                    <TableRow key={idx}>
+                                                        <TableCell>
+                                                            <strong>{change.employee_abbr}</strong>
+                                                            <Typography variant="caption" display="block" color="text.secondary">
+                                                                {change.employee_name}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2">
+                                                                {change.action}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {change.reason}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            <Chip
+                                                                label={change.shifts_needed || 0}
+                                                                color="primary"
+                                                                size="small"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            +{change.hours_to_add?.toFixed(1) || 0}h
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            <Box display="flex" alignItems="center" justifyContent="flex-end" gap={0.5}>
+                                                                <Typography variant="caption" color="text.secondary">
+                                                                    {change.current_utilization?.toFixed(0)}%
+                                                                </Typography>
+                                                                <Typography variant="caption">→</Typography>
+                                                                <Typography variant="caption" color="success.main" fontWeight="bold">
+                                                                    {change.target_utilization}%
+                                                                </Typography>
+                                                            </Box>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </Box>
+                            )}
+
+                            {/* Suggestions */}
+                            {analysisData.improvement_suggestions?.length > 0 && (
+                                <Box>
+                                    <Typography variant="h6" gutterBottom>
+                                        💡 Résumé des Suggestions
+                                    </Typography>
+                                    <Box display="flex" flexDirection="column" gap={1}>
+                                        {analysisData.improvement_suggestions.map((suggestion: any, idx: number) => (
+                                            <Alert
+                                                key={idx}
+                                                severity={suggestion.priority === 'high' ? 'error' : suggestion.priority === 'medium' ? 'warning' : 'info'}
+                                                icon={
+                                                    suggestion.type === 'underutilization' ? <TrendingUpIcon /> :
+                                                    suggestion.type === 'low_coverage' ? <AssessmentIcon /> :
+                                                    <AssessmentIcon />
+                                                }
+                                            >
+                                                <Typography variant="body2" fontWeight="bold">
+                                                    {suggestion.type === 'underutilization' ? '📊 Sous-utilisation' :
+                                                     suggestion.type === 'low_coverage' ? '⚠️ Couverture faible' :
+                                                     '📈 Déséquilibre de charge'}
+                                                </Typography>
+                                                <Typography variant="body2">{suggestion.title}</Typography>
+                                                {suggestion.description && (
+                                                    <Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.8 }}>
+                                                        {suggestion.description}
+                                                    </Typography>
+                                                )}
+                                            </Alert>
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {/* No Suggestions */}
+                            {(!analysisData.improvement_suggestions || analysisData.improvement_suggestions.length === 0) && (
+                                <Alert severity="success">
+                                    ✅ Aucune suggestion d'amélioration - le planning semble optimal!
+                                </Alert>
+                            )}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setAnalysisDialog(false)}>
+                        Fermer
+                    </Button>
+                    {analysisData && analysisData.improvement_suggestions?.length > 0 && (
+                        <Button
+                            onClick={() => handleApplySuggestions(false)}
+                            variant="contained"
+                            color="primary"
+                            disabled={applyingSuggestions}
+                            startIcon={applyingSuggestions ? null : <AutoAwesomeIcon />}
+                        >
+                            {applyingSuggestions ? 'Application...' : 'Appliquer les suggestions'}
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
 
