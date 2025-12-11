@@ -3,7 +3,6 @@
 # Stage 1: Build the application
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
@@ -34,17 +33,19 @@ ENV VITE_DEBUG=$VITE_DEBUG
 # Build the application
 RUN npm run build
 
-# Stage 2: Production server with nginx
-FROM nginx:alpine
+# Stage 2: Production server with serve (lightweight static server)
+FROM node:20-alpine
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+
+# Install serve globally
+RUN npm install -g serve
 
 # Copy built files from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist ./dist
 
 # Expose port
 EXPOSE 3001
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Serve the app with SPA fallback
+CMD ["serve", "-s", "dist", "-l", "3001"]

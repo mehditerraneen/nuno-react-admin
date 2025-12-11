@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - VITE_SIMPLE_REST_URL=${VITE_SIMPLE_REST_URL:-http://127.0.0.1:8000/fast}
+        - VITE_SIMPLE_REST_URL=${VITE_SIMPLE_REST_URL}
         - VITE_TEST_USERNAME=${VITE_TEST_USERNAME:-admin}
         - VITE_TEST_PASSWORD=${VITE_TEST_PASSWORD:-changeme}
         - VITE_JWT_SECRET=${VITE_JWT_SECRET:-your-secret-key-here}
@@ -12,15 +12,12 @@ services:
         - VITE_DEBUG=${VITE_DEBUG:-false}
     restart: unless-stopped
     ports:
-      - 3002:3001
+      - "${HOST_PORT:-3002}:3001"
     environment:
       - NODE_ENV=production
     networks:
       - app-network
-      - dokploy-network
 
 networks:
   app-network:
     driver: bridge
-  dokploy-network:
-    external: true
