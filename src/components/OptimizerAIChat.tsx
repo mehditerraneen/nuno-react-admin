@@ -65,7 +65,7 @@ interface OptimizerAIChatProps {
 
 const API_BASE_URL = import.meta.env.VITE_SIMPLE_REST_URL || 'http://localhost:8000';
 const AI_ORCHESTRATOR_URL = import.meta.env.VITE_AI_ORCHESTRATOR_URL || 'https://nunoollama.opefitoo.com';
-const AI_ORCHESTRATOR_API_KEY = import.meta.env.VITE_AI_ORCHESTRATOR_API_KEY || '79FNVaF6Y3W241B4ZWHRwHHWa_L5ca7f-L-qFR_GYhs';
+const AI_ORCHESTRATOR_API_KEY = import.meta.env.VITE_AI_ORCHESTRATOR_API_KEY || '';
 
 export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
   planningId,
