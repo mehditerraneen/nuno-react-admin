@@ -55,7 +55,13 @@ import {
     Checkbox,
     ToggleButtonGroup,
     ToggleButton,
+    ListItemText,
+    OutlinedInput,
+    InputAdornment,
 } from '@mui/material';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import AddIcon from '@mui/icons-material/Add';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import EditIcon from '@mui/icons-material/Edit';
@@ -69,6 +75,12 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import CircularProgress from '@mui/material/CircularProgress';
 import { SchoolCalendarUpdateBanner } from './components/SchoolCalendarUpdateBanner';
 import { OptimizerAIChat } from './components/OptimizerAIChat';
 import { authenticatedFetch } from './dataProvider';
@@ -1058,8 +1070,54 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     const [analyzing, setAnalyzing] = useState(false);
     const [applyingSuggestions, setApplyingSuggestions] = useState(false);
 
+    // Validation state
+    const [validationDialog, setValidationDialog] = useState(false);
+    const [validationResults, setValidationResults] = useState<any>(null);
+    const [validating, setValidating] = useState(false);
+
+    // Grouping state
+    const [groupBy, setGroupBy] = useState<'none' | 'job_position' | 'job_type' | 'alphabetical' | 'hours'>('none');
+    const [groupedData, setGroupedData] = useState<any>(null);
+    const [reordering, setReordering] = useState(false);
+
+    // Hide/Show Employees state
+    const [hiddenEmployees, setHiddenEmployees] = useState<Set<number>>(new Set());
+    const [togglingVisibility, setTogglingVisibility] = useState<number | null>(null);
+
+    // PDF Export state
+    const [exportingPdf, setExportingPdf] = useState(false);
+
+    // Refresh state
+    const [refreshing, setRefreshing] = useState(false);
+
+    // Filter state
+    const [filterVisibility, setFilterVisibility] = useState<'all' | 'visible' | 'hidden'>('all');
+    const [filterJobPositions, setFilterJobPositions] = useState<string[]>([]);
+    const [filterJobTypes, setFilterJobTypes] = useState<string[]>([]);
+    const [filterHoursStatus, setFilterHoursStatus] = useState<'all' | 'over_limit' | 'under_50' | 'ok'>('all');
+    const [filterNameSearch, setFilterNameSearch] = useState('');
+
     useEffect(() => {
         loadData();
+    }, [planningId]);
+
+    // Load hidden employees on mount
+    useEffect(() => {
+        const loadHiddenEmployees = async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                const response = await authenticatedFetch(
+                    `${apiUrl}/planning/monthly-planning/${planningId}/hidden-employees`
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setHiddenEmployees(new Set(data.hidden_employee_ids || []));
+                }
+            } catch (error) {
+                console.error('Error loading hidden employees:', error);
+            }
+        };
+        loadHiddenEmployees();
     }, [planningId]);
 
     const loadData = async () => {
@@ -1621,12 +1679,235 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         }
     };
 
+    // Refresh handler
+    const handleRefreshData = async () => {
+        try {
+            setRefreshing(true);
+            await loadData();
+            notify('Données actualisées', { type: 'success' });
+        } catch (error: any) {
+            console.error('Error refreshing data:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    // PDF Export handler
+    const handleExportPdf = async () => {
+        try {
+            setExportingPdf(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/pdf`,
+                { method: 'GET' }
+            );
+
+            if (!response.ok) {
+                throw new Error('Échec de l\'export PDF');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `planning_${calendarData?.planning?.year || 'unknown'}_${String(calendarData?.planning?.month || 0).padStart(2, '0')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            notify('PDF exporté avec succès', { type: 'success' });
+        } catch (error: any) {
+            console.error('Error exporting PDF:', error);
+            notify(`Erreur d'export: ${error.message}`, { type: 'error' });
+        } finally {
+            setExportingPdf(false);
+        }
+    };
+
+    // Validation handler
+    const handleValidatePlanning = async () => {
+        try {
+            setValidating(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/validate`,
+                { method: 'POST' }
+            );
+
+            if (!response.ok) {
+                throw new Error('Échec de la validation');
+            }
+
+            const data = await response.json();
+            setValidationResults(data);
+            setValidationDialog(true);
+            notify('Validation terminée', { type: 'success' });
+        } catch (error: any) {
+            console.error('Error validating planning:', error);
+            notify(`Erreur de validation: ${error.message}`, { type: 'error' });
+        } finally {
+            setValidating(false);
+        }
+    };
+
+    // Toggle employee visibility handler
+    const handleToggleEmployeeVisibility = async (employeeId: number) => {
+        try {
+            setTogglingVisibility(employeeId);
+            const isCurrentlyHidden = hiddenEmployees.has(employeeId);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/employee/${employeeId}/visibility`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ hidden: !isCurrentlyHidden })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Échec du changement de visibilité');
+            }
+
+            setHiddenEmployees((prev) => {
+                const newSet = new Set(prev);
+                if (isCurrentlyHidden) {
+                    newSet.delete(employeeId);
+                } else {
+                    newSet.add(employeeId);
+                }
+                return newSet;
+            });
+
+            notify(
+                isCurrentlyHidden ? 'Employé affiché' : 'Employé masqué',
+                { type: 'info' }
+            );
+        } catch (error: any) {
+            console.error('Error toggling visibility:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+        } finally {
+            setTogglingVisibility(null);
+        }
+    };
+
+    // Reorder employees handler
+    const handleReorderEmployees = async (orderBy: string) => {
+        if (orderBy === 'none') {
+            setGroupBy('none');
+            setGroupedData(null);
+            // Reload original data to restore default order
+            loadData();
+            return;
+        }
+
+        try {
+            setReordering(true);
+            setGroupBy(orderBy as any);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/reorder`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ group_by: orderBy })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Échec du regroupement');
+            }
+
+            const data = await response.json();
+            setGroupedData(data);
+
+            // For flat responses (alphabetical, hours), update calendarData with reordered employees
+            if (data.employees && !data.groups) {
+                setCalendarData((prev: any) => {
+                    if (!prev) return prev;
+                    // Map the reordered employee list to full employee data
+                    const reorderedEmployees = data.employees.map((emp: any) => {
+                        const fullEmployee = prev.employees.find((e: any) => e.employee_id === emp.id);
+                        return fullEmployee || emp;
+                    }).filter(Boolean);
+                    return {
+                        ...prev,
+                        employees: reorderedEmployees
+                    };
+                });
+            }
+
+            notify('Employés regroupés', { type: 'success' });
+        } catch (error: any) {
+            console.error('Error reordering employees:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+            setGroupBy('none');
+            setGroupedData(null);
+        } finally {
+            setReordering(false);
+        }
+    };
+
     if (loading) return <Loading />;
     if (!calendarData) return <Typography>Aucune donnée</Typography>;
 
-    const { planning, employees, daily_staff_count, luxembourg_holidays } = calendarData;
+    const { planning, employees: rawEmployees, daily_staff_count, luxembourg_holidays } = calendarData;
     const daysInMonth = new Date(planning.year, planning.month, 0).getDate();
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    // Extract unique job positions and types for filter options
+    const uniqueJobPositions = [...new Set(rawEmployees.map((e: any) => e.job_position).filter(Boolean))].sort();
+    const uniqueJobTypes = [...new Set(rawEmployees.map((e: any) => e.job_type).filter(Boolean))].sort();
+
+    // Apply filters to employees
+    const employees = rawEmployees.filter((employee: any) => {
+        // Visibility filter
+        if (filterVisibility === 'visible' && hiddenEmployees.has(employee.employee_id)) return false;
+        if (filterVisibility === 'hidden' && !hiddenEmployees.has(employee.employee_id)) return false;
+
+        // Job position filter
+        if (filterJobPositions.length > 0 && !filterJobPositions.includes(employee.job_position)) return false;
+
+        // Job type filter
+        if (filterJobTypes.length > 0 && !filterJobTypes.includes(employee.job_type)) return false;
+
+        // Hours status filter
+        if (filterHoursStatus !== 'all') {
+            const utilization = employee.max_monthly_hours > 0
+                ? (employee.total_work_hours / employee.max_monthly_hours) * 100
+                : 0;
+            if (filterHoursStatus === 'over_limit' && !employee.hours_exceeded) return false;
+            if (filterHoursStatus === 'under_50' && utilization >= 50) return false;
+            if (filterHoursStatus === 'ok' && (employee.hours_exceeded || utilization < 50)) return false;
+        }
+
+        // Name search filter
+        if (filterNameSearch.trim()) {
+            const search = filterNameSearch.toLowerCase().trim();
+            const matchesName = employee.name?.toLowerCase().includes(search);
+            const matchesAbbr = employee.abbreviation?.toLowerCase().includes(search);
+            if (!matchesName && !matchesAbbr) return false;
+        }
+
+        return true;
+    });
+
+    // Check if any filters are active
+    const hasActiveFilters = filterVisibility !== 'all' ||
+        filterJobPositions.length > 0 ||
+        filterJobTypes.length > 0 ||
+        filterHoursStatus !== 'all' ||
+        filterNameSearch.trim() !== '';
+
+    // Clear all filters function
+    const clearAllFilters = () => {
+        setFilterVisibility('all');
+        setFilterJobPositions([]);
+        setFilterJobTypes([]);
+        setFilterHoursStatus('all');
+        setFilterNameSearch('');
+    };
 
     const getWeekday = (day: number) => {
         const date = new Date(planning.year, planning.month - 1, day);
@@ -1694,8 +1975,180 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         disabled={analyzing}
                         label={analyzing ? "Analyse..." : "Analyser le planning"}
                     />
+                    <Button
+                        startIcon={exportingPdf ? <CircularProgress size={20} color="inherit" /> : <PictureAsPdfIcon />}
+                        onClick={handleExportPdf}
+                        color="error"
+                        variant="outlined"
+                        disabled={exportingPdf}
+                        label={exportingPdf ? "Export..." : "PDF"}
+                    />
+                    <Button
+                        startIcon={validating ? <CircularProgress size={20} color="inherit" /> : <CheckCircleIcon />}
+                        onClick={handleValidatePlanning}
+                        color="primary"
+                        variant="contained"
+                        disabled={validating}
+                        label={validating ? "Validation..." : "Valider"}
+                    />
+                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                        <InputLabel id="group-by-label">Grouper par</InputLabel>
+                        <Select
+                            labelId="group-by-label"
+                            value={groupBy}
+                            label="Grouper par"
+                            onChange={(e) => handleReorderEmployees(e.target.value)}
+                            disabled={reordering}
+                        >
+                            <MenuItem value="none">Aucun</MenuItem>
+                            <MenuItem value="job_position">Poste</MenuItem>
+                            <MenuItem value="job_type">Type</MenuItem>
+                            <MenuItem value="alphabetical">Alphabétique</MenuItem>
+                            <MenuItem value="hours">Heures</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Tooltip title="Rafraîchir les données">
+                        <IconButton
+                            onClick={handleRefreshData}
+                            disabled={refreshing || loading}
+                            color="primary"
+                        >
+                            {refreshing ? <CircularProgress size={24} /> : <RefreshIcon />}
+                        </IconButton>
+                    </Tooltip>
                 </Box>
             </Box>
+
+            {/* Filter Row */}
+            <Paper variant="outlined" sx={{ p: 1, mb: 1, display: 'inline-block' }}>
+                <Box
+                    component="span"
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 1,
+                        flexWrap: 'nowrap',
+                    }}
+                >
+                <FilterListIcon color="action" fontSize="small" />
+
+                {/* Visibility Filter */}
+                <FormControl size="small" variant="outlined" sx={{ width: 110 }}>
+                    <InputLabel id="filter-visibility-label">Visibilité</InputLabel>
+                    <Select
+                        labelId="filter-visibility-label"
+                        value={filterVisibility}
+                        label="Visibilité"
+                        onChange={(e) => setFilterVisibility(e.target.value as any)}
+                    >
+                        <MenuItem value="all">Tous</MenuItem>
+                        <MenuItem value="visible">Visibles</MenuItem>
+                        <MenuItem value="hidden">Masqués</MenuItem>
+                    </Select>
+                </FormControl>
+
+                {/* Job Position Filter (Multi-select) - only show if positions exist */}
+                {uniqueJobPositions.length > 0 && (
+                    <FormControl size="small" variant="outlined" sx={{ width: 130 }}>
+                        <InputLabel id="filter-position-label">Poste</InputLabel>
+                        <Select
+                            labelId="filter-position-label"
+                            multiple
+                            value={filterJobPositions}
+                            onChange={(e) => setFilterJobPositions(e.target.value as string[])}
+                            input={<OutlinedInput label="Poste" />}
+                            renderValue={(selected) => selected.length === 0 ? '' : `${selected.length} sél.`}
+                        >
+                            {uniqueJobPositions.map((position: string) => (
+                                <MenuItem key={position} value={position}>
+                                    <Checkbox checked={filterJobPositions.includes(position)} size="small" />
+                                    <ListItemText primary={position} />
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                )}
+
+                {/* Job Type Filter (Multi-select) - only show if types exist */}
+                {uniqueJobTypes.length > 0 && (
+                    <FormControl size="small" variant="outlined" sx={{ width: 120 }}>
+                        <InputLabel id="filter-type-label">Type</InputLabel>
+                        <Select
+                            labelId="filter-type-label"
+                            multiple
+                            value={filterJobTypes}
+                            onChange={(e) => setFilterJobTypes(e.target.value as string[])}
+                            input={<OutlinedInput label="Type" />}
+                            renderValue={(selected) => selected.length === 0 ? '' : `${selected.length} sél.`}
+                        >
+                            {uniqueJobTypes.map((type: string) => (
+                                <MenuItem key={type} value={type}>
+                                    <Checkbox checked={filterJobTypes.includes(type)} size="small" />
+                                    <ListItemText primary={type} />
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                )}
+
+                {/* Hours Status Filter */}
+                <FormControl size="small" variant="outlined" sx={{ width: 120 }}>
+                    <InputLabel id="filter-hours-label">Heures</InputLabel>
+                    <Select
+                        labelId="filter-hours-label"
+                        value={filterHoursStatus}
+                        label="Heures"
+                        onChange={(e) => setFilterHoursStatus(e.target.value as any)}
+                    >
+                        <MenuItem value="all">Tous</MenuItem>
+                        <MenuItem value="over_limit">Dépassement</MenuItem>
+                        <MenuItem value="under_50">&lt; 50%</MenuItem>
+                        <MenuItem value="ok">OK</MenuItem>
+                    </Select>
+                </FormControl>
+
+                {/* Name Search */}
+                <MuiTextField
+                    size="small"
+                    placeholder="Nom..."
+                    value={filterNameSearch}
+                    onChange={(e) => setFilterNameSearch(e.target.value)}
+                    sx={{ width: 130 }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon fontSize="small" />
+                            </InputAdornment>
+                        ),
+                        endAdornment: filterNameSearch && (
+                            <InputAdornment position="end">
+                                <IconButton size="small" onClick={() => setFilterNameSearch('')} sx={{ p: 0.25 }}>
+                                    <ClearIcon fontSize="small" />
+                                </IconButton>
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+
+                {/* Results count and clear button */}
+                {hasActiveFilters && (
+                    <>
+                        <Chip
+                            label={`${employees.length}/${rawEmployees.length}`}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                        />
+                        <Tooltip title="Effacer filtres">
+                            <IconButton size="small" onClick={clearAllFilters} color="error" sx={{ p: 0.25 }}>
+                                <ClearIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
+                </Box>
+            </Paper>
 
             <TableContainer
                 component={Paper}
@@ -1792,7 +2245,10 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {employees.map((employee: any) => {
+                        {/* Render employees with optional grouping */}
+                        {(() => {
+                            // Function to render a single employee row
+                            const renderEmployeeRow = (employee: any) => {
                             // Calculate total hours safely - filter out undefined/null shifts
                             let totalHours = 0;
                             if (employee.shifts && typeof employee.shifts === 'object') {
@@ -1817,6 +2273,8 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
 
                             const isSelected = selectedEmployeeId === employee.employee_id;
 
+                            const isHiddenEmployee = hiddenEmployees.has(employee.employee_id);
+
                             return (
                                 <TableRow
                                     key={employee.employee_id}
@@ -1831,7 +2289,8 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                                     ? theme.palette.grey[800]
                                                     : theme.palette.grey[200]
                                                 : theme.palette.background.paper,
-                                        opacity: textOpacity,
+                                        opacity: isHiddenEmployee ? 0.4 : textOpacity,
+                                        filter: isHiddenEmployee ? 'grayscale(80%)' : 'none',
                                         borderLeft: isSelected ? '4px solid #FFA726' : 'none',
                                         '&:hover': {
                                             backgroundColor: isSelected
@@ -1867,6 +2326,25 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                         })}
                                     >
                                         <Box display="flex" alignItems="flex-start" gap={1}>
+                                            <Tooltip title={hiddenEmployees.has(employee.employee_id) ? "Afficher l'employé" : "Masquer l'employé"}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleToggleEmployeeVisibility(employee.employee_id);
+                                                    }}
+                                                    disabled={togglingVisibility === employee.employee_id}
+                                                    sx={{ padding: 0.25 }}
+                                                >
+                                                    {togglingVisibility === employee.employee_id ? (
+                                                        <CircularProgress size={16} />
+                                                    ) : hiddenEmployees.has(employee.employee_id) ? (
+                                                        <VisibilityOffIcon fontSize="small" color="disabled" />
+                                                    ) : (
+                                                        <VisibilityIcon fontSize="small" />
+                                                    )}
+                                                </IconButton>
+                                            </Tooltip>
                                             <Checkbox
                                                 checked={isSelected}
                                                 onChange={() => setSelectedEmployeeId(isSelected ? null : employee.employee_id)}
@@ -1951,7 +2429,58 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     ))}
                                 </TableRow>
                             );
-                        })}
+                            };
+
+                            // If grouping is active with group headers (job_position, job_type)
+                            if (groupBy !== 'none' && groupedData?.groups) {
+                                return groupedData.groups.flatMap((group: { group: string; employees: any[] }, groupIndex: number) => {
+                                    const groupEmployees = group.employees || [];
+                                    return [
+                                        // Group Header Row
+                                        <TableRow key={`group-header-${groupIndex}`}>
+                                            <TableCell
+                                                colSpan={days.length + 1}
+                                                sx={(theme) => ({
+                                                    backgroundColor: theme.palette.mode === 'dark'
+                                                        ? theme.palette.grey[800]
+                                                        : theme.palette.grey[200],
+                                                    fontWeight: 'bold',
+                                                    fontSize: '0.9rem',
+                                                    py: 1,
+                                                    position: 'sticky',
+                                                    left: 0,
+                                                    zIndex: 997,
+                                                })}
+                                            >
+                                                <Box display="flex" alignItems="center" gap={1}>
+                                                    <Chip
+                                                        label={groupEmployees.length}
+                                                        size="small"
+                                                        color="primary"
+                                                    />
+                                                    <Typography variant="subtitle2">
+                                                        {group.group}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>,
+                                        // Employee rows for this group
+                                        ...groupEmployees.map((emp: any) => {
+                                            // Find the full employee data from the calendar employees array
+                                            // emp.id comes from API, employee_id is in calendar data
+                                            const employee = employees.find((e: any) =>
+                                                e.employee_id === emp.id || e.employee_id === emp.employee_id
+                                            ) || emp;
+                                            return renderEmployeeRow(employee);
+                                        })
+                                    ];
+                                });
+                            }
+
+                            // Default: no grouping or flat reordering (alphabetical, hours)
+                            // The employees array is already reordered by handleReorderEmployees for flat responses
+                            return employees.map((employee: any) => renderEmployeeRow(employee));
+                        })()}
                     </TableBody>
                 </Table>
             </TableContainer>
@@ -2633,6 +3162,165 @@ BH,2025-12-01,S13.5-22`}
                             {applyingSuggestions ? 'Application...' : 'Appliquer les suggestions'}
                         </Button>
                     )}
+                </DialogActions>
+            </Dialog>
+
+            {/* Validation Results Dialog */}
+            <Dialog
+                open={validationDialog}
+                onClose={() => setValidationDialog(false)}
+                maxWidth="lg"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <CheckCircleIcon color={validationResults?.employees_with_errors === 0 ? 'success' : 'error'} />
+                        <Typography variant="h6">
+                            Résultats de Validation - {planning?.month_name} {planning?.year}
+                        </Typography>
+                        {validationResults?.employees_with_errors === 0 ? (
+                            <Chip label="Valide" color="success" size="small" />
+                        ) : (
+                            <Chip label="Erreurs détectées" color="error" size="small" />
+                        )}
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {validationResults && (
+                        <Box display="flex" flexDirection="column" gap={3} mt={2}>
+                            {/* Summary Cards */}
+                            <Grid container spacing={2}>
+                                <Grid item xs={3}>
+                                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                        <Typography variant="h4" color="primary">
+                                            {validationResults.total_employees || 0}
+                                        </Typography>
+                                        <Typography variant="caption">Employés</Typography>
+                                    </Paper>
+                                </Grid>
+                                <Grid item xs={3}>
+                                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                        <Typography variant="h4" color="success.main">
+                                            {(validationResults.total_employees || 0) - (validationResults.employees_with_errors || 0) - (validationResults.employees_with_warnings || 0)}
+                                        </Typography>
+                                        <Typography variant="caption">OK</Typography>
+                                    </Paper>
+                                </Grid>
+                                <Grid item xs={3}>
+                                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                        <Typography variant="h4" color="warning.main">
+                                            {validationResults.employees_with_warnings || 0}
+                                        </Typography>
+                                        <Typography variant="caption">Avertissements</Typography>
+                                    </Paper>
+                                </Grid>
+                                <Grid item xs={3}>
+                                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                        <Typography variant="h4" color="error">
+                                            {validationResults.employees_with_errors || 0}
+                                        </Typography>
+                                        <Typography variant="caption">Erreurs</Typography>
+                                    </Paper>
+                                </Grid>
+                            </Grid>
+
+                            {/* Employee-by-Employee Results */}
+                            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                                <Table size="small" stickyHeader>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Employé</TableCell>
+                                            <TableCell align="center">Heures</TableCell>
+                                            <TableCell align="center">Jours consécutifs</TableCell>
+                                            <TableCell align="center">Soir→Matin</TableCell>
+                                            <TableCell>Statut</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {validationResults.results?.map((emp: any) => (
+                                            <TableRow
+                                                key={emp.employee_id}
+                                                sx={{
+                                                    backgroundColor: emp.has_errors
+                                                        ? 'rgba(244, 67, 54, 0.1)'
+                                                        : emp.has_warnings
+                                                            ? 'rgba(255, 152, 0, 0.1)'
+                                                            : 'inherit'
+                                                }}
+                                            >
+                                                <TableCell>
+                                                    <Box display="flex" alignItems="center" gap={1}>
+                                                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>
+                                                            {emp.abbreviation}
+                                                        </Avatar>
+                                                        <Typography variant="body2">{emp.name}</Typography>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    <Tooltip title={emp.checks?.hours?.message || ''}>
+                                                        <Box>
+                                                            <Typography
+                                                                color={emp.checks?.hours?.status === 'error' ? 'error' : 'inherit'}
+                                                                fontWeight={emp.checks?.hours?.status === 'error' ? 'bold' : 'normal'}
+                                                            >
+                                                                {emp.checks?.hours?.current?.toFixed(1)}h / {emp.checks?.hours?.limit?.toFixed(1)}h
+                                                            </Typography>
+                                                            {emp.checks?.hours?.status === 'error' && (
+                                                                <Typography variant="caption" color="error">
+                                                                    +{emp.checks?.hours?.over_by?.toFixed(1)}h
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Tooltip>
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    <Tooltip title={emp.checks?.consecutive_days?.message || ''}>
+                                                        <Chip
+                                                            label={`${emp.checks?.consecutive_days?.max_consecutive || 0}j`}
+                                                            size="small"
+                                                            color={emp.checks?.consecutive_days?.status === 'error' ? 'error' : 'default'}
+                                                        />
+                                                    </Tooltip>
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    <Tooltip title={emp.checks?.evening_morning?.message || ''}>
+                                                        {emp.checks?.evening_morning?.violations > 0 ? (
+                                                            <Chip
+                                                                label={emp.checks?.evening_morning?.violations}
+                                                                size="small"
+                                                                color="error"
+                                                            />
+                                                        ) : (
+                                                            <CheckCircleIcon color="success" fontSize="small" />
+                                                        )}
+                                                    </Tooltip>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {emp.has_errors ? (
+                                                        <Chip label="Erreur" size="small" color="error" />
+                                                    ) : emp.has_warnings ? (
+                                                        <Chip label="Avertissement" size="small" color="warning" />
+                                                    ) : (
+                                                        <Chip label="OK" size="small" color="success" />
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setValidationDialog(false)}>Fermer</Button>
+                    <Button
+                        onClick={handleRefreshData}
+                        startIcon={<RefreshIcon />}
+                        variant="outlined"
+                    >
+                        Actualiser
+                    </Button>
                 </DialogActions>
             </Dialog>
 
