@@ -58,7 +58,11 @@ import {
     ListItemText,
     OutlinedInput,
     InputAdornment,
+    Collapse,
 } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -253,8 +257,8 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
     // Filter shifts based on employee's contract hours
     // Show shifts within ±1 hour of contract (to account for breaks)
     const filteredShiftTypes = shiftTypes.filter(st => {
-        // Always show OFF, CP, CONG, FORM shifts
-        const nonWorkCodes = ['OFF', 'CP6.4', 'CP8', 'CONG', 'FORM'];
+        // Always show OFF, DES (desiderata), CP, CONG, FORM shifts
+        const nonWorkCodes = ['OFF', 'DES', 'CP6.4', 'CP8', 'CONG', 'FORM'];
         if (nonWorkCodes.includes(st.code)) {
             return true;
         }
@@ -1074,6 +1078,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     const [validationDialog, setValidationDialog] = useState(false);
     const [validationResults, setValidationResults] = useState<any>(null);
     const [validating, setValidating] = useState(false);
+    const [expandedValidationRows, setExpandedValidationRows] = useState<Set<number>>(new Set());
 
     // Grouping state
     const [groupBy, setGroupBy] = useState<'none' | 'job_position' | 'job_type' | 'alphabetical' | 'hours'>('none');
@@ -3225,87 +3230,196 @@ BH,2025-12-01,S13.5-22`}
                             </Grid>
 
                             {/* Employee-by-Employee Results */}
-                            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                            <TableContainer component={Paper} sx={{ maxHeight: 450 }}>
                                 <Table size="small" stickyHeader>
                                     <TableHead>
                                         <TableRow>
+                                            <TableCell width={30} />
                                             <TableCell>Employé</TableCell>
                                             <TableCell align="center">Heures</TableCell>
-                                            <TableCell align="center">Jours consécutifs</TableCell>
+                                            <TableCell align="center">Jours conséc.</TableCell>
                                             <TableCell align="center">Soir→Matin</TableCell>
+                                            <TableCell align="center">Congés</TableCell>
                                             <TableCell>Statut</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {validationResults.results?.map((emp: any) => (
-                                            <TableRow
-                                                key={emp.employee_id}
-                                                sx={{
-                                                    backgroundColor: emp.has_errors
-                                                        ? 'rgba(244, 67, 54, 0.1)'
-                                                        : emp.has_warnings
-                                                            ? 'rgba(255, 152, 0, 0.1)'
-                                                            : 'inherit'
-                                                }}
-                                            >
-                                                <TableCell>
-                                                    <Box display="flex" alignItems="center" gap={1}>
-                                                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>
-                                                            {emp.abbreviation}
-                                                        </Avatar>
-                                                        <Typography variant="body2">{emp.name}</Typography>
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <Tooltip title={emp.checks?.hours?.message || ''}>
-                                                        <Box>
-                                                            <Typography
-                                                                color={emp.checks?.hours?.status === 'error' ? 'error' : 'inherit'}
-                                                                fontWeight={emp.checks?.hours?.status === 'error' ? 'bold' : 'normal'}
-                                                            >
-                                                                {emp.checks?.hours?.current?.toFixed(1)}h / {emp.checks?.hours?.limit?.toFixed(1)}h
-                                                            </Typography>
-                                                            {emp.checks?.hours?.status === 'error' && (
-                                                                <Typography variant="caption" color="error">
-                                                                    +{emp.checks?.hours?.over_by?.toFixed(1)}h
-                                                                </Typography>
+                                        {validationResults.results?.map((emp: any) => {
+                                            const hasDetails = (emp.checks?.consecutive_days?.periods?.length > 0) ||
+                                                (emp.checks?.evening_morning?.details?.length > 0) ||
+                                                (emp.checks?.holiday_conflicts?.details?.length > 0);
+                                            const isExpanded = expandedValidationRows.has(emp.employee_id);
+
+                                            const toggleExpand = () => {
+                                                setExpandedValidationRows(prev => {
+                                                    const newSet = new Set(prev);
+                                                    if (newSet.has(emp.employee_id)) {
+                                                        newSet.delete(emp.employee_id);
+                                                    } else {
+                                                        newSet.add(emp.employee_id);
+                                                    }
+                                                    return newSet;
+                                                });
+                                            };
+
+                                            return (
+                                                <React.Fragment key={emp.employee_id}>
+                                                    <TableRow
+                                                        sx={{
+                                                            backgroundColor: emp.has_errors
+                                                                ? 'rgba(244, 67, 54, 0.1)'
+                                                                : emp.has_warnings
+                                                                    ? 'rgba(255, 152, 0, 0.1)'
+                                                                    : 'inherit',
+                                                            cursor: hasDetails ? 'pointer' : 'default',
+                                                            '& > *': { borderBottom: isExpanded ? 'none' : undefined }
+                                                        }}
+                                                        onClick={hasDetails ? toggleExpand : undefined}
+                                                    >
+                                                        <TableCell>
+                                                            {hasDetails && (
+                                                                <IconButton size="small" sx={{ p: 0 }}>
+                                                                    {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                                                </IconButton>
                                                             )}
-                                                        </Box>
-                                                    </Tooltip>
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <Tooltip title={emp.checks?.consecutive_days?.message || ''}>
-                                                        <Chip
-                                                            label={`${emp.checks?.consecutive_days?.max_consecutive || 0}j`}
-                                                            size="small"
-                                                            color={emp.checks?.consecutive_days?.status === 'error' ? 'error' : 'default'}
-                                                        />
-                                                    </Tooltip>
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <Tooltip title={emp.checks?.evening_morning?.message || ''}>
-                                                        {emp.checks?.evening_morning?.violations > 0 ? (
-                                                            <Chip
-                                                                label={emp.checks?.evening_morning?.violations}
-                                                                size="small"
-                                                                color="error"
-                                                            />
-                                                        ) : (
-                                                            <CheckCircleIcon color="success" fontSize="small" />
-                                                        )}
-                                                    </Tooltip>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {emp.has_errors ? (
-                                                        <Chip label="Erreur" size="small" color="error" />
-                                                    ) : emp.has_warnings ? (
-                                                        <Chip label="Avertissement" size="small" color="warning" />
-                                                    ) : (
-                                                        <Chip label="OK" size="small" color="success" />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Box display="flex" alignItems="center" gap={1}>
+                                                                <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>
+                                                                    {emp.abbreviation}
+                                                                </Avatar>
+                                                                <Typography variant="body2">{emp.name}</Typography>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell align="center">
+                                                            <Tooltip title={emp.checks?.hours?.message || ''}>
+                                                                <Box>
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        color={emp.checks?.hours?.status === 'error' ? 'error' : 'inherit'}
+                                                                        fontWeight={emp.checks?.hours?.status === 'error' ? 'bold' : 'normal'}
+                                                                    >
+                                                                        {emp.checks?.hours?.current?.toFixed(1)}h / {emp.checks?.hours?.limit?.toFixed(1)}h
+                                                                    </Typography>
+                                                                    {emp.checks?.hours?.status === 'error' && (
+                                                                        <Typography variant="caption" color="error">
+                                                                            +{emp.checks?.hours?.over_by?.toFixed(1)}h
+                                                                        </Typography>
+                                                                    )}
+                                                                </Box>
+                                                            </Tooltip>
+                                                        </TableCell>
+                                                        <TableCell align="center">
+                                                            {emp.checks?.consecutive_days?.status === 'error' ? (
+                                                                <Chip
+                                                                    label={`${emp.checks?.consecutive_days?.max_consecutive || 0}j`}
+                                                                    size="small"
+                                                                    color="error"
+                                                                    icon={<WarningAmberIcon />}
+                                                                />
+                                                            ) : (
+                                                                <Chip
+                                                                    label={`${emp.checks?.consecutive_days?.max_consecutive || 0}j`}
+                                                                    size="small"
+                                                                    color="default"
+                                                                />
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell align="center">
+                                                            {emp.checks?.evening_morning?.violations > 0 ? (
+                                                                <Chip
+                                                                    label={emp.checks?.evening_morning?.violations}
+                                                                    size="small"
+                                                                    color="error"
+                                                                    icon={<WarningAmberIcon />}
+                                                                />
+                                                            ) : (
+                                                                <CheckCircleIcon color="success" fontSize="small" />
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell align="center">
+                                                            {emp.checks?.holiday_conflicts?.violations > 0 ? (
+                                                                <Chip
+                                                                    label={emp.checks?.holiday_conflicts?.violations}
+                                                                    size="small"
+                                                                    color="warning"
+                                                                    icon={<WarningAmberIcon />}
+                                                                />
+                                                            ) : (
+                                                                <CheckCircleIcon color="success" fontSize="small" />
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {emp.has_errors ? (
+                                                                <Chip label="Erreur" size="small" color="error" />
+                                                            ) : emp.has_warnings ? (
+                                                                <Chip label="Avert." size="small" color="warning" />
+                                                            ) : (
+                                                                <Chip label="OK" size="small" color="success" />
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {/* Expandable Details Row */}
+                                                    {hasDetails && (
+                                                        <TableRow>
+                                                            <TableCell colSpan={7} sx={{ py: 0, backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                                                                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                                                                    <Box sx={{ py: 1, px: 2 }}>
+                                                                        <Grid container spacing={2}>
+                                                                            {/* Consecutive Days Details */}
+                                                                            {emp.checks?.consecutive_days?.periods?.length > 0 && (
+                                                                                <Grid item xs={12} md={4}>
+                                                                                    <Typography variant="subtitle2" color="error" gutterBottom>
+                                                                                        Jours consécutifs ({emp.checks.consecutive_days.periods.length})
+                                                                                    </Typography>
+                                                                                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                                                                                        {emp.checks.consecutive_days.periods.map((period: any, idx: number) => (
+                                                                                            <Typography component="li" variant="body2" key={idx}>
+                                                                                                {period.display}
+                                                                                            </Typography>
+                                                                                        ))}
+                                                                                    </Box>
+                                                                                </Grid>
+                                                                            )}
+                                                                            {/* Evening→Morning Details */}
+                                                                            {emp.checks?.evening_morning?.details?.length > 0 && (
+                                                                                <Grid item xs={12} md={4}>
+                                                                                    <Typography variant="subtitle2" color="error" gutterBottom>
+                                                                                        Soir→Matin ({emp.checks.evening_morning.details.length})
+                                                                                    </Typography>
+                                                                                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                                                                                        {emp.checks.evening_morning.details.map((detail: any, idx: number) => (
+                                                                                            <Typography component="li" variant="body2" key={idx}>
+                                                                                                {detail.display}
+                                                                                            </Typography>
+                                                                                        ))}
+                                                                                    </Box>
+                                                                                </Grid>
+                                                                            )}
+                                                                            {/* Holiday Conflicts Details */}
+                                                                            {emp.checks?.holiday_conflicts?.details?.length > 0 && (
+                                                                                <Grid item xs={12} md={4}>
+                                                                                    <Typography variant="subtitle2" color="warning.main" gutterBottom>
+                                                                                        Conflits congés ({emp.checks.holiday_conflicts.details.length})
+                                                                                    </Typography>
+                                                                                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                                                                                        {emp.checks.holiday_conflicts.details.map((detail: any, idx: number) => (
+                                                                                            <Typography component="li" variant="body2" key={idx}>
+                                                                                                {detail.display}
+                                                                                            </Typography>
+                                                                                        ))}
+                                                                                    </Box>
+                                                                                </Grid>
+                                                                            )}
+                                                                        </Grid>
+                                                                    </Box>
+                                                                </Collapse>
+                                                            </TableCell>
+                                                        </TableRow>
                                                     )}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                                </React.Fragment>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             </TableContainer>
