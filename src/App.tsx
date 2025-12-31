@@ -41,6 +41,7 @@ import {
   PlanningCreate,
   PlanningEdit,
 } from "./planning-better";
+import PlanningAuditLogPage from "./components/planning/PlanningAuditLogPage";
 import {
   WoundList,
   WoundEdit,
@@ -138,6 +139,7 @@ export const App = () => (
     />
     <CustomRoutes>
       <Route path="/tours-dashboard" element={<EnhancedToursDashboard />} />
+      <Route path="/planning/:id/audit-log" element={<PlanningAuditLogPage />} />
     </CustomRoutes>
   </Admin>
 );

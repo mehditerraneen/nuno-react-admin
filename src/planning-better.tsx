@@ -84,10 +84,13 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import HistoryIcon from '@mui/icons-material/History';
 import CircularProgress from '@mui/material/CircularProgress';
 import { SchoolCalendarUpdateBanner } from './components/SchoolCalendarUpdateBanner';
 import { OptimizerAIChat } from './components/OptimizerAIChat';
 import { authenticatedFetch } from './dataProvider';
+import { Link as RouterLink } from 'react-router-dom';
+import ShiftHistoryPopover from './components/planning/ShiftHistoryPopover';
 
 const statusChoices = [
     { id: 'DRAFT', name: 'Brouillon' },
@@ -234,6 +237,7 @@ interface ShiftCellProps {
     shiftTypes: any[];
     onUpdate: () => void;
     onOptimisticUpdate?: (employeeId: number, day: number, shiftData: any) => void;
+    planningStatus?: string;  // Planning status to show history icon when validated
 }
 
 const ShiftCell: React.FC<ShiftCellProps> = ({
@@ -247,12 +251,17 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
     shiftTypes,
     onUpdate,
     onOptimisticUpdate,
+    planningStatus,
 }) => {
     const [editing, setEditing] = useState(false);
     const [selectedShiftType, setSelectedShiftType] = useState(shift?.shift_type_id || '');
     const [isDragOver, setIsDragOver] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [historyAnchorEl, setHistoryAnchorEl] = useState<HTMLElement | null>(null);
     const notify = useNotify();
+
+    // Show history icon when planning is validated (not DRAFT)
+    const isValidated = planningStatus && planningStatus !== 'DRAFT';
 
     // Filter shifts based on employee's contract hours
     // Show shifts within ±1 hour of contract (to account for breaks)
@@ -510,45 +519,95 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
                 onDrop={handleDrop}
             >
             {shift ? (
-                <Tooltip title={
-                    `${shift.shift_code} (${shift.hours || 0}h)${shift.source ? ' - ' + getSourceInfo(shift.source).label : ''} | Glisser-déposer pour copier | Cliquer pour modifier`
-                }>
-                    <Chip
-                        label={
-                            <Box display="flex" alignItems="center" gap={0.5}>
-                                <span>{shift.shift_code}</span>
-                                {shift.source && getSourceInfo(shift.source).icon && (
-                                    <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                                        {getSourceInfo(shift.source).icon}
-                                    </span>
-                                )}
-                            </Box>
-                        }
-                        size="small"
-                        draggable
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        sx={{
-                            background: shift.color,
-                            color: '#fff',
-                            fontSize: '0.7rem',
-                            cursor: 'grab',
-                            borderLeft: shift.source ? `3px solid ${getSourceInfo(shift.source).borderColor}` : undefined,
-                            '&:active': {
-                                cursor: 'grabbing',
-                            },
-                        }}
-                        onDelete={handleDelete}
-                        deleteIcon={<DeleteIcon style={{ color: '#fff', fontSize: 16 }} />}
-                    />
-                </Tooltip>
+                <Box display="flex" alignItems="center" justifyContent="center" gap={0.25}>
+                    <Tooltip title={
+                        `${shift.shift_code} (${shift.hours || 0}h)${shift.source ? ' - ' + getSourceInfo(shift.source).label : ''} | Glisser-déposer pour copier | Cliquer pour modifier`
+                    }>
+                        <Chip
+                            label={
+                                <Box display="flex" alignItems="center" gap={0.5}>
+                                    <span>{shift.shift_code}</span>
+                                    {shift.source && getSourceInfo(shift.source).icon && (
+                                        <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                                            {getSourceInfo(shift.source).icon}
+                                        </span>
+                                    )}
+                                </Box>
+                            }
+                            size="small"
+                            draggable
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            sx={{
+                                background: shift.color,
+                                color: '#fff',
+                                fontSize: '0.7rem',
+                                cursor: 'grab',
+                                borderLeft: shift.source ? `3px solid ${getSourceInfo(shift.source).borderColor}` : undefined,
+                                '&:active': {
+                                    cursor: 'grabbing',
+                                },
+                            }}
+                            onDelete={handleDelete}
+                            deleteIcon={<DeleteIcon style={{ color: '#fff', fontSize: 16 }} />}
+                        />
+                    </Tooltip>
+                    {isValidated && (
+                        <Tooltip title="Voir l'historique des modifications">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setHistoryAnchorEl(e.currentTarget);
+                                }}
+                                sx={{
+                                    p: 0.25,
+                                    opacity: 0.6,
+                                    '&:hover': { opacity: 1 },
+                                }}
+                            >
+                                <HistoryIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Box>
             ) : (
-                <Tooltip title="Déposer un shift ici | Cliquer pour ajouter">
-                    <Typography variant="caption" color="textSecondary">
-                        +
-                    </Typography>
-                </Tooltip>
+                <Box display="flex" alignItems="center" justifyContent="center" gap={0.25}>
+                    <Tooltip title="Déposer un shift ici | Cliquer pour ajouter">
+                        <Typography variant="caption" color="textSecondary">
+                            +
+                        </Typography>
+                    </Tooltip>
+                    {isValidated && (
+                        <Tooltip title="Voir l'historique des modifications">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setHistoryAnchorEl(e.currentTarget);
+                                }}
+                                sx={{
+                                    p: 0.25,
+                                    opacity: 0.4,
+                                    '&:hover': { opacity: 1 },
+                                }}
+                            >
+                                <HistoryIcon sx={{ fontSize: 12 }} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Box>
             )}
+
+            {/* History Popover */}
+            <ShiftHistoryPopover
+                anchorEl={historyAnchorEl}
+                onClose={() => setHistoryAnchorEl(null)}
+                planningId={planningId}
+                employeeId={employeeId}
+                employeeName={employeeName}
+                date={date}
+            />
             </TableCell>
         </Tooltip>
     );
@@ -1929,12 +1988,94 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         return luxembourg_holidays && luxembourg_holidays[day];
     };
 
+    // Status change handler
+    const handleStatusChange = async (newStatus: string) => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update status');
+            }
+
+            notify(`Statut changé en ${newStatus === 'DRAFT' ? 'Brouillon' : newStatus === 'PUBLISHED' ? 'Publié' : 'Verrouillé'}`, { type: 'success' });
+            loadData(); // Reload to get updated status
+        } catch (error) {
+            console.error('Error updating status:', error);
+            notify('Erreur lors du changement de statut', { type: 'error' });
+        }
+    };
+
+    // Status chip color and label
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case 'DRAFT':
+                return { color: 'default' as const, label: 'Brouillon', icon: '📝' };
+            case 'PUBLISHED':
+                return { color: 'success' as const, label: 'Publié', icon: '✅' };
+            case 'LOCKED':
+                return { color: 'error' as const, label: 'Verrouillé', icon: '🔒' };
+            default:
+                return { color: 'default' as const, label: status, icon: '' };
+        }
+    };
+
+    const statusConfig = getStatusConfig(planning.status);
+
     return (
         <Box>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">
-                    {planning.month_name} {planning.year}
-                </Typography>
+                <Box display="flex" alignItems="center" gap={2}>
+                    <Typography variant="h6">
+                        {planning.month_name} {planning.year}
+                    </Typography>
+                    {/* Status indicator with dropdown */}
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <Select
+                            value={planning.status}
+                            onChange={(e) => handleStatusChange(e.target.value)}
+                            renderValue={(value) => (
+                                <Chip
+                                    label={`${getStatusConfig(value).icon} ${getStatusConfig(value).label}`}
+                                    color={getStatusConfig(value).color}
+                                    size="small"
+                                    sx={{ fontWeight: 'bold' }}
+                                />
+                            )}
+                            sx={{
+                                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                                '& .MuiSelect-select': { py: 0.5 }
+                            }}
+                        >
+                            <MenuItem value="DRAFT">
+                                <Chip label="📝 Brouillon" color="default" size="small" sx={{ mr: 1 }} />
+                                Mode édition libre
+                            </MenuItem>
+                            <MenuItem value="PUBLISHED">
+                                <Chip label="✅ Publié" color="success" size="small" sx={{ mr: 1 }} />
+                                Modifications trackées
+                            </MenuItem>
+                            <MenuItem value="LOCKED">
+                                <Chip label="🔒 Verrouillé" color="error" size="small" sx={{ mr: 1 }} />
+                                Planning finalisé
+                            </MenuItem>
+                        </Select>
+                    </FormControl>
+                    {planning.status !== 'DRAFT' && (
+                        <Tooltip title="Les modifications sont enregistrées dans l'historique">
+                            <Chip
+                                icon={<HistoryIcon />}
+                                label="Suivi actif"
+                                color="info"
+                                size="small"
+                                variant="outlined"
+                            />
+                        </Tooltip>
+                    )}
+                </Box>
                 <Box display="flex" gap={1}>
                     <Button
                         startIcon={<AddIcon />}
@@ -1988,6 +2129,16 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         disabled={exportingPdf}
                         label={exportingPdf ? "Export..." : "PDF"}
                     />
+                    {planning?.status && planning.status !== 'DRAFT' && (
+                        <Button
+                            startIcon={<HistoryIcon />}
+                            component={RouterLink}
+                            to={`/planning/${planningId}/audit-log`}
+                            color="info"
+                            variant="outlined"
+                            label="Historique"
+                        />
+                    )}
                     <Button
                         startIcon={validating ? <CircularProgress size={20} color="inherit" /> : <CheckCircleIcon />}
                         onClick={handleValidatePlanning}
@@ -2430,6 +2581,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             shiftTypes={shiftTypes}
                                             onUpdate={loadData}
                                             onOptimisticUpdate={updateShiftOptimistically}
+                                            planningStatus={planning.status}
                                         />
                                     ))}
                                 </TableRow>

@@ -2448,4 +2448,75 @@ export const dataProvider: MyDataProvider = {
 
     return response.json();
   },
+
+  // ============ Planning Audit API Methods ============
+
+  getCellHistory: async (
+    planningId: Identifier,
+    employeeId: Identifier,
+    date: string
+  ) => {
+    const url = `${apiUrl}/planning/monthly-planning/${planningId}/cell-history/${employeeId}/${date}`;
+    console.log("📜 Getting cell history:", url);
+
+    const response = await authenticatedFetch(url);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch cell history");
+    }
+
+    return response.json();
+  },
+
+  getPlanningAuditLog: async (
+    planningId: Identifier,
+    params?: {
+      page?: number;
+      pageSize?: number;
+      employeeId?: number;
+      dateFrom?: string;
+      dateTo?: string;
+      action?: string;
+      changedBy?: number;
+    }
+  ) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.pageSize)
+      queryParams.append("page_size", params.pageSize.toString());
+    if (params?.employeeId)
+      queryParams.append("employee_id", params.employeeId.toString());
+    if (params?.dateFrom) queryParams.append("date_from", params.dateFrom);
+    if (params?.dateTo) queryParams.append("date_to", params.dateTo);
+    if (params?.action) queryParams.append("action", params.action);
+    if (params?.changedBy)
+      queryParams.append("changed_by", params.changedBy.toString());
+
+    const url = `${apiUrl}/planning/monthly-planning/${planningId}/audit-log?${queryParams.toString()}`;
+    console.log("📋 Getting planning audit log:", url);
+
+    const response = await authenticatedFetch(url);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch planning audit log");
+    }
+
+    return response.json();
+  },
+
+  updateAuditReason: async (auditId: Identifier, changeReason: string) => {
+    const url = `${apiUrl}/planning/audit-log/${auditId}/reason`;
+    console.log("✏️ Updating audit reason:", url);
+
+    const response = await authenticatedFetch(url, {
+      method: "PATCH",
+      body: JSON.stringify({ change_reason: changeReason }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update audit reason");
+    }
+
+    return response.json();
+  },
 };
