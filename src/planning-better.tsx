@@ -1917,6 +1917,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     if (!calendarData) return <Typography>Aucune donnée</Typography>;
 
     const { planning, employees: rawEmployees, daily_staff_count, luxembourg_holidays } = calendarData;
+    const isDraft = planning?.status === 'DRAFT';
     const daysInMonth = new Date(planning.year, planning.month, 0).getDate();
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
@@ -2084,35 +2085,54 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         variant="outlined"
                         label="Créer un shift"
                     />
-                    <Button
-                        startIcon={<AutoFixHighIcon />}
-                        onClick={() => setTemplateDialog(true)}
-                        color="primary"
-                        variant="contained"
-                        label="Générer planning automatique"
-                    />
-                    <Button
-                        startIcon={<AutoAwesomeIcon />}
-                        onClick={() => setOptimizeDialog(true)}
-                        color="success"
-                        variant="contained"
-                        label="Optimiser avec OR-Tools"
-                    />
-                    <Button
-                        startIcon={<DeleteSweepIcon />}
-                        onClick={handleClearOptimizerShifts}
-                        color="warning"
-                        variant="outlined"
-                        disabled={clearing}
-                        label={clearing ? "Effacement..." : "Effacer shifts auto"}
-                    />
-                    <Button
-                        startIcon={<UploadFileIcon />}
-                        onClick={() => setCsvImportDialog(true)}
-                        color="info"
-                        variant="outlined"
-                        label="Importer CSV"
-                    />
+                    <Tooltip title={!isDraft ? "Disponible uniquement en mode Brouillon" : ""}>
+                        <span>
+                            <Button
+                                startIcon={<AutoFixHighIcon />}
+                                onClick={() => setTemplateDialog(true)}
+                                color="primary"
+                                variant="contained"
+                                disabled={!isDraft}
+                                label="Générer planning automatique"
+                            />
+                        </span>
+                    </Tooltip>
+                    <Tooltip title={!isDraft ? "Disponible uniquement en mode Brouillon" : ""}>
+                        <span>
+                            <Button
+                                startIcon={<AutoAwesomeIcon />}
+                                onClick={() => setOptimizeDialog(true)}
+                                color="success"
+                                variant="contained"
+                                disabled={!isDraft}
+                                label="Optimiser avec OR-Tools"
+                            />
+                        </span>
+                    </Tooltip>
+                    <Tooltip title={!isDraft ? "Disponible uniquement en mode Brouillon" : ""}>
+                        <span>
+                            <Button
+                                startIcon={<DeleteSweepIcon />}
+                                onClick={handleClearOptimizerShifts}
+                                color="warning"
+                                variant="outlined"
+                                disabled={!isDraft || clearing}
+                                label={clearing ? "Effacement..." : "Effacer shifts auto"}
+                            />
+                        </span>
+                    </Tooltip>
+                    <Tooltip title={!isDraft ? "Disponible uniquement en mode Brouillon" : ""}>
+                        <span>
+                            <Button
+                                startIcon={<UploadFileIcon />}
+                                onClick={() => setCsvImportDialog(true)}
+                                color="info"
+                                variant="outlined"
+                                disabled={!isDraft}
+                                label="Importer CSV"
+                            />
+                        </span>
+                    </Tooltip>
                     <Button
                         startIcon={<AssessmentIcon />}
                         onClick={handleAnalyzePlanning}
