@@ -2076,6 +2076,19 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                             />
                         </Tooltip>
                     )}
+                    {/* Optimization info display */}
+                    {planning.last_optimized_at && (
+                        <Tooltip title={`Algorithme: ${planning.last_optimization_algorithm || 'CP-SAT'} | Durée: ${planning.last_optimization_duration?.toFixed(1) || '?'}s`}>
+                            <Chip
+                                icon={<AutoAwesomeIcon />}
+                                label={`Optimisé ${new Date(planning.last_optimized_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
+                                color="success"
+                                size="small"
+                                variant="outlined"
+                                sx={{ ml: 1 }}
+                            />
+                        </Tooltip>
+                    )}
                 </Box>
                 <Box display="flex" gap={1}>
                     <Button
