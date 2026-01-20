@@ -85,6 +85,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import HistoryIcon from '@mui/icons-material/History';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import CircularProgress from '@mui/material/CircularProgress';
 import { SchoolCalendarUpdateBanner } from './components/SchoolCalendarUpdateBanner';
 import { OptimizerAIChat } from './components/OptimizerAIChat';
@@ -1160,6 +1162,9 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     const [filterJobTypes, setFilterJobTypes] = useState<string[]>([]);
     const [filterHoursStatus, setFilterHoursStatus] = useState<'all' | 'over_limit' | 'under_50' | 'ok'>('all');
     const [filterNameSearch, setFilterNameSearch] = useState('');
+
+    // Sticky employee column state
+    const [stickyEmployeeColumn, setStickyEmployeeColumn] = useState(true);
 
     useEffect(() => {
         loadData();
@@ -2339,6 +2344,18 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         </Tooltip>
                     </>
                 )}
+
+                {/* Pin/Unpin employee column button */}
+                <Tooltip title={stickyEmployeeColumn ? "Libérer colonne Employé" : "Fixer colonne Employé"}>
+                    <IconButton
+                        size="small"
+                        onClick={() => setStickyEmployeeColumn(!stickyEmployeeColumn)}
+                        color={stickyEmployeeColumn ? "primary" : "default"}
+                        sx={{ p: 0.5, ml: 1 }}
+                    >
+                        {stickyEmployeeColumn ? <PushPinIcon fontSize="small" /> : <PushPinOutlinedIcon fontSize="small" />}
+                    </IconButton>
+                </Tooltip>
                 </Box>
             </Paper>
 
@@ -2356,17 +2373,17 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         <TableRow>
                             <TableCell
                                 sx={(theme) => ({
-                                    position: 'sticky',
-                                    left: 0,
+                                    position: stickyEmployeeColumn ? 'sticky' : 'static',
+                                    left: stickyEmployeeColumn ? 0 : 'auto',
                                     backgroundColor: theme.palette.background.paper,
-                                    zIndex: 999,
+                                    zIndex: stickyEmployeeColumn ? 999 : 'auto',
                                     fontWeight: 'bold',
                                     minWidth: 220,
                                     maxWidth: 220,
                                     width: 220,
                                     borderRight: `2px solid ${theme.palette.divider}`,
                                     padding: '8px',
-                                    boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                                    boxShadow: stickyEmployeeColumn ? '2px 0 4px rgba(0,0,0,0.1)' : 'none',
                                 })}
                             >
                                 Employé
@@ -2532,14 +2549,14 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                 >
                                     <TableCell
                                         sx={(theme) => ({
-                                            position: 'sticky',
-                                            left: 0,
+                                            position: stickyEmployeeColumn ? 'sticky' : 'static',
+                                            left: stickyEmployeeColumn ? 0 : 'auto',
                                             backgroundColor: isInactive
                                                 ? theme.palette.mode === 'dark'
                                                     ? theme.palette.grey[800]
                                                     : theme.palette.grey[200]
                                                 : theme.palette.background.paper,
-                                            zIndex: 998,
+                                            zIndex: stickyEmployeeColumn ? 998 : 'auto',
                                             fontWeight: 'bold',
                                             minWidth: 220,
                                             maxWidth: 220,
@@ -2547,7 +2564,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             borderRight: `2px solid ${theme.palette.divider}`,
                                             verticalAlign: 'top',
                                             padding: '8px',
-                                            boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                                            boxShadow: stickyEmployeeColumn ? '2px 0 4px rgba(0,0,0,0.1)' : 'none',
                                         })}
                                     >
                                         <Box display="flex" alignItems="flex-start" gap={1}>
@@ -2717,9 +2734,9 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                                     fontWeight: 'bold',
                                                     fontSize: '0.9rem',
                                                     py: 1,
-                                                    position: 'sticky',
-                                                    left: 0,
-                                                    zIndex: 997,
+                                                    position: stickyEmployeeColumn ? 'sticky' : 'static',
+                                                    left: stickyEmployeeColumn ? 0 : 'auto',
+                                                    zIndex: stickyEmployeeColumn ? 997 : 'auto',
                                                 })}
                                             >
                                                 <Box display="flex" alignItems="center" gap={1}>
