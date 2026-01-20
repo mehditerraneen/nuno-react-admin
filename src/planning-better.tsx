@@ -1925,7 +1925,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     const uniqueJobPositions = [...new Set(rawEmployees.map((e: any) => e.job_position).filter(Boolean))].sort();
     const uniqueJobTypes = [...new Set(rawEmployees.map((e: any) => e.job_type).filter(Boolean))].sort();
 
-    // Apply filters to employees
+    // Apply filters to employees and sort by employee_id for consistent ordering
     const employees = rawEmployees.filter((employee: any) => {
         // Visibility filter
         if (filterVisibility === 'visible' && hiddenEmployees.has(employee.employee_id)) return false;
@@ -1956,7 +1956,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         }
 
         return true;
-    });
+    }).sort((a: any, b: any) => a.employee_id - b.employee_id);
 
     // Check if any filters are active
     const hasActiveFilters = filterVisibility !== 'all' ||
@@ -2624,7 +2624,10 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                             // If grouping is active with group headers (job_position, job_type)
                             if (groupBy !== 'none' && groupedData?.groups) {
                                 return groupedData.groups.flatMap((group: { group: string; employees: any[] }, groupIndex: number) => {
-                                    const groupEmployees = group.employees || [];
+                                    // Sort employees within each group by employee_id for consistent ordering
+                                    const groupEmployees = (group.employees || []).sort((a: any, b: any) =>
+                                        (a.id || a.employee_id) - (b.id || b.employee_id)
+                                    );
                                     return [
                                         // Group Header Row
                                         <TableRow key={`group-header-${groupIndex}`}>
