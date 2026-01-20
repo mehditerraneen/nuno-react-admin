@@ -2363,27 +2363,31 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 component={Paper}
                 sx={{
                     maxHeight: '70vh',
-                    overflowX: 'auto',
-                    overflowY: 'auto',
+                    overflow: 'auto',
                     position: 'relative',
                 }}
             >
-                <Table stickyHeader size="small" sx={{ minWidth: 'max-content', borderCollapse: 'separate' }}>
+                <Table stickyHeader size="small" sx={{ minWidth: 'max-content', borderCollapse: 'separate', borderSpacing: 0 }}>
                     <TableHead>
                         <TableRow>
                             <TableCell
+                                style={stickyEmployeeColumn ? {
+                                    position: 'sticky',
+                                    left: 0,
+                                    zIndex: 3,
+                                    backgroundColor: '#fff',
+                                    boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
+                                } : undefined}
                                 sx={(theme) => ({
-                                    position: stickyEmployeeColumn ? 'sticky' : 'relative',
-                                    left: stickyEmployeeColumn ? 0 : 'auto',
-                                    backgroundColor: `${theme.palette.background.paper} !important`,
-                                    zIndex: stickyEmployeeColumn ? 1000 : 'auto',
                                     fontWeight: 'bold',
                                     minWidth: 220,
                                     maxWidth: 220,
                                     width: 220,
                                     borderRight: `2px solid ${theme.palette.divider}`,
                                     padding: '8px',
-                                    boxShadow: stickyEmployeeColumn ? '4px 0 8px rgba(0,0,0,0.15)' : 'none',
+                                    ...(stickyEmployeeColumn && {
+                                        backgroundColor: theme.palette.mode === 'dark' ? '#121212' : '#fff',
+                                    }),
                                 })}
                             >
                                 Employé
@@ -2548,15 +2552,14 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     })}
                                 >
                                     <TableCell
+                                        style={stickyEmployeeColumn ? {
+                                            position: 'sticky',
+                                            left: 0,
+                                            zIndex: 2,
+                                            backgroundColor: isInactive ? '#e0e0e0' : '#fff',
+                                            boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
+                                        } : undefined}
                                         sx={(theme) => ({
-                                            position: stickyEmployeeColumn ? 'sticky' : 'relative',
-                                            left: stickyEmployeeColumn ? 0 : 'auto',
-                                            backgroundColor: isInactive
-                                                ? theme.palette.mode === 'dark'
-                                                    ? `${theme.palette.grey[800]} !important`
-                                                    : `${theme.palette.grey[200]} !important`
-                                                : `${theme.palette.background.paper} !important`,
-                                            zIndex: stickyEmployeeColumn ? 999 : 'auto',
                                             fontWeight: 'bold',
                                             minWidth: 220,
                                             maxWidth: 220,
@@ -2564,7 +2567,11 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             borderRight: `2px solid ${theme.palette.divider}`,
                                             verticalAlign: 'top',
                                             padding: '8px',
-                                            boxShadow: stickyEmployeeColumn ? '4px 0 8px rgba(0,0,0,0.15)' : 'none',
+                                            ...(stickyEmployeeColumn && {
+                                                backgroundColor: isInactive
+                                                    ? theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'
+                                                    : theme.palette.mode === 'dark' ? '#121212' : '#fff',
+                                            }),
                                         })}
                                     >
                                         <Box display="flex" alignItems="flex-start" gap={1}>
@@ -2729,14 +2736,11 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                                 colSpan={days.length + prevWeekDays.length + 1}
                                                 sx={(theme) => ({
                                                     backgroundColor: theme.palette.mode === 'dark'
-                                                        ? `${theme.palette.grey[800]} !important`
-                                                        : `${theme.palette.grey[200]} !important`,
+                                                        ? theme.palette.grey[800]
+                                                        : theme.palette.grey[200],
                                                     fontWeight: 'bold',
                                                     fontSize: '0.9rem',
                                                     py: 1,
-                                                    position: stickyEmployeeColumn ? 'sticky' : 'relative',
-                                                    left: stickyEmployeeColumn ? 0 : 'auto',
-                                                    zIndex: stickyEmployeeColumn ? 998 : 'auto',
                                                 })}
                                             >
                                                 <Box display="flex" alignItems="center" gap={1}>
