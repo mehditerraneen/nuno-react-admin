@@ -2375,7 +2375,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                             {prevWeekDays.map((prevDay) => {
                                 const prevDate = new Date(previous_week.year, previous_week.month - 1, prevDay);
                                 const prevWeekday = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][prevDate.getDay()];
-                                const isPrevWeekend = prevDate.getDay() === 0 || prevDate.getDay() === 6;
+                                const isLastPrevDay = prevDay === prevWeekDays[prevWeekDays.length - 1];
                                 return (
                                     <TableCell
                                         key={`prev-${prevDay}`}
@@ -2386,19 +2386,21 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             background: theme.palette.mode === 'dark'
                                                 ? theme.palette.grey[900]
                                                 : theme.palette.grey[300],
-                                            opacity: 0.7,
                                             fontWeight: 'bold',
-                                            borderRight: prevDay === prevWeekDays[prevWeekDays.length - 1]
-                                                ? `3px solid ${theme.palette.primary.main}`
+                                            // Use box-shadow for separator instead of border to avoid opacity issues
+                                            boxShadow: isLastPrevDay
+                                                ? 'inset -4px 0 0 0 #1976d2'  // Blue separator
                                                 : undefined,
                                         })}
                                     >
-                                        <Typography variant="caption" display="block" sx={{ fontSize: '0.65rem' }}>
-                                            {prevWeekday}
-                                        </Typography>
-                                        <Typography variant="body2" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
-                                            {prevDay}/{previous_week.month}
-                                        </Typography>
+                                        <Box sx={{ opacity: 0.6 }}>
+                                            <Typography variant="caption" display="block" sx={{ fontSize: '0.65rem' }}>
+                                                {prevWeekday}
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                                {prevDay}/{previous_week.month}
+                                            </Typography>
+                                        </Box>
                                     </TableCell>
                                 );
                             })}
@@ -2638,6 +2640,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     {/* Previous week cells (readonly context) */}
                                     {prevWeekDays.map((prevDay) => {
                                         const prevShift = previous_week?.shifts?.[employee.employee_id]?.[prevDay];
+                                        const isLastPrevDay = prevDay === prevWeekDays[prevWeekDays.length - 1];
                                         return (
                                             <TableCell
                                                 key={`prev-${prevDay}`}
@@ -2649,28 +2652,29 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                                     background: theme.palette.mode === 'dark'
                                                         ? theme.palette.grey[900]
                                                         : theme.palette.grey[300],
-                                                    opacity: 0.7,
-                                                    borderRight: prevDay === prevWeekDays[prevWeekDays.length - 1]
-                                                        ? `3px solid ${theme.palette.primary.main}`
+                                                    // Use box-shadow for separator instead of border
+                                                    boxShadow: isLastPrevDay
+                                                        ? 'inset -4px 0 0 0 #1976d2'  // Blue separator
                                                         : undefined,
                                                 })}
                                             >
-                                                {prevShift ? (
-                                                    <Chip
-                                                        label={prevShift.shift_code}
-                                                        size="small"
-                                                        sx={{
-                                                            backgroundColor: prevShift.color || '#CCCCCC',
-                                                            color: '#000',
-                                                            fontWeight: 'bold',
-                                                            fontSize: '0.65rem',
-                                                            height: 20,
-                                                            opacity: 0.8,
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <Typography variant="caption" color="text.disabled">-</Typography>
-                                                )}
+                                                <Box sx={{ opacity: 0.6 }}>
+                                                    {prevShift ? (
+                                                        <Chip
+                                                            label={prevShift.shift_code}
+                                                            size="small"
+                                                            sx={{
+                                                                backgroundColor: prevShift.color || '#CCCCCC',
+                                                                color: '#000',
+                                                                fontWeight: 'bold',
+                                                                fontSize: '0.65rem',
+                                                                height: 20,
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <Typography variant="caption" color="text.disabled">-</Typography>
+                                                    )}
+                                                </Box>
                                             </TableCell>
                                         );
                                     })}
