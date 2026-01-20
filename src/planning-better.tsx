@@ -2368,22 +2368,22 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                     position: 'relative',
                 }}
             >
-                <Table stickyHeader size="small" sx={{ minWidth: 'max-content' }}>
+                <Table stickyHeader size="small" sx={{ minWidth: 'max-content', borderCollapse: 'separate' }}>
                     <TableHead>
                         <TableRow>
                             <TableCell
                                 sx={(theme) => ({
-                                    position: stickyEmployeeColumn ? 'sticky' : 'static',
+                                    position: stickyEmployeeColumn ? 'sticky' : 'relative',
                                     left: stickyEmployeeColumn ? 0 : 'auto',
-                                    backgroundColor: theme.palette.background.paper,
-                                    zIndex: stickyEmployeeColumn ? 999 : 'auto',
+                                    backgroundColor: `${theme.palette.background.paper} !important`,
+                                    zIndex: stickyEmployeeColumn ? 1000 : 'auto',
                                     fontWeight: 'bold',
                                     minWidth: 220,
                                     maxWidth: 220,
                                     width: 220,
                                     borderRight: `2px solid ${theme.palette.divider}`,
                                     padding: '8px',
-                                    boxShadow: stickyEmployeeColumn ? '2px 0 4px rgba(0,0,0,0.1)' : 'none',
+                                    boxShadow: stickyEmployeeColumn ? '4px 0 8px rgba(0,0,0,0.15)' : 'none',
                                 })}
                             >
                                 Employé
@@ -2549,14 +2549,14 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                 >
                                     <TableCell
                                         sx={(theme) => ({
-                                            position: stickyEmployeeColumn ? 'sticky' : 'static',
+                                            position: stickyEmployeeColumn ? 'sticky' : 'relative',
                                             left: stickyEmployeeColumn ? 0 : 'auto',
                                             backgroundColor: isInactive
                                                 ? theme.palette.mode === 'dark'
-                                                    ? theme.palette.grey[800]
-                                                    : theme.palette.grey[200]
-                                                : theme.palette.background.paper,
-                                            zIndex: stickyEmployeeColumn ? 998 : 'auto',
+                                                    ? `${theme.palette.grey[800]} !important`
+                                                    : `${theme.palette.grey[200]} !important`
+                                                : `${theme.palette.background.paper} !important`,
+                                            zIndex: stickyEmployeeColumn ? 999 : 'auto',
                                             fontWeight: 'bold',
                                             minWidth: 220,
                                             maxWidth: 220,
@@ -2564,7 +2564,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             borderRight: `2px solid ${theme.palette.divider}`,
                                             verticalAlign: 'top',
                                             padding: '8px',
-                                            boxShadow: stickyEmployeeColumn ? '2px 0 4px rgba(0,0,0,0.1)' : 'none',
+                                            boxShadow: stickyEmployeeColumn ? '4px 0 8px rgba(0,0,0,0.15)' : 'none',
                                         })}
                                     >
                                         <Box display="flex" alignItems="flex-start" gap={1}>
@@ -2729,14 +2729,14 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                                 colSpan={days.length + prevWeekDays.length + 1}
                                                 sx={(theme) => ({
                                                     backgroundColor: theme.palette.mode === 'dark'
-                                                        ? theme.palette.grey[800]
-                                                        : theme.palette.grey[200],
+                                                        ? `${theme.palette.grey[800]} !important`
+                                                        : `${theme.palette.grey[200]} !important`,
                                                     fontWeight: 'bold',
                                                     fontSize: '0.9rem',
                                                     py: 1,
-                                                    position: stickyEmployeeColumn ? 'sticky' : 'static',
+                                                    position: stickyEmployeeColumn ? 'sticky' : 'relative',
                                                     left: stickyEmployeeColumn ? 0 : 'auto',
-                                                    zIndex: stickyEmployeeColumn ? 997 : 'auto',
+                                                    zIndex: stickyEmployeeColumn ? 998 : 'auto',
                                                 })}
                                             >
                                                 <Box display="flex" alignItems="center" gap={1}>
