@@ -1916,10 +1916,13 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     if (loading) return <Loading />;
     if (!calendarData) return <Typography>Aucune donnée</Typography>;
 
-    const { planning, employees: rawEmployees, daily_staff_count, luxembourg_holidays } = calendarData;
+    const { planning, employees: rawEmployees, daily_staff_count, luxembourg_holidays, previous_week } = calendarData;
     const isDraft = planning?.status === 'DRAFT';
     const daysInMonth = new Date(planning.year, planning.month, 0).getDate();
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    // Previous week days for context display
+    const prevWeekDays = previous_week?.days || [];
 
     // Extract unique job positions and types for filter options
     const uniqueJobPositions = [...new Set(rawEmployees.map((e: any) => e.job_position).filter(Boolean))].sort();
@@ -2368,6 +2371,37 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                             >
                                 Employé
                             </TableCell>
+                            {/* Previous week columns (grayed out, readonly context) */}
+                            {prevWeekDays.map((prevDay) => {
+                                const prevDate = new Date(previous_week.year, previous_week.month - 1, prevDay);
+                                const prevWeekday = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][prevDate.getDay()];
+                                const isPrevWeekend = prevDate.getDay() === 0 || prevDate.getDay() === 6;
+                                return (
+                                    <TableCell
+                                        key={`prev-${prevDay}`}
+                                        align="center"
+                                        sx={(theme) => ({
+                                            minWidth: 70,
+                                            maxWidth: 70,
+                                            background: theme.palette.mode === 'dark'
+                                                ? theme.palette.grey[900]
+                                                : theme.palette.grey[300],
+                                            opacity: 0.7,
+                                            fontWeight: 'bold',
+                                            borderRight: prevDay === prevWeekDays[prevWeekDays.length - 1]
+                                                ? `3px solid ${theme.palette.primary.main}`
+                                                : undefined,
+                                        })}
+                                    >
+                                        <Typography variant="caption" display="block" sx={{ fontSize: '0.65rem' }}>
+                                            {prevWeekday}
+                                        </Typography>
+                                        <Typography variant="body2" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                            {prevDay}/{previous_week.month}
+                                        </Typography>
+                                    </TableCell>
+                                );
+                            })}
                             {days.map((day) => {
                                 const staffCount = daily_staff_count?.[day] || {
                                     infirmier: 0,
@@ -2601,6 +2635,45 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             </Box>
                                         </Box>
                                     </TableCell>
+                                    {/* Previous week cells (readonly context) */}
+                                    {prevWeekDays.map((prevDay) => {
+                                        const prevShift = previous_week?.shifts?.[employee.employee_id]?.[prevDay];
+                                        return (
+                                            <TableCell
+                                                key={`prev-${prevDay}`}
+                                                align="center"
+                                                sx={(theme) => ({
+                                                    minWidth: 70,
+                                                    maxWidth: 70,
+                                                    padding: '4px',
+                                                    background: theme.palette.mode === 'dark'
+                                                        ? theme.palette.grey[900]
+                                                        : theme.palette.grey[300],
+                                                    opacity: 0.7,
+                                                    borderRight: prevDay === prevWeekDays[prevWeekDays.length - 1]
+                                                        ? `3px solid ${theme.palette.primary.main}`
+                                                        : undefined,
+                                                })}
+                                            >
+                                                {prevShift ? (
+                                                    <Chip
+                                                        label={prevShift.shift_code}
+                                                        size="small"
+                                                        sx={{
+                                                            backgroundColor: prevShift.color || '#CCCCCC',
+                                                            color: '#000',
+                                                            fontWeight: 'bold',
+                                                            fontSize: '0.65rem',
+                                                            height: 20,
+                                                            opacity: 0.8,
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Typography variant="caption" color="text.disabled">-</Typography>
+                                                )}
+                                            </TableCell>
+                                        );
+                                    })}
                                     {days.map((day) => (
                                         <ShiftCell
                                             key={day}
@@ -2632,7 +2705,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                         // Group Header Row
                                         <TableRow key={`group-header-${groupIndex}`}>
                                             <TableCell
-                                                colSpan={days.length + 1}
+                                                colSpan={days.length + prevWeekDays.length + 1}
                                                 sx={(theme) => ({
                                                     backgroundColor: theme.palette.mode === 'dark'
                                                         ? theme.palette.grey[800]
