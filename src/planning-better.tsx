@@ -87,6 +87,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import HistoryIcon from '@mui/icons-material/History';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import EmailIcon from '@mui/icons-material/Email';
 import CircularProgress from '@mui/material/CircularProgress';
 import { SchoolCalendarUpdateBanner } from './components/SchoolCalendarUpdateBanner';
 import { OptimizerAIChat } from './components/OptimizerAIChat';
@@ -1166,6 +1167,9 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
     // Sticky employee column state
     const [stickyEmployeeColumn, setStickyEmployeeColumn] = useState(true);
 
+    // Send email state
+    const [sendingEmail, setSendingEmail] = useState<number | null>(null);
+
     useEffect(() => {
         loadData();
     }, [planningId]);
@@ -1859,6 +1863,32 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
             notify(`Erreur: ${error.message}`, { type: 'error' });
         } finally {
             setTogglingVisibility(null);
+        }
+    };
+
+    // Send individual planning email handler
+    const handleSendPlanningEmail = async (employeeId: number, employeeName: string) => {
+        try {
+            setSendingEmail(employeeId);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/send-employee-planning/${employeeId}`,
+                { method: 'POST' }
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Échec de l\'envoi');
+            }
+
+            const result = await response.json();
+            notify(`Planning envoyé à ${result.email}`, { type: 'success' });
+        } catch (error: any) {
+            console.error('Error sending planning email:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+        } finally {
+            setSendingEmail(null);
         }
     };
 
@@ -2591,6 +2621,24 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                                         <VisibilityOffIcon fontSize="small" color="disabled" />
                                                     ) : (
                                                         <VisibilityIcon fontSize="small" />
+                                                    )}
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Envoyer planning par email">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSendPlanningEmail(employee.employee_id, employee.name);
+                                                    }}
+                                                    disabled={sendingEmail === employee.employee_id}
+                                                    sx={{ padding: 0.25 }}
+                                                    color="primary"
+                                                >
+                                                    {sendingEmail === employee.employee_id ? (
+                                                        <CircularProgress size={16} />
+                                                    ) : (
+                                                        <EmailIcon fontSize="small" />
                                                     )}
                                                 </IconButton>
                                             </Tooltip>
