@@ -62,45 +62,45 @@ import {
     styled,
 } from '@mui/material';
 
-// Sticky TableCell for fixed first column - using !important to override MUI stickyHeader
+// Sticky TableCell for fixed first column
 const StickyTableCell = styled(TableCell)(({ theme }) => ({
-    position: 'sticky',
-    left: 0,
-    backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
+    position: 'sticky !important' as any,
+    left: '0 !important' as any,
+    backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
     borderRight: `2px solid ${theme.palette.divider}`,
     minWidth: 220,
     maxWidth: 220,
     width: 220,
     boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
-    zIndex: 2,
     // Header cell: sticky both vertically (top) and horizontally (left)
     '&.MuiTableCell-head': {
-        zIndex: 3,
-        top: 0,
+        zIndex: '10 !important' as any, // Above other header cells (z-index 1)
+        top: '0 !important' as any,
+        backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
     },
     // Body cells: sticky only horizontally (left)
     '&.MuiTableCell-body': {
-        zIndex: 2,
+        zIndex: '5 !important' as any, // Above regular cells
+        backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
     },
 }));
 
 // Inactive variant for hidden/inactive employees
 const StickyTableCellInactive = styled(TableCell)(({ theme }) => ({
-    position: 'sticky',
-    left: 0,
-    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0',
+    position: 'sticky !important' as any,
+    left: '0 !important' as any,
+    backgroundColor: `${theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'} !important`,
     borderRight: `2px solid ${theme.palette.divider}`,
     minWidth: 220,
     maxWidth: 220,
     width: 220,
     boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
-    zIndex: 2,
     '&.MuiTableCell-head': {
-        zIndex: 3,
-        top: 0,
+        zIndex: '10 !important' as any,
+        top: '0 !important' as any,
     },
     '&.MuiTableCell-body': {
-        zIndex: 2,
+        zIndex: '5 !important' as any,
     },
 }));
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -2465,19 +2465,18 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 }}
             >
                 <Table
-                    stickyHeader
                     size="small"
                     sx={{
                         borderCollapse: 'separate',
                         borderSpacing: 0,
                         tableLayout: 'auto',
                         minWidth: 'max-content',
-                        // Ensure table elements don't break sticky context
-                        '& thead': {
-                            position: 'relative',
-                        },
-                        '& tbody': {
-                            position: 'relative',
+                        // Make all header cells sticky at top
+                        '& thead th': {
+                            position: 'sticky',
+                            top: 0,
+                            backgroundColor: 'background.paper',
+                            zIndex: 1,
                         },
                     }}
                 >
