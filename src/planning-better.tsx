@@ -64,45 +64,43 @@ import {
 
 // Sticky TableCell for fixed first column - using !important to override MUI stickyHeader
 const StickyTableCell = styled(TableCell)(({ theme }) => ({
-    position: 'sticky !important' as any,
-    left: '0px !important' as any,
-    backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
+    position: 'sticky',
+    left: 0,
+    backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
     borderRight: `2px solid ${theme.palette.divider}`,
-    minWidth: '220px !important' as any,
+    minWidth: 220,
     maxWidth: 220,
     width: 220,
     boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
+    zIndex: 2,
     // Header cell: sticky both vertically (top) and horizontally (left)
     '&.MuiTableCell-head': {
-        zIndex: '1200 !important' as any, // Very high - above MUI appBar (1100) and sticky header
-        backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
-        top: '0px !important' as any,
+        zIndex: 3,
+        top: 0,
     },
     // Body cells: sticky only horizontally (left)
     '&.MuiTableCell-body': {
-        zIndex: '1100 !important' as any, // Above regular cells but below header
-        backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
+        zIndex: 2,
     },
 }));
 
 // Inactive variant for hidden/inactive employees
 const StickyTableCellInactive = styled(TableCell)(({ theme }) => ({
-    position: 'sticky !important' as any,
-    left: '0px !important' as any,
-    backgroundColor: `${theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'} !important`,
+    position: 'sticky',
+    left: 0,
+    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0',
     borderRight: `2px solid ${theme.palette.divider}`,
-    minWidth: '220px !important' as any,
+    minWidth: 220,
     maxWidth: 220,
     width: 220,
     boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
+    zIndex: 2,
     '&.MuiTableCell-head': {
-        zIndex: '1200 !important' as any,
-        backgroundColor: `${theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'} !important`,
-        top: '0px !important' as any,
+        zIndex: 3,
+        top: 0,
     },
     '&.MuiTableCell-body': {
-        zIndex: '1100 !important' as any,
-        backgroundColor: `${theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'} !important`,
+        zIndex: 2,
     },
 }));
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -2459,15 +2457,30 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 </Box>
             </Paper>
 
-            <TableContainer
-                component={Paper}
+            <Paper
                 sx={{
                     maxHeight: '70vh',
-                    overflowX: 'scroll',
-                    overflowY: 'scroll',
+                    overflow: 'auto',
+                    position: 'relative',
                 }}
             >
-                <Table stickyHeader size="small" sx={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                <Table
+                    stickyHeader
+                    size="small"
+                    sx={{
+                        borderCollapse: 'separate',
+                        borderSpacing: 0,
+                        tableLayout: 'auto',
+                        minWidth: 'max-content',
+                        // Ensure table elements don't break sticky context
+                        '& thead': {
+                            position: 'relative',
+                        },
+                        '& tbody': {
+                            position: 'relative',
+                        },
+                    }}
+                >
                     <TableHead>
                         <TableRow>
                             {stickyEmployeeColumn ? (
@@ -2901,7 +2914,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         })()}
                     </TableBody>
                 </Table>
-            </TableContainer>
+            </Paper>
 
             {/* Template Generator Dialog */}
             <Dialog open={templateDialog} onClose={() => setTemplateDialog(false)} maxWidth="sm" fullWidth>
