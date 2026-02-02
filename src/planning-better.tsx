@@ -2457,11 +2457,15 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 </Box>
             </Paper>
 
-            <Paper
-                sx={{
+            <div
+                style={{
                     maxHeight: '70vh',
-                    overflow: 'auto',
+                    overflowX: 'auto',
+                    overflowY: 'auto',
                     position: 'relative',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '4px',
+                    background: '#fff',
                 }}
             >
                 <Table
@@ -2469,35 +2473,34 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                     sx={{
                         borderCollapse: 'separate',
                         borderSpacing: 0,
-                        tableLayout: 'auto',
                         minWidth: 'max-content',
-                        // Make all header cells sticky at top
-                        '& thead th': {
-                            position: 'sticky',
-                            top: 0,
-                            backgroundColor: 'background.paper',
-                            zIndex: 1,
-                        },
                     }}
                 >
                     <TableHead>
                         <TableRow>
-                            {stickyEmployeeColumn ? (
-                                <StickyTableCell sx={{ fontWeight: 'bold', padding: '8px' }}>
-                                    Employé
-                                </StickyTableCell>
-                            ) : (
-                                <TableCell sx={(theme) => ({
+                            <TableCell
+                                style={stickyEmployeeColumn ? {
+                                    position: 'sticky',
+                                    left: 0,
+                                    top: 0,
+                                    zIndex: 10,
+                                    backgroundColor: '#ffffff',
+                                    boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
+                                } : {}}
+                                sx={(theme) => ({
                                     fontWeight: 'bold',
                                     minWidth: 220,
                                     maxWidth: 220,
                                     width: 220,
                                     borderRight: `2px solid ${theme.palette.divider}`,
                                     padding: '8px',
-                                })}>
-                                    Employé
-                                </TableCell>
-                            )}
+                                    ...(stickyEmployeeColumn && {
+                                        backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
+                                    }),
+                                })}
+                            >
+                                Employé
+                            </TableCell>
                             {/* Previous week columns (grayed out, readonly context) */}
                             {prevWeekDays.map((prevDay) => {
                                 const prevDate = new Date(previous_week.year, previous_week.month - 1, prevDay);
@@ -2507,6 +2510,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     <TableCell
                                         key={`prev-${prevDay}`}
                                         align="center"
+                                        style={{ position: 'sticky', top: 0, zIndex: 1 }}
                                         sx={(theme) => ({
                                             minWidth: 70,
                                             maxWidth: 70,
@@ -2544,6 +2548,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     <TableCell
                                         key={day}
                                         align="center"
+                                        style={{ position: 'sticky', top: 0, zIndex: 1 }}
                                         sx={(theme) => ({
                                             minWidth: 100,
                                             background: today
@@ -2773,28 +2778,30 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             </Box>
                                         );
 
-                                        if (stickyEmployeeColumn) {
-                                            const CellComponent = isInactive ? StickyTableCellInactive : StickyTableCell;
-                                            return (
-                                                <CellComponent sx={{ fontWeight: 'bold', verticalAlign: 'top', padding: '8px' }}>
-                                                    {cellContent}
-                                                </CellComponent>
-                                            );
-                                        }
-
                                         return (
-                                            <TableCell sx={(theme) => ({
-                                                fontWeight: 'bold',
-                                                minWidth: 220,
-                                                maxWidth: 220,
-                                                width: 220,
-                                                borderRight: `2px solid ${theme.palette.divider}`,
-                                                verticalAlign: 'top',
-                                                padding: '8px',
-                                                backgroundColor: isInactive
-                                                    ? theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'
-                                                    : undefined,
-                                            })}>
+                                            <TableCell
+                                                style={stickyEmployeeColumn ? {
+                                                    position: 'sticky',
+                                                    left: 0,
+                                                    zIndex: 5,
+                                                    backgroundColor: isInactive ? '#e0e0e0' : '#ffffff',
+                                                    boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
+                                                } : {}}
+                                                sx={(theme) => ({
+                                                    fontWeight: 'bold',
+                                                    minWidth: 220,
+                                                    maxWidth: 220,
+                                                    width: 220,
+                                                    borderRight: `2px solid ${theme.palette.divider}`,
+                                                    verticalAlign: 'top',
+                                                    padding: '8px',
+                                                    backgroundColor: isInactive
+                                                        ? theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'
+                                                        : stickyEmployeeColumn
+                                                            ? theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'
+                                                            : undefined,
+                                                })}
+                                            >
                                                 {cellContent}
                                             </TableCell>
                                         );
@@ -2913,7 +2920,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                         })()}
                     </TableBody>
                 </Table>
-            </Paper>
+            </div>
 
             {/* Template Generator Dialog */}
             <Dialog open={templateDialog} onClose={() => setTemplateDialog(false)} maxWidth="sm" fullWidth>
