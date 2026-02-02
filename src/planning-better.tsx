@@ -2463,12 +2463,11 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 component={Paper}
                 sx={{
                     maxHeight: '70vh',
-                    overflowX: 'auto',
-                    overflowY: 'auto',
-                    position: 'relative',
+                    overflowX: 'scroll',
+                    overflowY: 'scroll',
                 }}
             >
-                <Table stickyHeader size="small" sx={{ minWidth: 'max-content', borderCollapse: 'separate', borderSpacing: 0 }}>
+                <Table stickyHeader size="small" sx={{ borderCollapse: 'separate', borderSpacing: 0 }}>
                     <TableHead>
                         <TableRow>
                             {stickyEmployeeColumn ? (
