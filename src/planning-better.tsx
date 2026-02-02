@@ -241,6 +241,7 @@ interface ShiftCellProps {
     onUpdate: () => void;
     onOptimisticUpdate?: (employeeId: number, day: number, shiftData: any) => void;
     planningStatus?: string;  // Planning status to show history icon when validated
+    isToday?: boolean;  // Highlight today's column
 }
 
 const ShiftCell: React.FC<ShiftCellProps> = ({
@@ -255,6 +256,7 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
     onUpdate,
     onOptimisticUpdate,
     planningStatus,
+    isToday: isTodayCell,
 }) => {
     const [editing, setEditing] = useState(false);
     const [selectedShiftType, setSelectedShiftType] = useState(shift?.shift_type_id || '');
@@ -470,7 +472,15 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
 
     if (editing) {
         return (
-            <TableCell align="center" sx={{ minWidth: 120 }}>
+            <TableCell align="center" sx={(theme) => ({
+                minWidth: 120,
+                border: isTodayCell ? '2px solid #1976D2' : undefined,
+                background: isTodayCell
+                    ? theme.palette.mode === 'dark'
+                        ? 'rgba(21, 101, 192, 0.3)'
+                        : 'rgba(187, 222, 251, 0.5)'
+                    : undefined,
+            })}>
                 <Box display="flex" flexDirection="column" gap={0.5}>
                     <Select
                         value={selectedShiftType}
@@ -509,12 +519,20 @@ const ShiftCell: React.FC<ShiftCellProps> = ({
                             : theme.palette.grey[200]
                     },
                     minWidth: 80,
-                    border: isDragOver ? '2px dashed #2196f3' : undefined,
+                    border: isDragOver
+                        ? '2px dashed #2196f3'
+                        : isTodayCell
+                            ? '2px solid #1976D2'
+                            : undefined,
                     background: isDragOver
                         ? theme.palette.mode === 'dark'
                             ? 'rgba(33, 150, 243, 0.2)'
                             : 'rgba(33, 150, 243, 0.1)'
-                        : undefined,
+                        : isTodayCell
+                            ? theme.palette.mode === 'dark'
+                                ? 'rgba(21, 101, 192, 0.3)'
+                                : 'rgba(187, 222, 251, 0.5)'
+                            : undefined,
                 })}
                 onClick={() => !isDragging && setEditing(true)}
                 onDragOver={handleDragOver}
@@ -2027,6 +2045,13 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
         return luxembourg_holidays && luxembourg_holidays[day];
     };
 
+    const isToday = (day: number) => {
+        const today = new Date();
+        return planning.year === today.getFullYear() &&
+               planning.month === today.getMonth() + 1 &&
+               day === today.getDate();
+    };
+
     // Status change handler
     const handleStatusChange = async (newStatus: string) => {
         try {
@@ -2463,23 +2488,31 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     total_soignant: 0
                                 };
                                 const holiday = isHoliday(day);
+                                const today = isToday(day);
                                 return (
                                     <TableCell
                                         key={day}
                                         align="center"
                                         sx={(theme) => ({
                                             minWidth: 100,
-                                            background: holiday
+                                            background: today
                                                 ? theme.palette.mode === 'dark'
-                                                    ? '#4A148C'  // Deep purple for holidays in dark mode
-                                                    : '#E1BEE7'  // Light purple for holidays
-                                                : isWeekend(day)
+                                                    ? '#1565C0'  // Blue for today in dark mode
+                                                    : '#BBDEFB'  // Light blue for today
+                                                : holiday
                                                     ? theme.palette.mode === 'dark'
-                                                        ? theme.palette.grey[800]
-                                                        : theme.palette.grey[100]
-                                                    : theme.palette.background.paper,
+                                                        ? '#4A148C'  // Deep purple for holidays in dark mode
+                                                        : '#E1BEE7'  // Light purple for holidays
+                                                    : isWeekend(day)
+                                                        ? theme.palette.mode === 'dark'
+                                                            ? theme.palette.grey[800]
+                                                            : theme.palette.grey[100]
+                                                        : theme.palette.background.paper,
                                             fontWeight: 'bold',
-                                            border: holiday ? '2px solid #9C27B0' : undefined,
+                                            border: today
+                                                ? '2px solid #1976D2'
+                                                : holiday ? '2px solid #9C27B0' : undefined,
+                                            boxShadow: today ? '0 0 8px rgba(25, 118, 210, 0.5)' : undefined,
                                         })}
                                     >
                                         <Box>
@@ -2764,6 +2797,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             onUpdate={loadData}
                                             onOptimisticUpdate={updateShiftOptimistically}
                                             planningStatus={planning.status}
+                                            isToday={isToday(day)}
                                         />
                                     ))}
                                 </TableRow>
