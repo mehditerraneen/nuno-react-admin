@@ -62,30 +62,47 @@ import {
     styled,
 } from '@mui/material';
 
-// Sticky TableCell for fixed first column
+// Sticky TableCell for fixed first column - using !important to override MUI stickyHeader
 const StickyTableCell = styled(TableCell)(({ theme }) => ({
-    position: 'sticky',
-    left: 0,
-    backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
+    position: 'sticky !important' as any,
+    left: '0px !important' as any,
+    backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
     borderRight: `2px solid ${theme.palette.divider}`,
-    minWidth: 220,
+    minWidth: '220px !important' as any,
     maxWidth: 220,
     width: 220,
-    boxShadow: '4px 0 8px rgba(0,0,0,0.1)',
+    boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
+    // Header cell: sticky both vertically (top) and horizontally (left)
     '&.MuiTableCell-head': {
-        zIndex: theme.zIndex.appBar + 2, // 1102 - above sticky header and body cells
-        backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
+        zIndex: '1200 !important' as any, // Very high - above MUI appBar (1100) and sticky header
+        backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
+        top: '0px !important' as any,
     },
+    // Body cells: sticky only horizontally (left)
     '&.MuiTableCell-body': {
-        zIndex: theme.zIndex.appBar + 1, // 1101 - above regular cells
+        zIndex: '1100 !important' as any, // Above regular cells but below header
+        backgroundColor: `${theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'} !important`,
     },
 }));
 
 // Inactive variant for hidden/inactive employees
-const StickyTableCellInactive = styled(StickyTableCell)(({ theme }) => ({
-    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0',
+const StickyTableCellInactive = styled(TableCell)(({ theme }) => ({
+    position: 'sticky !important' as any,
+    left: '0px !important' as any,
+    backgroundColor: `${theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'} !important`,
+    borderRight: `2px solid ${theme.palette.divider}`,
+    minWidth: '220px !important' as any,
+    maxWidth: 220,
+    width: 220,
+    boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
     '&.MuiTableCell-head': {
-        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0',
+        zIndex: '1200 !important' as any,
+        backgroundColor: `${theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'} !important`,
+        top: '0px !important' as any,
+    },
+    '&.MuiTableCell-body': {
+        zIndex: '1100 !important' as any,
+        backgroundColor: `${theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'} !important`,
     },
 }));
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
