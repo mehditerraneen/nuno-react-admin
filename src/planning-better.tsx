@@ -59,7 +59,35 @@ import {
     OutlinedInput,
     InputAdornment,
     Collapse,
+    styled,
 } from '@mui/material';
+
+// Sticky TableCell for fixed first column
+const StickyTableCell = styled(TableCell)(({ theme }) => ({
+    position: 'sticky',
+    left: 0,
+    backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
+    borderRight: `2px solid ${theme.palette.divider}`,
+    minWidth: 220,
+    maxWidth: 220,
+    width: 220,
+    boxShadow: '4px 0 8px rgba(0,0,0,0.1)',
+    '&.MuiTableCell-head': {
+        zIndex: theme.zIndex.appBar + 2, // 1102 - above sticky header and body cells
+        backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
+    },
+    '&.MuiTableCell-body': {
+        zIndex: theme.zIndex.appBar + 1, // 1101 - above regular cells
+    },
+}));
+
+// Inactive variant for hidden/inactive employees
+const StickyTableCellInactive = styled(StickyTableCell)(({ theme }) => ({
+    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0',
+    '&.MuiTableCell-head': {
+        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0',
+    },
+}));
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -2426,26 +2454,22 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 <Table stickyHeader size="small" sx={{ minWidth: 'max-content', borderCollapse: 'separate', borderSpacing: 0 }}>
                     <TableHead>
                         <TableRow>
-                            <TableCell
-                                sx={(theme) => ({
+                            {stickyEmployeeColumn ? (
+                                <StickyTableCell sx={{ fontWeight: 'bold', padding: '8px' }}>
+                                    Employé
+                                </StickyTableCell>
+                            ) : (
+                                <TableCell sx={(theme) => ({
                                     fontWeight: 'bold',
                                     minWidth: 220,
                                     maxWidth: 220,
                                     width: 220,
                                     borderRight: `2px solid ${theme.palette.divider}`,
                                     padding: '8px',
-                                    // Sticky column + sticky header = corner cell needs highest z-index
-                                    ...(stickyEmployeeColumn && {
-                                        position: 'sticky',
-                                        left: 0,
-                                        zIndex: 5, // Above sticky header (z-index 2) and sticky body cells (z-index 3)
-                                        backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#fff',
-                                        boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
-                                    }),
-                                })}
-                            >
-                                Employé
-                            </TableCell>
+                                })}>
+                                    Employé
+                                </TableCell>
+                            )}
                             {/* Previous week columns (grayed out, readonly context) */}
                             {prevWeekDays.map((prevDay) => {
                                 const prevDate = new Date(previous_week.year, previous_week.month - 1, prevDay);
@@ -2613,132 +2637,140 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                         }
                                     })}
                                 >
-                                    <TableCell
-                                        sx={(theme) => ({
-                                            fontWeight: 'bold',
-                                            minWidth: 220,
-                                            maxWidth: 220,
-                                            width: 220,
-                                            borderRight: `2px solid ${theme.palette.divider}`,
-                                            verticalAlign: 'top',
-                                            padding: '8px',
-                                            // Sticky column for body rows
-                                            ...(stickyEmployeeColumn && {
-                                                position: 'sticky',
-                                                left: 0,
-                                                zIndex: 3, // Above regular cells but below header corner cell
-                                                backgroundColor: isInactive
-                                                    ? theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'
-                                                    : theme.palette.mode === 'dark' ? '#1e1e1e' : '#fff',
-                                                boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
-                                            }),
-                                        })}
-                                    >
-                                        <Box display="flex" alignItems="flex-start" gap={1}>
-                                            <Tooltip title={hiddenEmployees.has(employee.employee_id) ? "Afficher l'employé" : "Masquer l'employé"}>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleToggleEmployeeVisibility(employee.employee_id);
-                                                    }}
-                                                    disabled={togglingVisibility === employee.employee_id}
-                                                    sx={{ padding: 0.25 }}
-                                                >
-                                                    {togglingVisibility === employee.employee_id ? (
-                                                        <CircularProgress size={16} />
-                                                    ) : hiddenEmployees.has(employee.employee_id) ? (
-                                                        <VisibilityOffIcon fontSize="small" color="disabled" />
-                                                    ) : (
-                                                        <VisibilityIcon fontSize="small" />
-                                                    )}
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Envoyer planning par email">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleSendPlanningEmail(employee.employee_id, employee.name);
-                                                    }}
-                                                    disabled={sendingEmail === employee.employee_id}
-                                                    sx={{ padding: 0.25 }}
-                                                    color="primary"
-                                                >
-                                                    {sendingEmail === employee.employee_id ? (
-                                                        <CircularProgress size={16} />
-                                                    ) : (
-                                                        <EmailIcon fontSize="small" />
-                                                    )}
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Checkbox
-                                                checked={isSelected}
-                                                onChange={() => setSelectedEmployeeId(isSelected ? null : employee.employee_id)}
-                                                size="small"
-                                                sx={{ padding: 0, marginRight: 0.5 }}
-                                            />
-                                            <Avatar
-                                                src={employee.avatar_url || undefined}
-                                                alt={employee.abbreviation}
-                                                sx={{
-                                                    width: 28,
-                                                    height: 28,
-                                                    bgcolor: employee.color_cell || '#FF0000',
-                                                    color: employee.color_text || '#FFFFFF',
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: 'bold',
-                                                    flexShrink: 0,
-                                                }}
-                                            >
-                                                {!employee.avatar_url && employee.abbreviation}
-                                            </Avatar>
-                                            <Box minWidth={0} flex={1}>
-                                                <Typography variant="body2" fontWeight="600" sx={{ lineHeight: 1.2, mb: 0.3 }}>
-                                                    {employee.name}
-                                                </Typography>
-                                                <Typography variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.1, mb: 0.3 }}>
-                                                    {employee.abbreviation} • {employee.job_position}
-                                                </Typography>
-                                                <Typography variant="caption" color={employee.hours_exceeded ? 'error' : 'text.secondary'} display="block" sx={{ lineHeight: 1.1, mb: 0.5 }}>
-                                                    {totalHours.toFixed(1)}h / {employee.max_monthly_hours?.toFixed(1)}h
-                                                </Typography>
-                                                {(isInactive || employee.hours_exceeded || employee.consecutive_days_violation || employee.evening_to_morning_violation) && (
-                                                    <Box display="flex" flexWrap="wrap" gap={0.3}>
-                                                        {isInactive && <Chip label="Absent" size="small" sx={{ fontSize: '0.6rem', height: 14 }} />}
-                                                        {employee.hours_exceeded && (
-                                                            <Chip
-                                                                label={`⚠️ +${employee.hours_over_limit?.toFixed(1)}h`}
-                                                                size="small"
-                                                                color="error"
-                                                                sx={{ fontSize: '0.6rem', height: 14 }}
-                                                            />
+                                    {(() => {
+                                        const cellContent = (
+                                            <Box display="flex" alignItems="flex-start" gap={1}>
+                                                <Tooltip title={hiddenEmployees.has(employee.employee_id) ? "Afficher l'employé" : "Masquer l'employé"}>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleToggleEmployeeVisibility(employee.employee_id);
+                                                        }}
+                                                        disabled={togglingVisibility === employee.employee_id}
+                                                        sx={{ padding: 0.25 }}
+                                                    >
+                                                        {togglingVisibility === employee.employee_id ? (
+                                                            <CircularProgress size={16} />
+                                                        ) : hiddenEmployees.has(employee.employee_id) ? (
+                                                            <VisibilityOffIcon fontSize="small" color="disabled" />
+                                                        ) : (
+                                                            <VisibilityIcon fontSize="small" />
                                                         )}
-                                                        {employee.consecutive_days_violation && (
-                                                            <Tooltip title={`${employee.max_consecutive_days} jours consécutifs - Loi: max 6 jours (44h repos)`}>
-                                                                <Chip
-                                                                    label={`🚨 ${employee.max_consecutive_days}j`}
-                                                                    size="small"
-                                                                    color="warning"
-                                                                    sx={{ fontSize: '0.6rem', height: 14 }}
-                                                                />
-                                                            </Tooltip>
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Envoyer planning par email">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleSendPlanningEmail(employee.employee_id, employee.name);
+                                                        }}
+                                                        disabled={sendingEmail === employee.employee_id}
+                                                        sx={{ padding: 0.25 }}
+                                                        color="primary"
+                                                    >
+                                                        {sendingEmail === employee.employee_id ? (
+                                                            <CircularProgress size={16} />
+                                                        ) : (
+                                                            <EmailIcon fontSize="small" />
                                                         )}
-                                                        {employee.evening_to_morning_violation && (
-                                                            <Tooltip title={`Soir→Matin interdit: ${employee.evening_to_morning_violations?.length} violation(s)`}>
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onChange={() => setSelectedEmployeeId(isSelected ? null : employee.employee_id)}
+                                                    size="small"
+                                                    sx={{ padding: 0, marginRight: 0.5 }}
+                                                />
+                                                <Avatar
+                                                    src={employee.avatar_url || undefined}
+                                                    alt={employee.abbreviation}
+                                                    sx={{
+                                                        width: 28,
+                                                        height: 28,
+                                                        bgcolor: employee.color_cell || '#FF0000',
+                                                        color: employee.color_text || '#FFFFFF',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 'bold',
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    {!employee.avatar_url && employee.abbreviation}
+                                                </Avatar>
+                                                <Box minWidth={0} flex={1}>
+                                                    <Typography variant="body2" fontWeight="600" sx={{ lineHeight: 1.2, mb: 0.3 }}>
+                                                        {employee.name}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.1, mb: 0.3 }}>
+                                                        {employee.abbreviation} • {employee.job_position}
+                                                    </Typography>
+                                                    <Typography variant="caption" color={employee.hours_exceeded ? 'error' : 'text.secondary'} display="block" sx={{ lineHeight: 1.1, mb: 0.5 }}>
+                                                        {totalHours.toFixed(1)}h / {employee.max_monthly_hours?.toFixed(1)}h
+                                                    </Typography>
+                                                    {(isInactive || employee.hours_exceeded || employee.consecutive_days_violation || employee.evening_to_morning_violation) && (
+                                                        <Box display="flex" flexWrap="wrap" gap={0.3}>
+                                                            {isInactive && <Chip label="Absent" size="small" sx={{ fontSize: '0.6rem', height: 14 }} />}
+                                                            {employee.hours_exceeded && (
                                                                 <Chip
-                                                                    label={`🔴 S→M`}
+                                                                    label={`⚠️ +${employee.hours_over_limit?.toFixed(1)}h`}
                                                                     size="small"
                                                                     color="error"
                                                                     sx={{ fontSize: '0.6rem', height: 14 }}
                                                                 />
-                                                            </Tooltip>
-                                                        )}
-                                                    </Box>
-                                                )}
+                                                            )}
+                                                            {employee.consecutive_days_violation && (
+                                                                <Tooltip title={`${employee.max_consecutive_days} jours consécutifs - Loi: max 6 jours (44h repos)`}>
+                                                                    <Chip
+                                                                        label={`🚨 ${employee.max_consecutive_days}j`}
+                                                                        size="small"
+                                                                        color="warning"
+                                                                        sx={{ fontSize: '0.6rem', height: 14 }}
+                                                                    />
+                                                                </Tooltip>
+                                                            )}
+                                                            {employee.evening_to_morning_violation && (
+                                                                <Tooltip title={`Soir→Matin interdit: ${employee.evening_to_morning_violations?.length} violation(s)`}>
+                                                                    <Chip
+                                                                        label={`🔴 S→M`}
+                                                                        size="small"
+                                                                        color="error"
+                                                                        sx={{ fontSize: '0.6rem', height: 14 }}
+                                                                    />
+                                                                </Tooltip>
+                                                            )}
+                                                        </Box>
+                                                    )}
+                                                </Box>
                                             </Box>
-                                        </Box>
-                                    </TableCell>
+                                        );
+
+                                        if (stickyEmployeeColumn) {
+                                            const CellComponent = isInactive ? StickyTableCellInactive : StickyTableCell;
+                                            return (
+                                                <CellComponent sx={{ fontWeight: 'bold', verticalAlign: 'top', padding: '8px' }}>
+                                                    {cellContent}
+                                                </CellComponent>
+                                            );
+                                        }
+
+                                        return (
+                                            <TableCell sx={(theme) => ({
+                                                fontWeight: 'bold',
+                                                minWidth: 220,
+                                                maxWidth: 220,
+                                                width: 220,
+                                                borderRight: `2px solid ${theme.palette.divider}`,
+                                                verticalAlign: 'top',
+                                                padding: '8px',
+                                                backgroundColor: isInactive
+                                                    ? theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'
+                                                    : undefined,
+                                            })}>
+                                                {cellContent}
+                                            </TableCell>
+                                        );
+                                    })()}
                                     {/* Previous week cells (readonly context) */}
                                     {prevWeekDays.map((prevDay) => {
                                         const prevShift = previous_week?.shifts?.[employee.employee_id]?.[prevDay];
