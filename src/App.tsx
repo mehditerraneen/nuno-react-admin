@@ -41,6 +41,12 @@ import {
   PlanningCreate,
   PlanningEdit,
 } from "./planning-better";
+import {
+  PlanningFullCalendarList,
+  PlanningFullCalendarShow,
+  PlanningFullCalendarCreate,
+  PlanningFullCalendarEdit,
+} from "./planning-fullcalendar";
 import PlanningAuditLogPage from "./components/planning/PlanningAuditLogPage";
 import {
   WoundList,
@@ -128,6 +134,14 @@ export const App = () => (
       create={PlanningCreate}
       edit={PlanningEdit}
       options={{ label: "Planning" }}
+    />
+    <Resource
+      name="planning-fc"
+      list={PlanningFullCalendarList}
+      show={PlanningFullCalendarShow}
+      create={PlanningFullCalendarCreate}
+      edit={PlanningFullCalendarEdit}
+      options={{ label: "Planning (*)" }}
     />
     <Resource
       name="wounds"

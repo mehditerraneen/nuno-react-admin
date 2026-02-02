@@ -431,6 +431,38 @@ export const dataProvider: MyDataProvider = {
       params,
     );
 
+    // Handle planning-fc resource (mapped to planning/monthly-planning)
+    if (resource === "planning-fc") {
+      const url = `${apiUrl}/planning/monthly-planning/${params.id}`;
+      console.log("🔍 DEBUG getOne planning-fc:");
+      console.log("  Resource:", resource);
+      console.log("  Params:", params);
+      console.log("  URL:", url);
+
+      try {
+        const response = await httpClient(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📊 Planning-fc getOne response:", data);
+
+        if (data && typeof data === "object") {
+          if (data.data) {
+            return data;
+          }
+          return { data };
+        }
+
+        return { data };
+      } catch (error: any) {
+        console.error("❌ Error getting one planning-fc:", error);
+        throw error;
+      }
+    }
+
     // Handle planning resources
     if (resource.startsWith("planning/")) {
       const url = `${apiUrl}/${resource}/${params.id}`;
@@ -557,6 +589,29 @@ export const dataProvider: MyDataProvider = {
   create: async (resource: string, params: any) => {
     console.log("🔍 Creating for resource:", resource, "with params:", params);
     try {
+      // Handle planning-fc resource (mapped to planning/monthly-planning)
+      if (resource === "planning-fc") {
+        const url = `${apiUrl}/planning/monthly-planning`;
+        const response = await httpClient(url, {
+          method: "POST",
+          body: JSON.stringify(params.data),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📊 Create planning-fc response:", data);
+
+        if (data && typeof data === "object" && data.id) {
+          return { data: { id: data.id, ...params.data } };
+        } else {
+          console.error("❌ Planning-fc creation response missing id:", data);
+          throw new Error("Planning-fc creation response must include an id");
+        }
+      }
+
       // Handle planning resources
       if (resource.startsWith("planning/")) {
         const url = `${apiUrl}/${resource}`;
@@ -849,6 +904,41 @@ export const dataProvider: MyDataProvider = {
     const { page, perPage } = params.pagination;
     const { field, order } = params.sort;
     const filter = params.filter || {};
+
+    // IMPORTANT: Handle planning-fc resource (same API as planning/monthly-planning)
+    if (resource === "planning-fc") {
+      console.log("📅 Handling planning-fc with FastAPI endpoint (mapped to planning/monthly-planning)");
+
+      const url = `${apiUrl}/planning/monthly-planning`;
+      console.log("🌐 Making request to planning endpoint:", url);
+
+      try {
+        const response = await httpClient(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📊 Planning-fc response:", data);
+
+        // API returns {data: [...], total: number}
+        if (
+          data &&
+          typeof data === "object" &&
+          data.data &&
+          Array.isArray(data.data)
+        ) {
+          return data;
+        } else {
+          console.error("❌ Unexpected planning-fc response format:", data);
+          throw new Error(`Expected React Admin format for planning-fc`);
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching planning-fc:", error);
+        throw error;
+      }
+    }
 
     // IMPORTANT: Handle planning resources
     if (resource.startsWith("planning/")) {
