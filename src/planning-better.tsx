@@ -2418,7 +2418,8 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 component={Paper}
                 sx={{
                     maxHeight: '70vh',
-                    overflow: 'auto',
+                    overflowX: 'auto',
+                    overflowY: 'auto',
                     position: 'relative',
                 }}
             >
@@ -2426,13 +2427,6 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                     <TableHead>
                         <TableRow>
                             <TableCell
-                                style={stickyEmployeeColumn ? {
-                                    position: 'sticky',
-                                    left: 0,
-                                    zIndex: 3,
-                                    backgroundColor: '#fff',
-                                    boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
-                                } : undefined}
                                 sx={(theme) => ({
                                     fontWeight: 'bold',
                                     minWidth: 220,
@@ -2440,8 +2434,13 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     width: 220,
                                     borderRight: `2px solid ${theme.palette.divider}`,
                                     padding: '8px',
+                                    // Sticky column + sticky header = corner cell needs highest z-index
                                     ...(stickyEmployeeColumn && {
-                                        backgroundColor: theme.palette.mode === 'dark' ? '#121212' : '#fff',
+                                        position: 'sticky',
+                                        left: 0,
+                                        zIndex: 5, // Above sticky header (z-index 2) and sticky body cells (z-index 3)
+                                        backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#fff',
+                                        boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
                                     }),
                                 })}
                             >
@@ -2615,13 +2614,6 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     })}
                                 >
                                     <TableCell
-                                        style={stickyEmployeeColumn ? {
-                                            position: 'sticky',
-                                            left: 0,
-                                            zIndex: 2,
-                                            backgroundColor: isInactive ? '#e0e0e0' : '#fff',
-                                            boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
-                                        } : undefined}
                                         sx={(theme) => ({
                                             fontWeight: 'bold',
                                             minWidth: 220,
@@ -2630,10 +2622,15 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                             borderRight: `2px solid ${theme.palette.divider}`,
                                             verticalAlign: 'top',
                                             padding: '8px',
+                                            // Sticky column for body rows
                                             ...(stickyEmployeeColumn && {
+                                                position: 'sticky',
+                                                left: 0,
+                                                zIndex: 3, // Above regular cells but below header corner cell
                                                 backgroundColor: isInactive
                                                     ? theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'
-                                                    : theme.palette.mode === 'dark' ? '#121212' : '#fff',
+                                                    : theme.palette.mode === 'dark' ? '#1e1e1e' : '#fff',
+                                                boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
                                             }),
                                         })}
                                     >
