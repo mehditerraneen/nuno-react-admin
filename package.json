@@ -24,6 +24,8 @@
     "@mui/material": "^7.0.1",
     "@mui/x-date-pickers": "^7.22.1",
     "@tippyjs/react": "^4.2.6",
+    "ag-grid-community": "^35.1.0",
+    "ag-grid-react": "^35.1.0",
     "date-fns": "^4.1.0",
     "moment": "^2.30.1",
     "ra-data-simple-rest": "^5.8.0",
