@@ -681,7 +681,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     updatedShifts[day] = {
                         shift_code: shiftCode,
                         color: shiftType.color_code || '#ccc',
-                        hours: shiftType.hours || 0,
+                        hours: typeof shiftType.hours === 'number' ? shiftType.hours : parseFloat(shiftType.hours) || 0,
                         source: 'MANUAL',
                     };
                 } else {
@@ -700,21 +700,8 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 employees: updatedEmployees,
             };
         });
-
-        // Force AG Grid to refresh - use timeout to ensure React state is updated first
-        if (gridApi) {
-            setTimeout(() => {
-                // Find the row node for this employee and refresh entire row (including employee cell with hours)
-                const rowNode = gridApi.getRowNode(String(employeeId));
-                if (rowNode) {
-                    gridApi.refreshCells({ rowNodes: [rowNode], force: true });
-                } else {
-                    // Fallback: refresh all cells
-                    gridApi.refreshCells({ force: true });
-                }
-            }, 100);
-        }
-    }, [gridApi]);
+        // AG Grid with controlled rowData will auto-detect changes and re-render
+    }, []);
 
     // Handle shift update (from AG Grid cell edit)
     const handleShiftUpdate = useCallback(async (employeeId: number, day: number, shiftCode: string) => {
@@ -1546,11 +1533,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const EmployeeCellRenderer = useCallback((params: any) => {
         const data = params.data;
         const {
-            employee_name, employee_abbr, job_position, total_hours, max_monthly_hours,
-            avatar_url, color_cell, color_text, hours_exceeded, hours_over_limit,
+            employee_name, employee_abbr, job_position,
+            avatar_url, color_cell, color_text, hours_exceeded,
             consecutive_days_violation, max_consecutive_days, evening_to_morning_violation,
             evening_to_morning_violations, is_hidden, is_inactive, employee_id
         } = data;
+        // Ensure numeric values for toFixed()
+        const total_hours = typeof data.total_hours === 'number' ? data.total_hours : parseFloat(data.total_hours) || 0;
+        const max_monthly_hours = typeof data.max_monthly_hours === 'number' ? data.max_monthly_hours : parseFloat(data.max_monthly_hours) || 168;
+        const hours_over_limit = typeof data.hours_over_limit === 'number' ? data.hours_over_limit : parseFloat(data.hours_over_limit) || 0;
         const hoursRatio = max_monthly_hours > 0 ? total_hours / max_monthly_hours : 0;
         const hasViolations = hours_exceeded || consecutive_days_violation || evening_to_morning_violation;
 
@@ -1804,6 +1795,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     headerName: `${weekday} ${prevDay}/${previous_week.month}`,
                     width: 75,
                     cellRenderer: PrevWeekCellRenderer,
+                    valueFormatter: (params: any) => params.value?.shift_code || '', // Prevent AG Grid "object" warning
                     editable: false,
                     headerClass: 'ag-header-prev-week',
                     cellStyle: () => ({
