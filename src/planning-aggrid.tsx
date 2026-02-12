@@ -610,25 +610,20 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 try {
                     // Use direct fetch instead of dataProvider to avoid parameter issues
                     const auditUrl = `${apiUrl}/planning/monthly-planning/${planningId}/audit-log`;
-                    console.log('Fetching audit log from:', auditUrl);
                     const auditResponse = await authenticatedFetch(auditUrl);
 
                     if (auditResponse.ok) {
                         const auditRes = await auditResponse.json();
-                        console.log('Audit response:', auditRes);
 
                         if (auditRes?.changes && auditRes.changes.length > 0) {
                             const cellsSet = new Set<string>();
                             auditRes.changes.forEach((change: any) => {
                                 // Create key from employeeId and date
                                 const key = `${change.employee_id}-${change.date}`;
-                                console.log('Adding audit key:', key);
                                 cellsSet.add(key);
                             });
-                            console.log('Cells with history:', cellsSet.size, 'cells');
                             setCellsWithHistory(cellsSet);
                         } else {
-                            console.log('No audit changes found');
                             setCellsWithHistory(new Set());
                         }
                     } else {
@@ -641,7 +636,6 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     setCellsWithHistory(new Set());
                 }
             } else {
-                console.log('Planning is DRAFT, no audit history');
                 setCellsWithHistory(new Set());
             }
 
@@ -674,6 +668,54 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         loadHiddenEmployees();
     }, [planningId]);
 
+    // Helper function to update local state after shift change (avoids full reload)
+    const updateLocalShift = useCallback((employeeId: number, day: number, shiftCode: string | null, shiftType: any | null) => {
+        setCalendarData((prevData: any) => {
+            if (!prevData?.employees) return prevData;
+
+            const updatedEmployees = prevData.employees.map((emp: any) => {
+                if (emp.employee_id !== employeeId) return emp;
+
+                const updatedShifts = { ...emp.shifts };
+                if (shiftCode && shiftType) {
+                    updatedShifts[day] = {
+                        shift_code: shiftCode,
+                        color: shiftType.color_code || '#ccc',
+                        hours: shiftType.hours || 0,
+                        source: 'MANUAL',
+                    };
+                } else {
+                    // Delete shift
+                    delete updatedShifts[day];
+                }
+
+                return {
+                    ...emp,
+                    shifts: updatedShifts,
+                };
+            });
+
+            return {
+                ...prevData,
+                employees: updatedEmployees,
+            };
+        });
+
+        // Force AG Grid to refresh - use timeout to ensure React state is updated first
+        if (gridApi) {
+            setTimeout(() => {
+                // Find the row node for this employee and refresh entire row (including employee cell with hours)
+                const rowNode = gridApi.getRowNode(String(employeeId));
+                if (rowNode) {
+                    gridApi.refreshCells({ rowNodes: [rowNode], force: true });
+                } else {
+                    // Fallback: refresh all cells
+                    gridApi.refreshCells({ force: true });
+                }
+            }, 100);
+        }
+    }, [gridApi]);
+
     // Handle shift update (from AG Grid cell edit)
     const handleShiftUpdate = useCallback(async (employeeId: number, day: number, shiftCode: string) => {
         try {
@@ -694,13 +736,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 }),
             });
 
+            // Update local state instead of full reload
+            updateLocalShift(employeeId, day, shiftCode, shiftType);
             notify('Shift mis à jour', { type: 'success' });
         } catch (error) {
             console.error('Error updating shift:', error);
             notify('Erreur lors de la mise à jour', { type: 'error' });
             loadData();
         }
-    }, [calendarData, planningId, shiftTypes, notify, loadData]);
+    }, [calendarData, planningId, shiftTypes, notify, loadData, updateLocalShift]);
 
     // Status change handler
     const handleStatusChange = async (newStatus: string) => {
@@ -1148,7 +1192,6 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     // Force AG Grid to refresh cells when cellsWithHistory is populated
     useEffect(() => {
         if (gridApi && cellsWithHistory.size > 0) {
-            console.log('Refreshing AG Grid cells because cellsWithHistory updated:', cellsWithHistory.size);
             gridApi.refreshCells({ force: true });
         }
     }, [gridApi, cellsWithHistory]);
@@ -1176,8 +1219,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments/${date}/${employeeId}${queryString}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Failed to delete');
 
+            // Update local state instead of full reload
+            updateLocalShift(employeeId, day, null, null);
+
+            // Mark cell as having history if published
+            if (isPublished) {
+                setCellsWithHistory(prev => new Set([...prev, `${employeeId}-${date}`]));
+            }
+
             notify('Affectation supprimée', { type: 'success' });
-            loadData();
         } catch (error) {
             console.error('Error deleting shift:', error);
             notify('Erreur lors de la suppression', { type: 'error' });
@@ -1216,8 +1266,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 }),
             });
 
+            // Update local state instead of full reload
+            updateLocalShift(employeeId, day, shiftCode, shiftType);
+
+            // Mark cell as having history if published
+            if (isPublished) {
+                setCellsWithHistory(prev => new Set([...prev, `${employeeId}-${date}`]));
+            }
+
             notify('Shift mis à jour', { type: 'success' });
-            loadData();
         } catch (error) {
             console.error('Error updating shift:', error);
             notify('Erreur lors de la mise à jour', { type: 'error' });
@@ -1262,8 +1319,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 }),
             });
 
+            // Update local state instead of full reload
+            const shiftType = shiftTypes.find(st => st.code === dragData.shift_code);
+            updateLocalShift(employeeId, day, dragData.shift_code, {
+                ...shiftType,
+                color_code: dragData.color || shiftType?.color_code,
+                hours: dragData.hours,
+            });
+
             notify('✅ Shift copié', { type: 'success' });
-            loadData();
         } catch (error) {
             console.error('Error dropping shift:', error);
             notify('Erreur lors de la copie', { type: 'error' });
@@ -1295,11 +1359,6 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         // Check if this cell has history
         const historyKey = `${employeeId}-${dateStr}`;
         const hasHistory = cellsWithHistory.has(historyKey);
-
-        // Debug: log first few cells
-        if (day <= 3 && employeeId) {
-            console.log('Cell check:', { historyKey, hasHistory, cellsWithHistorySize: cellsWithHistory.size });
-        }
 
         // Handle history icon click
         const handleHistoryClick = (e: React.MouseEvent<HTMLElement>) => {
@@ -2026,6 +2085,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                         rowHeight={90}
                         headerHeight={85}
                         theme={themeQuartz}
+                        getRowId={(params) => String(params.data.employee_id)}
                         onGridReady={onGridReady}
                         onCellClicked={onCellClicked}
                         onCellValueChanged={onCellValueChanged}
