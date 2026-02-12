@@ -42,12 +42,14 @@ import {
   PlanningEdit,
 } from "./planning-better";
 import {
-  PlanningFullCalendarList,
-  PlanningFullCalendarShow,
-  PlanningFullCalendarCreate,
-  PlanningFullCalendarEdit,
-} from "./planning-fullcalendar";
+  PlanningAgGridList,
+  PlanningAgGridShow,
+  PlanningAgGridCreate,
+  PlanningAgGridEdit,
+} from "./planning-aggrid";
 import PlanningAuditLogPage from "./components/planning/PlanningAuditLogPage";
+import { StickyTest } from "./StickyTest";
+import { StickyTestAgGrid } from "./StickyTestAgGrid";
 import {
   WoundList,
   WoundEdit,
@@ -137,11 +139,11 @@ export const App = () => (
     />
     <Resource
       name="planning-fc"
-      list={PlanningFullCalendarList}
-      show={PlanningFullCalendarShow}
-      create={PlanningFullCalendarCreate}
-      edit={PlanningFullCalendarEdit}
-      options={{ label: "Planning (*)" }}
+      list={PlanningAgGridList}
+      show={PlanningAgGridShow}
+      create={PlanningAgGridCreate}
+      edit={PlanningAgGridEdit}
+      options={{ label: "Planning (AG Grid)" }}
     />
     <Resource
       name="wounds"
@@ -154,6 +156,8 @@ export const App = () => (
     <CustomRoutes>
       <Route path="/tours-dashboard" element={<EnhancedToursDashboard />} />
       <Route path="/planning/:id/audit-log" element={<PlanningAuditLogPage />} />
+      <Route path="/sticky-test" element={<StickyTest />} />
+      <Route path="/ag-grid-test" element={<StickyTestAgGrid />} />
     </CustomRoutes>
   </Admin>
 );
