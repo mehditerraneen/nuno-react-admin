@@ -3,6 +3,7 @@
  * Direct inline editing, no CSV imports!
  */
 import React, { useState, useEffect } from 'react';
+import './planning-sticky.css';
 import {
     List,
     Datagrid,
@@ -2457,8 +2458,8 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                 </Box>
             </Paper>
 
-            <div
-                style={{
+            <div className={stickyEmployeeColumn ? 'planning-table-container' : undefined}
+                style={!stickyEmployeeColumn ? {
                     maxHeight: '70vh',
                     overflowX: 'auto',
                     overflowY: 'auto',
@@ -2466,7 +2467,7 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
                     background: '#fff',
-                }}
+                } : undefined}
             >
                 <Table
                     size="small"
@@ -2479,14 +2480,6 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                     <TableHead>
                         <TableRow>
                             <TableCell
-                                style={stickyEmployeeColumn ? {
-                                    position: 'sticky',
-                                    left: 0,
-                                    top: 0,
-                                    zIndex: 10,
-                                    backgroundColor: '#ffffff',
-                                    boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
-                                } : {}}
                                 sx={(theme) => ({
                                     fontWeight: 'bold',
                                     minWidth: 220,
@@ -2494,9 +2487,6 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     width: 220,
                                     borderRight: `2px solid ${theme.palette.divider}`,
                                     padding: '8px',
-                                    ...(stickyEmployeeColumn && {
-                                        backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
-                                    }),
                                 })}
                             >
                                 Employé
@@ -2510,7 +2500,6 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     <TableCell
                                         key={`prev-${prevDay}`}
                                         align="center"
-                                        style={{ position: 'sticky', top: 0, zIndex: 1 }}
                                         sx={(theme) => ({
                                             minWidth: 70,
                                             maxWidth: 70,
@@ -2548,7 +2537,6 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                     <TableCell
                                         key={day}
                                         align="center"
-                                        style={{ position: 'sticky', top: 0, zIndex: 1 }}
                                         sx={(theme) => ({
                                             minWidth: 100,
                                             background: today
@@ -2780,13 +2768,6 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
 
                                         return (
                                             <TableCell
-                                                style={stickyEmployeeColumn ? {
-                                                    position: 'sticky',
-                                                    left: 0,
-                                                    zIndex: 5,
-                                                    backgroundColor: isInactive ? '#e0e0e0' : '#ffffff',
-                                                    boxShadow: '4px 0 8px rgba(0,0,0,0.15)',
-                                                } : {}}
                                                 sx={(theme) => ({
                                                     fontWeight: 'bold',
                                                     minWidth: 220,
@@ -2795,11 +2776,10 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
                                                     borderRight: `2px solid ${theme.palette.divider}`,
                                                     verticalAlign: 'top',
                                                     padding: '8px',
+                                                    // Background handled by CSS when sticky is enabled
                                                     backgroundColor: isInactive
                                                         ? theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#e0e0e0'
-                                                        : stickyEmployeeColumn
-                                                            ? theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff'
-                                                            : undefined,
+                                                        : undefined,
                                                 })}
                                             >
                                                 {cellContent}
