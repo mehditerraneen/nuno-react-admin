@@ -671,9 +671,10 @@ const EnhancedTourEditForm = () => {
   };
 
   // Function to remove free time between events
-  const removeFreeBetweenEvents = (
+  const setGapBetweenEvents = (
     currentEventId: number,
     nextEventId: number,
+    gapMinutes: number = 0,
   ) => {
     const currentEvent = availableEvents.find((e) => e.id === currentEventId);
     const nextEvent = availableEvents.find((e) => e.id === nextEventId);
@@ -686,15 +687,15 @@ const EnhancedTourEditForm = () => {
       nextEventId,
     );
 
-    // Calculate new start time for next event (end of current + travel time)
+    // Calculate new start time: end of current + travel time + desired gap
     const newNextStartMinutes =
-      timeToMinutes(currentEffective.time_end) + travelDuration;
+      timeToMinutes(currentEffective.time_end) + travelDuration + gapMinutes;
     const newNextStartTime = minutesToTime(newNextStartMinutes);
 
-    // Apply local adjustment to next event
     applyLocalTimeAdjustment(nextEventId, newNextStartTime);
 
-    notify(`Removed free time. Next event moved to ${newNextStartTime}`, {
+    const label = gapMinutes === 0 ? "Removed gap" : `Set ${gapMinutes}min gap`;
+    notify(`${label}. Next event moved to ${newNextStartTime}`, {
       type: "info",
     });
   };
@@ -2193,26 +2194,32 @@ const EnhancedTourEditForm = () => {
                                     {item.canRemove &&
                                       item.currentEventId &&
                                       item.nextEventId && (
-                                        <Button
-                                          size="small"
-                                          variant="outlined"
-                                          color="warning"
-                                          onClick={() =>
-                                            removeFreeBetweenEvents(
-                                              item.currentEventId,
-                                              item.nextEventId,
-                                            )
-                                          }
-                                          sx={{
-                                            fontSize: "0.6rem",
-                                            py: 0.25,
-                                            px: 0.5,
-                                            minWidth: "auto",
-                                            lineHeight: 1,
-                                          }}
-                                        >
-                                          Remove Gap
-                                        </Button>
+                                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                                          {[0, 5, 10, 15, 30].map((gap) => (
+                                            <Button
+                                              key={gap}
+                                              size="small"
+                                              variant={gap === 0 ? "contained" : "outlined"}
+                                              color="warning"
+                                              onClick={() =>
+                                                setGapBetweenEvents(
+                                                  item.currentEventId,
+                                                  item.nextEventId,
+                                                  gap,
+                                                )
+                                              }
+                                              sx={{
+                                                fontSize: "0.6rem",
+                                                py: 0.25,
+                                                px: 0.5,
+                                                minWidth: "auto",
+                                                lineHeight: 1,
+                                              }}
+                                            >
+                                              {gap === 0 ? "0" : `${gap}′`}
+                                            </Button>
+                                          ))}
+                                        </Box>
                                       )}
                                   </Box>
                                   <Typography
@@ -2232,8 +2239,7 @@ const EnhancedTourEditForm = () => {
                                         fontStyle: "italic",
                                       }}
                                     >
-                                      💡 Click "Remove Gap" to move next event
-                                      earlier
+                                      💡 Set gap duration or click 0 to remove
                                     </Typography>
                                   )}
                                 </Box>
