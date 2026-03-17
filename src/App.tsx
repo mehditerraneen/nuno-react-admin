@@ -56,10 +56,18 @@ import {
   WoundShow,
   WoundCreate,
 } from "./components/wounds";
+import SessionManager from "./components/SessionManager";
+
+const AppLayout = (props: any) => (
+  <>
+    <Layout {...props} />
+    <SessionManager />
+  </>
+);
 
 export const App = () => (
   <Admin
-    layout={Layout}
+    layout={AppLayout}
     dataProvider={dataProvider}
     authProvider={authProvider}
     loginPage={LoginPage}

@@ -156,14 +156,14 @@ export const authenticatedFetch = async (
           console.log(
             "❌ Still getting 401 after token refresh, authentication failed",
           );
-          authService.logout();
+          authService.handleSessionExpired();
           throw new Error("Authentication failed - please login again");
         }
 
         return retryResponse;
       } catch (refreshError) {
         console.log("❌ Token refresh failed:", refreshError);
-        authService.logout();
+        authService.handleSessionExpired();
         throw new Error("Session expired - please login again");
       }
     }

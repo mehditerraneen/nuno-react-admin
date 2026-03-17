@@ -37,6 +37,22 @@ class AuthService {
   private static readonly USER_KEY = "auth_user";
 
   private refreshTimer: NodeJS.Timeout | null = null;
+  private warningTimer: NodeJS.Timeout | null = null;
+  private sessionExpiredShown = false;
+
+  // Event listeners for session state changes
+  private listeners: Array<(event: "warning" | "expired" | "refreshed") => void> = [];
+
+  onSessionEvent(listener: (event: "warning" | "expired" | "refreshed") => void) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  }
+
+  private emit(event: "warning" | "expired" | "refreshed") {
+    this.listeners.forEach((l) => l(event));
+  }
 
   // Login with real backend API
   async login(credentials: LoginCredentials): Promise<User> {
@@ -109,6 +125,25 @@ class AuthService {
       clearTimeout(this.refreshTimer);
       this.refreshTimer = null;
     }
+    if (this.warningTimer) {
+      clearTimeout(this.warningTimer);
+      this.warningTimer = null;
+    }
+  }
+
+  // Logout due to session expiry — emits event so UI can show a message
+  handleSessionExpired(): void {
+    if (this.sessionExpiredShown) return;
+    this.sessionExpiredShown = true;
+    this.emit("expired");
+    this.logout();
+  }
+
+  // Get remaining session time in seconds
+  getRemainingSeconds(): number {
+    const expiry = localStorage.getItem(AuthService.TOKEN_EXPIRY_KEY);
+    if (!expiry) return 0;
+    return Math.max(0, Math.floor((parseInt(expiry, 10) - Date.now()) / 1000));
   }
 
   // Check if user is authenticated
@@ -190,23 +225,33 @@ class AuthService {
     }
   }
 
-  // Schedule automatic token refresh
+  // Schedule automatic token refresh and expiry warning
   private scheduleTokenRefresh(expiresIn: number): void {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
     }
+    if (this.warningTimer) {
+      clearTimeout(this.warningTimer);
+    }
+    this.sessionExpiredShown = false;
 
     // Refresh token 5 minutes before expiry
-    const refreshTime = (expiresIn - 300) * 1000; // Convert to milliseconds
+    const refreshTime = Math.max((expiresIn - 300) * 1000, 10000);
+
+    // Warn user 2 minutes before expiry
+    const warningTime = Math.max((expiresIn - 120) * 1000, 5000);
+
+    this.warningTimer = setTimeout(() => {
+      this.emit("warning");
+    }, warningTime);
 
     this.refreshTimer = setTimeout(async () => {
       try {
         await this.refreshToken();
+        this.emit("refreshed");
       } catch (error) {
         console.error("Failed to refresh token:", error);
-        // If refresh fails, logout user
-        this.logout();
-        window.location.reload();
+        this.handleSessionExpired();
       }
     }, refreshTime);
 

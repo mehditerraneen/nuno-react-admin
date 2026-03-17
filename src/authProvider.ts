@@ -24,22 +24,17 @@ export const authProvider: AuthProvider = {
   // Called when the API returns an error
   checkError: async ({ status }: { status: number }) => {
     if (status === 401) {
-      // For 401 errors, try to refresh token first
       try {
-        console.log("🔄 Attempting token refresh due to 401 error");
         await authService.refreshToken();
-        console.log("✅ Token refreshed successfully, continuing request");
-        return Promise.resolve(); // Token refreshed, can continue
+        return Promise.resolve();
       } catch (error) {
-        console.log("❌ Token refresh failed, logging out");
-        authService.logout();
+        authService.handleSessionExpired();
         return Promise.reject();
       }
     }
 
     if (status === 403) {
-      // For 403 errors, immediately logout (permission denied)
-      authService.logout();
+      authService.handleSessionExpired();
       return Promise.reject();
     }
 
