@@ -704,6 +704,31 @@ const EnhancedTourEditForm = () => {
     });
   };
 
+  // Adjust event duration: change end time by delta minutes (keeps start time)
+  const adjustEventDuration = (eventId: number, deltaMinutes: number) => {
+    const event = availableEvents.find((e) => e.id === eventId);
+    if (!event) return;
+
+    const effective = getEffectiveEventTimes(event);
+    const startMin = timeToMinutes(effective.time_start);
+    const endMin = timeToMinutes(effective.time_end);
+    const newEndMin = Math.max(startMin + 5, endMin + deltaMinutes); // minimum 5 min event
+    const newEndTime = minutesToTime(newEndMin);
+
+    setPendingTimeChanges((prev) => ({
+      ...prev,
+      [eventId]: {
+        time_start: effective.time_start,
+        time_end: newEndTime,
+        originalStart: event.time_start,
+        originalEnd: event.time_end,
+      },
+    }));
+
+    const newDur = newEndMin - startMin;
+    notify(`Duration changed to ${newDur}min (${effective.time_start} - ${newEndTime})`, { type: "info" });
+  };
+
   // Reorder event: swap time slots with the adjacent event
   const reorderEvent = (eventId: number, direction: "up" | "down") => {
     const assigned = availableEvents
@@ -2101,13 +2126,37 @@ const EnhancedTourEditForm = () => {
                                       <RemoveIcon sx={{ fontSize: 16 }} />
                                     </IconButton>
                                   </Box>
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                  >
-                                    {item.startTime} - {item.endTime} •{" "}
-                                    {getEventTypeName(item.event.event_type)}
-                                  </Typography>
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                    >
+                                      {item.startTime} - {item.endTime} •{" "}
+                                      {getEventTypeName(item.event.event_type)}
+                                    </Typography>
+                                    <Box sx={{ display: "flex", gap: 0.25 }}>
+                                      {[-10, -5, 5, 10].map((d) => (
+                                        <Button
+                                          key={d}
+                                          size="small"
+                                          variant="text"
+                                          onClick={() => adjustEventDuration(item.event.id, d)}
+                                          sx={{
+                                            fontSize: "0.55rem",
+                                            minWidth: "auto",
+                                            px: 0.4,
+                                            py: 0,
+                                            lineHeight: 1,
+                                            height: 16,
+                                            color: d < 0 ? "error.main" : "success.main",
+                                          }}
+                                          title={`${d > 0 ? "+" : ""}${d}min duration`}
+                                        >
+                                          {d > 0 ? "+" : ""}{d}′
+                                        </Button>
+                                      ))}
+                                    </Box>
+                                  </Box>
                                   {item.event.notes && (
                                     <Typography
                                       variant="caption"
