@@ -66,6 +66,8 @@ import {
   LocationOn,
   MoreTime,
   Circle,
+  ArrowUpward,
+  ArrowDownward,
 } from "@mui/icons-material";
 import { Tour, Event } from "../../types/tours";
 import { EventProximityResponse } from "../../dataProvider";
@@ -700,6 +702,58 @@ const EnhancedTourEditForm = () => {
     notify(`${label}. Next event moved to ${newNextStartTime}`, {
       type: "info",
     });
+  };
+
+  // Reorder event: swap time slots with the adjacent event
+  const reorderEvent = (eventId: number, direction: "up" | "down") => {
+    const assigned = availableEvents
+      .filter((e) => e.assigned_to_tour === record?.id)
+      .sort((a, b) => {
+        const aEff = getEffectiveEventTimes(a);
+        const bEff = getEffectiveEventTimes(b);
+        return aEff.time_start.localeCompare(bEff.time_start);
+      });
+
+    const idx = assigned.findIndex((e) => e.id === eventId);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= assigned.length) return;
+
+    const eventA = assigned[idx];
+    const eventB = assigned[swapIdx];
+    const effA = getEffectiveEventTimes(eventA);
+    const effB = getEffectiveEventTimes(eventB);
+
+    // Get durations of each event
+    const durA = timeToMinutes(effA.time_end) - timeToMinutes(effA.time_start);
+    const durB = timeToMinutes(effB.time_end) - timeToMinutes(effB.time_start);
+
+    // The earlier slot start stays the same; reassign durations in swapped order
+    const earlierStart = direction === "up"
+      ? timeToMinutes(effB.time_start)
+      : timeToMinutes(effA.time_start);
+
+    // Event moving into the earlier slot
+    const firstDur = direction === "up" ? durA : durB;
+    const secondDur = direction === "up" ? durB : durA;
+    const firstId = direction === "up" ? eventA.id : eventB.id;
+    const secondId = direction === "up" ? eventB.id : eventA.id;
+
+    // Get travel time between the two (will be recalculated after validation)
+    const travelGap = direction === "up"
+      ? timeToMinutes(effA.time_start) - timeToMinutes(effB.time_end)
+      : timeToMinutes(effB.time_start) - timeToMinutes(effA.time_end);
+    const gap = Math.max(travelGap, 0);
+
+    const firstStart = earlierStart;
+    const firstEnd = firstStart + firstDur;
+    const secondStart = firstEnd + gap;
+    const secondEnd = secondStart + secondDur;
+
+    applyLocalTimeAdjustment(firstId, minutesToTime(firstStart));
+    applyLocalTimeAdjustment(secondId, minutesToTime(secondStart));
+
+    notify(`Swapped event order`, { type: "info" });
   };
 
   // Generate timeline items with events, travel segments, and empty gaps
@@ -2017,6 +2071,24 @@ const EnhancedTourEditForm = () => {
                                       title="Show closest available events to this location"
                                     >
                                       <LocationOn sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => reorderEvent(item.event.id, "up")}
+                                      color="default"
+                                      sx={{ width: 24, height: 24 }}
+                                      title="Move event earlier"
+                                    >
+                                      <ArrowUpward sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => reorderEvent(item.event.id, "down")}
+                                      color="default"
+                                      sx={{ width: 24, height: 24 }}
+                                      title="Move event later"
+                                    >
+                                      <ArrowDownward sx={{ fontSize: 16 }} />
                                     </IconButton>
                                     <IconButton
                                       size="small"
