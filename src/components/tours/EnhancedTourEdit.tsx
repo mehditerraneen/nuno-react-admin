@@ -180,10 +180,11 @@ const EnhancedTourEditForm = () => {
 
   // NEW: Proximity highlighting state
   const [proximityHighlights, setProximityHighlights] = useState<{
-    [eventId: number]: { 
-      rank: number; 
+    [eventId: number]: {
+      rank: number;
       distance: number;
       duration: number;
+      timeGap: number;
       color: string;
     }
   }>({});
@@ -860,7 +861,8 @@ const EnhancedTourEditForm = () => {
     return timelineItems;
   };
 
-  // NEW: Calculate and display proximity highlights for available events
+  // Calculate and display proximity highlights for available events
+  // Combines geographic proximity (from API) with time proximity (client-side)
   const calculateProximityHighlights = async (sourceEvent: AvailableEvent | Event | null) => {
     if (!sourceEvent) {
       setProximityHighlights({});
@@ -878,30 +880,66 @@ const EnhancedTourEditForm = () => {
       return;
     }
 
+    // Get source event end time for time proximity scoring
+    const sourceEffective = getEffectiveEventTimes(sourceEvent as Event);
+    const sourceEndMinutes = timeToMinutes(sourceEffective.time_end);
+
     try {
       const response = await dataProvider.calculateEventProximity({
         source_event_id: sourceEvent.id,
         target_event_ids: unassignedEvents.map(e => e.id),
       });
 
-      // Create highlights with numbered badges and colors
-      const highlights: { [eventId: number]: { rank: number; distance: number; duration: number; color: string } } = {};
-      const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336'];
-      
-      response.closest_events
-        .slice(0, 5) // Top 5 closest events
-        .forEach((event, index) => {
-          highlights[event.event_id] = {
-            rank: event.rank,
-            distance: event.distance_km,
-            duration: event.duration_minutes,
-            color: colors[index] || '#757575'
+      // Build a map of geographic scores from API (lower = closer)
+      const geoScores: { [eventId: number]: { distance_km: number; duration_min: number } } = {};
+      response.closest_events.forEach((ev: any) => {
+        geoScores[ev.event_id] = {
+          distance_km: ev.distance_km,
+          duration_min: ev.duration_minutes,
+        };
+      });
+
+      // Compute combined score: geographic proximity + time proximity
+      // Time gap = how soon the target event starts after the source ends
+      const scored = unassignedEvents
+        .map((ev) => {
+          const targetStart = timeToMinutes(ev.time_start);
+          const timeGapMin = targetStart - sourceEndMinutes; // negative = before source ends
+          const absTimeGap = Math.abs(timeGapMin);
+          const geo = geoScores[ev.id];
+          const geoMinutes = geo ? geo.duration_min : 30; // fallback
+          const geoKm = geo ? geo.distance_km : 10;
+
+          // Combined score: weight geographic travel (60%) and time gap (40%)
+          // Penalize events that start BEFORE the source ends (negative gap)
+          const timePenalty = timeGapMin < 0 ? absTimeGap * 2 : absTimeGap;
+          const combinedScore = geoMinutes * 0.6 + timePenalty * 0.4;
+
+          return {
+            eventId: ev.id,
+            distance_km: geoKm,
+            duration_min: geoMinutes,
+            timeGapMin,
+            combinedScore,
           };
-        });
+        })
+        .sort((a, b) => a.combinedScore - b.combinedScore);
+
+      // Highlight top 5
+      const highlights: { [eventId: number]: { rank: number; distance: number; duration: number; timeGap: number; color: string } } = {};
+      const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336'];
+
+      scored.slice(0, 5).forEach((item, index) => {
+        highlights[item.eventId] = {
+          rank: index + 1,
+          distance: item.distance_km,
+          duration: item.duration_min,
+          timeGap: item.timeGapMin,
+          color: colors[index] || '#757575',
+        };
+      });
 
       setProximityHighlights(highlights);
-      console.log('📍 Proximity highlights updated:', highlights);
-      console.log(`⚡ Performance: ${response.cache_hits}/${response.total_calculated} from cache (${Math.round(response.cache_hits / response.total_calculated * 100)}% cache hit rate)`);
     } catch (error) {
       console.error('Failed to calculate proximity:', error);
       setProximityHighlights({});
@@ -2471,13 +2509,18 @@ const EnhancedTourEditForm = () => {
                                 <Typography
                                   variant="caption"
                                   sx={{
-                                    fontSize: "0.5rem",
+                                    fontSize: "0.55rem",
                                     color: proximityHighlights[event.id].color,
                                     fontWeight: "bold",
+                                    lineHeight: 1.2,
                                   }}
-                                  title={`${proximityHighlights[event.id].distance.toFixed(1)} km • ${proximityHighlights[event.id].duration} min from ${lastDroppedEventId ? getPatientName(availableEvents.find(e => e.id === lastDroppedEventId)?.patient_id || 0) : 'tour'}`}
+                                  title={`${proximityHighlights[event.id].distance.toFixed(1)}km drive • ${proximityHighlights[event.id].duration}min travel • starts ${proximityHighlights[event.id].timeGap >= 0 ? `${proximityHighlights[event.id].timeGap}min after` : `${Math.abs(proximityHighlights[event.id].timeGap)}min before`}`}
                                 >
-                                  📍
+                                  {proximityHighlights[event.id].distance.toFixed(1)}km
+                                  <br />
+                                  {proximityHighlights[event.id].timeGap >= 0
+                                    ? `+${proximityHighlights[event.id].timeGap}′`
+                                    : `${proximityHighlights[event.id].timeGap}′`}
                                 </Typography>
                               </Box>
                             )}
