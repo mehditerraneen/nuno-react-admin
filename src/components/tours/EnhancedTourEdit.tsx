@@ -1115,17 +1115,21 @@ const EnhancedTourEditForm = () => {
         }
       }
 
-      // Update tour metadata with validation statistics if available
-      if (validationState.statistics) {
-        await dataProvider.update("tours", {
-          id: record.id,
-          data: {
-            ...record,
-            total_distance_km: validationState.statistics.total_distance_km,
-          },
-          previousData: record,
-        });
-      }
+      // Update tour metadata: form fields + validation statistics
+      const currentFormValues = getCurrentFormValues();
+      await dataProvider.update("tours", {
+        id: record.id,
+        data: {
+          ...record,
+          time_start: currentFormValues.time_start,
+          time_end: currentFormValues.time_end,
+          break_duration: currentFormValues.break_duration,
+          ...(validationState.statistics
+            ? { total_distance_km: validationState.statistics.total_distance_km }
+            : {}),
+        },
+        previousData: record,
+      });
 
       // Clear pending changes and proximity highlights
       const totalChanges =
