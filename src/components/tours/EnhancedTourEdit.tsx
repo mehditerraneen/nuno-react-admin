@@ -189,6 +189,7 @@ const EnhancedTourEditForm = () => {
   }>({});
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [lastDroppedEventId, setLastDroppedEventId] = useState<number | null>(null);
+  const [patientSearch, setPatientSearch] = useState("");
 
   const dataProvider = useDataProvider();
   const notify = useNotify();
@@ -1187,6 +1188,14 @@ const EnhancedTourEditForm = () => {
   const unassignedEvents = availableEvents.filter(
     (e) => e.is_available && !e.assigned_to_tour && e.event_type !== "BIRTHDAY",
   );
+  const filteredUnassignedEvents = patientSearch.trim()
+    ? unassignedEvents.filter((e) => {
+        const name = getPatientName(e.patient_id).toLowerCase();
+        const notes = (e.notes || "").toLowerCase();
+        const search = patientSearch.trim().toLowerCase();
+        return name.includes(search) || notes.includes(search);
+      })
+    : unassignedEvents;
   const conflictingEvents = assignedEventsForTour.filter((e) =>
     isEventOutsideTourHours(e),
   );
@@ -2145,13 +2154,44 @@ const EnhancedTourEditForm = () => {
                               )}
                               {item.type === "travel" && (
                                 <Box>
-                                  <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                  >
-                                    🚗 Travel: {item.fromLocation} →{" "}
-                                    {item.toLocation}
-                                  </Typography>
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                    >
+                                      🚗 Travel: {item.fromLocation} →{" "}
+                                      {item.toLocation}
+                                    </Typography>
+                                    {item.currentEventId && item.nextEventId && (
+                                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                                        {[5, 10, 15].map((gap) => (
+                                          <Button
+                                            key={gap}
+                                            size="small"
+                                            variant="outlined"
+                                            color="info"
+                                            onClick={() =>
+                                              setGapBetweenEvents(
+                                                item.currentEventId,
+                                                item.nextEventId,
+                                                gap,
+                                              )
+                                            }
+                                            sx={{
+                                              fontSize: "0.55rem",
+                                              py: 0,
+                                              px: 0.5,
+                                              minWidth: "auto",
+                                              lineHeight: 1,
+                                              height: 18,
+                                            }}
+                                          >
+                                            +{gap}′
+                                          </Button>
+                                        ))}
+                                      </Box>
+                                    )}
+                                  </Box>
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
@@ -2162,7 +2202,6 @@ const EnhancedTourEditForm = () => {
                                       ? "travel time"
                                       : "estimated"}
                                     {(() => {
-                                      // Find the travel segment for distance info using event IDs
                                       const segment =
                                         validationState.travelSegments.find(
                                           (s) =>
@@ -2258,7 +2297,7 @@ const EnhancedTourEditForm = () => {
             <Grid xs={12} md={6}>
               <Card>
                 <CardHeader
-                  title={`Available Events (${unassignedEvents.length})`}
+                  title={`Available Events (${patientSearch ? `${filteredUnassignedEvents.length}/` : ""}${unassignedEvents.length})`}
                   avatar={<AddIcon color="info" />}
                 />
                 <CardContent>
@@ -2282,7 +2321,7 @@ const EnhancedTourEditForm = () => {
                       </Typography>
                     </Alert>
                   )}
-                  <Box sx={{ mb: 2 }}>
+                  <Box sx={{ mb: 1 }}>
                     <Typography variant="body2" color="text.secondary">
                       Events for {currentFormValues.date} that can be assigned
                       to tours
@@ -2294,15 +2333,26 @@ const EnhancedTourEditForm = () => {
                       </Typography>
                     )}
                   </Box>
+                  <TextField
+                    size="small"
+                    placeholder="Search patient or notes..."
+                    value={patientSearch}
+                    onChange={(e) => setPatientSearch(e.target.value)}
+                    fullWidth
+                    sx={{ mb: 1 }}
+                    InputProps={{
+                      sx: { fontSize: "0.85rem", height: 36 },
+                    }}
+                  />
 
-                  {unassignedEvents.length === 0 ? (
+                  {filteredUnassignedEvents.length === 0 ? (
                     <Alert severity="warning">
                       No available events for this date. Create new events or
                       check other dates.
                     </Alert>
                   ) : (
                     <List dense sx={{ maxHeight: 400, overflow: "auto" }}>
-                      {unassignedEvents.map((event) => {
+                      {filteredUnassignedEvents.map((event) => {
                         const isPendingAssignment =
                           pendingChanges.toAssign.includes(event.id);
                         const isPendingRemoval =
