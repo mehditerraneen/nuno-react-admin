@@ -193,6 +193,10 @@ const EnhancedTourEditForm = () => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [lastDroppedEventId, setLastDroppedEventId] = useState<number | null>(null);
   const [patientSearch, setPatientSearch] = useState("");
+  const [tourBreaks, setTourBreaks] = useState<Array<{
+    id: number; break_type: string; start_time: string; end_time: string;
+    duration_minutes?: number; location?: string; notes?: string;
+  }>>([]);
 
   const dataProvider = useDataProvider();
   const notify = useNotify();
@@ -219,6 +223,7 @@ const EnhancedTourEditForm = () => {
       loadEventTypes();
       loadAvailableEvents();
       setAssignedEvents(record.events || []);
+      setTourBreaks(record.breaks || []);
 
       // Store original form values for comparison
       setOriginalFormValues({
@@ -727,6 +732,36 @@ const EnhancedTourEditForm = () => {
 
     const newDur = newEndMin - startMin;
     notify(`Duration changed to ${newDur}min (${effective.time_start} - ${newEndTime})`, { type: "info" });
+  };
+
+  // Add a break to the tour at a specific time
+  const addBreak = async (startTime: string, durationMinutes: number, breakType: string = "REST") => {
+    if (!record) return;
+    const startMin = timeToMinutes(startTime);
+    const endTime = minutesToTime(startMin + durationMinutes);
+    try {
+      const result = await (dataProvider as any).addBreakToTour(record.id, {
+        break_type: breakType,
+        start_time: startTime,
+        end_time: endTime,
+      });
+      setTourBreaks((prev) => [...prev, result]);
+      notify(`${breakType} break added: ${startTime} - ${endTime}`, { type: "success" });
+    } catch (error: any) {
+      notify(`Failed to add break: ${error.message}`, { type: "error" });
+    }
+  };
+
+  // Remove a break from the tour
+  const removeBreak = async (breakId: number) => {
+    if (!record) return;
+    try {
+      await (dataProvider as any).removeBreakFromTour(record.id, breakId);
+      setTourBreaks((prev) => prev.filter((b) => b.id !== breakId));
+      notify("Break removed", { type: "info" });
+    } catch (error: any) {
+      notify(`Failed to remove break: ${error.message}`, { type: "error" });
+    }
   };
 
   // Reorder event: swap time slots with the adjacent event
@@ -2441,6 +2476,34 @@ const EnhancedTourEditForm = () => {
                                       💡 Set gap duration or click 0 to remove
                                     </Typography>
                                   )}
+                                  {item.duration >= 15 && (
+                                    <Box sx={{ display: "flex", gap: 0.5, mt: 0.5 }}>
+                                      {[
+                                        { label: "☕ 15′", type: "REST", dur: 15 },
+                                        { label: "🍽️ 30′", type: "LUNCH", dur: 30 },
+                                        { label: "🍽️ 45′", type: "LUNCH", dur: 45 },
+                                      ]
+                                        .filter((b) => b.dur <= item.duration)
+                                        .map((b) => (
+                                          <Button
+                                            key={b.label}
+                                            size="small"
+                                            variant="outlined"
+                                            color="secondary"
+                                            onClick={() => addBreak(item.startTime, b.dur, b.type)}
+                                            sx={{
+                                              fontSize: "0.6rem",
+                                              py: 0.25,
+                                              px: 0.5,
+                                              minWidth: "auto",
+                                              lineHeight: 1,
+                                            }}
+                                          >
+                                            {b.label}
+                                          </Button>
+                                        ))}
+                                    </Box>
+                                  )}
                                 </Box>
                               )}
                             </Box>
@@ -2451,6 +2514,55 @@ const EnhancedTourEditForm = () => {
                   </Paper>
                 </CardContent>
               </Card>
+
+              {/* Breaks */}
+              {tourBreaks.length > 0 && (
+                <Card sx={{ mt: 1 }}>
+                  <CardHeader
+                    title={`Breaks (${tourBreaks.length})`}
+                    avatar={<Coffee color="secondary" />}
+                    titleTypographyProps={{ variant: "subtitle1" }}
+                    sx={{ pb: 0 }}
+                  />
+                  <CardContent sx={{ pt: 1 }}>
+                    {tourBreaks.map((b) => (
+                      <Box
+                        key={b.id}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          py: 0.5,
+                          px: 1,
+                          mb: 0.5,
+                          bgcolor: "#fff3e0",
+                          borderRadius: 1,
+                          border: "1px solid #ffe0b2",
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                            {b.break_type === "LUNCH" ? "🍽️" : "☕"}{" "}
+                            {b.break_type} break
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}
+                            {b.duration_minutes ? ` • ${b.duration_minutes}min` : ""}
+                          </Typography>
+                        </Box>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => removeBreak(b.id)}
+                          title="Remove break"
+                        >
+                          <RemoveIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </Grid>
 
             {/* Available Events */}

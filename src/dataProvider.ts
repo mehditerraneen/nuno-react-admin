@@ -2061,6 +2061,33 @@ export const dataProvider: MyDataProvider = {
     return proximityResult;
   },
 
+  // Tour break management
+  addBreakToTour: async (tourId: number, breakData: {
+    break_type: string;
+    start_time: string;
+    end_time: string;
+    location?: string;
+    notes?: string;
+  }) => {
+    const url = `${apiUrl}/tours/${tourId}/breaks`;
+    const response = await authenticatedFetch(url, {
+      method: "POST",
+      body: JSON.stringify(breakData),
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Failed to add break: ${err}`);
+    }
+    return response.json();
+  },
+
+  removeBreakFromTour: async (tourId: number, breakId: number) => {
+    const url = `${apiUrl}/tours/${tourId}/breaks/${breakId}`;
+    const response = await authenticatedFetch(url, { method: "DELETE" });
+    if (!response.ok) throw new Error("Failed to remove break");
+    return response.json();
+  },
+
   // Medication Plans methods
   searchMedicines: async (query: string, limit: number = 20) => {
     const params = new URLSearchParams({ q: query, limit: limit.toString() });
