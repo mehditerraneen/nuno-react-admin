@@ -278,11 +278,10 @@ export const ToursDashboard = () => {
                             {tour.events?.length || 0} events • Status:{" "}
                             {tour.optimization_status || "pending"}
                           </Typography>
-                          {tour.total_distance && (
+                          {tour.total_distance_km && (
                             <Typography variant="body2">
-                              Distance: {tour.total_distance} km • Duration:{" "}
-                              {Math.floor((tour.estimated_duration || 0) / 60)}h{" "}
-                              {(tour.estimated_duration || 0) % 60}m
+                              Distance: {tour.total_distance_km} km
+                              {tour.total_travel_time_minutes ? ` • Travel: ${tour.total_travel_time_minutes}min` : ""}
                             </Typography>
                           )}
                         </Box>

@@ -78,22 +78,22 @@ export const TourList = () => (
         )}
       />
       <FunctionField
-        source="total_distance"
+        source="total_distance_km"
         label="Distance"
         render={(record: Tour) =>
-          record.total_distance
-            ? `${record.total_distance} km`
+          record.total_distance_km
+            ? `${record.total_distance_km} km`
             : "Not calculated"
         }
       />
       <FunctionField
-        source="estimated_duration"
-        label="Duration"
+        source="total_travel_time_minutes"
+        label="Travel Time"
         render={(record: Tour) => {
-          if (!record.estimated_duration) return "Not calculated";
-          const hours = Math.floor(record.estimated_duration / 60);
-          const minutes = record.estimated_duration % 60;
-          return `${hours}h ${minutes}m`;
+          if (!record.total_travel_time_minutes) return "Not calculated";
+          const hours = Math.floor(record.total_travel_time_minutes / 60);
+          const minutes = record.total_travel_time_minutes % 60;
+          return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}min`;
         }}
       />
       <FunctionField
@@ -371,11 +371,11 @@ export const TourShow = () => (
       />
 
       <FunctionField
-        source="total_distance"
+        source="total_distance_km"
         label="Total Distance"
         render={(record: Tour) =>
-          record.total_distance
-            ? `${record.total_distance} km`
+          record.total_distance_km
+            ? `${record.total_distance_km} km`
             : "Not calculated"
         }
       />

@@ -116,10 +116,13 @@ interface OptimizationSuggestion {
 interface TravelSegment {
   from_event_id: number;
   to_event_id: number;
-  distance_km: number;
-  duration_minutes: number;
+  estimated_distance_km: number;
+  estimated_duration_minutes: number;
   from_location: string;
   to_location: string;
+  departure_time: string;
+  arrival_time: string;
+  buffer_time_minutes: number;
 }
 
 interface ValidationState {
@@ -577,7 +580,7 @@ const EnhancedTourEditForm = () => {
         segment.from_event_id === fromEventId &&
         segment.to_event_id === toEventId,
     );
-    return travelSegment?.duration_minutes || 15; // Default 15 minutes if no data available
+    return travelSegment?.estimated_duration_minutes || 15; // Default 15 minutes if no data available
   };
 
   // Helper function to get effective event times (including pending changes)
@@ -820,6 +823,8 @@ const EnhancedTourEditForm = () => {
             fromLocation: getPatientName(event.patient_id),
             toLocation: getPatientName(nextEvent.patient_id),
             actualTravelTime: true,
+            currentEventId: event.id,
+            nextEventId: nextEvent.id,
           });
 
           // Add free time if there's a gap after travel
@@ -1116,9 +1121,7 @@ const EnhancedTourEditForm = () => {
           id: record.id,
           data: {
             ...record,
-            total_distance: validationState.statistics.total_distance_km,
-            estimated_duration:
-              validationState.statistics.total_tour_duration_minutes,
+            total_distance_km: validationState.statistics.total_distance_km,
           },
           previousData: record,
         });
@@ -1322,8 +1325,8 @@ const EnhancedTourEditForm = () => {
                           label={
                             validationState.statistics?.total_distance_km
                               ? `${validationState.statistics.total_distance_km.toFixed(1)} km`
-                              : record.total_distance
-                                ? `${record.total_distance} km`
+                              : record.total_distance_km
+                                ? `${record.total_distance_km} km`
                                 : "Distance TBD"
                           }
                           color="secondary"
@@ -1333,10 +1336,8 @@ const EnhancedTourEditForm = () => {
                           icon={<AccessTime />}
                           label={
                             validationState.statistics?.total_care_time_minutes
-                              ? `${validationState.statistics.total_care_time_minutes}min`
-                              : record.estimated_duration
-                                ? `${Math.floor(record.estimated_duration / 60)}h ${record.estimated_duration % 60}m`
-                                : "Duration TBD"
+                              ? `${validationState.statistics.total_care_time_minutes}min care`
+                              : "Duration TBD"
                           }
                           color="success"
                           size="small"
@@ -2137,19 +2138,15 @@ const EnhancedTourEditForm = () => {
                                       ? "travel time"
                                       : "estimated"}
                                     {(() => {
-                                      // Find the travel segment for distance info
+                                      // Find the travel segment for distance info using event IDs
                                       const segment =
                                         validationState.travelSegments.find(
                                           (s) =>
-                                            s.from_location.includes(
-                                              item.fromLocation.split(" ")[0],
-                                            ) ||
-                                            s.to_location.includes(
-                                              item.toLocation.split(" ")[0],
-                                            ),
+                                            s.from_event_id === item.currentEventId &&
+                                            s.to_event_id === item.nextEventId,
                                         );
                                       return segment
-                                        ? ` • ${segment.distance_km.toFixed(1)}km`
+                                        ? ` • ${segment.estimated_distance_km.toFixed(1)}km`
                                         : "";
                                     })()}
                                   </Typography>

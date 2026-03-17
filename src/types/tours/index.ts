@@ -25,8 +25,8 @@ export interface Tour {
   time_end?: string;
   break_duration?: number; // minutes
   events: Event[];
-  total_distance: number;
-  estimated_duration: number;
+  total_distance_km: number;
+  total_travel_time_minutes?: number;
   optimization_status: "pending" | "optimized" | "manual";
 }
 
