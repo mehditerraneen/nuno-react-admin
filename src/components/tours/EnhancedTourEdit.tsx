@@ -1193,7 +1193,7 @@ const EnhancedTourEditForm = () => {
           await dataProvider.update("events", {
             id: eventId,
             data: {
-              ...event,
+              id: eventId,
               time_start: timeChange.time_start,
               time_end: timeChange.time_end,
             },
@@ -1210,7 +1210,7 @@ const EnhancedTourEditForm = () => {
           await dataProvider.update("events", {
             id: eventId,
             data: {
-              ...event,
+              id: eventId,
               tour_id: record.id,
               time_start: effectiveTimes.time_start,
               time_end: effectiveTimes.time_end,
@@ -1224,14 +1224,11 @@ const EnhancedTourEditForm = () => {
       for (const eventId of pendingChanges.toRemove) {
         const event = availableEvents.find((e) => e.id === eventId);
         if (event) {
-          const effectiveTimes = getEffectiveEventTimes(event);
           await dataProvider.update("events", {
             id: eventId,
             data: {
-              ...event,
+              id: eventId,
               tour_id: null,
-              time_start: effectiveTimes.time_start,
-              time_end: effectiveTimes.time_end,
             },
             previousData: event,
           });
@@ -1243,10 +1240,12 @@ const EnhancedTourEditForm = () => {
       await dataProvider.update("tours", {
         id: record.id,
         data: {
-          ...record,
+          id: record.id,
+          name: record.name,
           time_start: currentFormValues.time_start,
           time_end: currentFormValues.time_end,
           break_duration: currentFormValues.break_duration,
+          employee_id: record.employee_id,
           ...(validationState.statistics
             ? { total_distance_km: validationState.statistics.total_distance_km }
             : {}),
