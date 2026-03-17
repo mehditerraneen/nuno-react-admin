@@ -703,22 +703,26 @@ const EnhancedTourEditForm = () => {
   };
 
   // Generate timeline items with events, travel segments, and empty gaps
-  // Function to detect overlapping events
+  // Function to detect overlapping events (uses effective times including pending changes)
   const detectOverlaps = (events: any[]) => {
     const overlaps: any[] = [];
-    const sortedEvents = [...events].sort((a, b) =>
-      a.time_start.localeCompare(b.time_start),
-    );
+    const sortedEvents = [...events].sort((a, b) => {
+      const aEffective = getEffectiveEventTimes(a);
+      const bEffective = getEffectiveEventTimes(b);
+      return aEffective.time_start.localeCompare(bEffective.time_start);
+    });
 
     for (let i = 0; i < sortedEvents.length; i++) {
       for (let j = i + 1; j < sortedEvents.length; j++) {
         const event1 = sortedEvents[i];
         const event2 = sortedEvents[j];
+        const eff1 = getEffectiveEventTimes(event1);
+        const eff2 = getEffectiveEventTimes(event2);
 
-        const event1Start = timeToMinutes(event1.time_start);
-        const event1End = timeToMinutes(event1.time_end);
-        const event2Start = timeToMinutes(event2.time_start);
-        const event2End = timeToMinutes(event2.time_end);
+        const event1Start = timeToMinutes(eff1.time_start);
+        const event1End = timeToMinutes(eff1.time_end);
+        const event2Start = timeToMinutes(eff2.time_start);
+        const event2End = timeToMinutes(eff2.time_end);
 
         // Check if events overlap
         if (event1Start < event2End && event2Start < event1End) {
