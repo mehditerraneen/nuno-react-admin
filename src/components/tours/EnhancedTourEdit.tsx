@@ -1986,6 +1986,25 @@ const EnhancedTourEditForm = () => {
                                     {item.startTime} - {item.endTime} •{" "}
                                     {getEventTypeName(item.event.event_type)}
                                   </Typography>
+                                  {item.event.notes && (
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      display="block"
+                                      sx={{
+                                        mt: 0.25,
+                                        fontSize: "0.65rem",
+                                        lineHeight: 1.3,
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        maxWidth: 400,
+                                      }}
+                                      title={item.event.notes}
+                                    >
+                                      📋 {item.event.notes}
+                                    </Typography>
+                                  )}
                                   {isEventOutsideTourHours(item.event) && (
                                     <Typography
                                       variant="caption"
@@ -2349,13 +2368,22 @@ const EnhancedTourEditForm = () => {
                                 Patient: {getPatientName(event.patient_id)} •{" "}
                                 {getEventTypeName(event.event_type)}
                               </Typography>
-                              {event.event_address && (
+                              {event.notes && (
                                 <Typography
                                   variant="caption"
                                   display="block"
                                   color="text.secondary"
+                                  sx={{
+                                    fontSize: "0.65rem",
+                                    lineHeight: 1.3,
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    maxWidth: 350,
+                                  }}
+                                  title={event.notes}
                                 >
-                                  📍 {event.event_address}
+                                  📋 {event.notes}
                                 </Typography>
                               )}
                             </Box>
