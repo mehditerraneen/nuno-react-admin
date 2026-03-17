@@ -1178,8 +1178,6 @@ const EnhancedTourEditForm = () => {
         Object.keys(pendingTimeChanges).length;
       setPendingChanges({ toAssign: [], toRemove: [] });
       setPendingTimeChanges({});
-      setProximityHighlights({});
-      setLastDroppedEventId(null);
 
       // Refresh data
       loadAvailableEvents();
