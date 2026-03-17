@@ -580,7 +580,7 @@ const EnhancedTourEditForm = () => {
         segment.from_event_id === fromEventId &&
         segment.to_event_id === toEventId,
     );
-    return travelSegment?.estimated_duration_minutes || 15; // Default 15 minutes if no data available
+    return travelSegment?.estimated_duration_minutes ?? 15; // Default 15 minutes if no data available
   };
 
   // Helper function to get effective event times (including pending changes)
