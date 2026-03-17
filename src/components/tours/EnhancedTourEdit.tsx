@@ -890,16 +890,17 @@ const EnhancedTourEditForm = () => {
       const eventEndMinutes = timeToMinutes(effectiveTimes.time_end);
       const isOverlapping = overlappingEventIds.has(event.id);
 
-      // Add empty time segment if there's a gap
+      // Add gap or "travel from office" segment before first event
       if (currentTime < eventStartMinutes) {
+        const isFirstGap = index === 0;
         const nextEvent =
           index < sortedEvents.length - 1 ? sortedEvents[index] : null;
         timelineItems.push({
-          type: "empty",
+          type: isFirstGap ? "from_office" : "empty",
           startTime: minutesToTime(currentTime),
           endTime: effectiveTimes.time_start,
           duration: eventStartMinutes - currentTime,
-          canRemove: nextEvent ? true : false,
+          canRemove: !isFirstGap && nextEvent ? true : false,
           currentEventId: index > 0 ? sortedEvents[index - 1].id : null,
           nextEventId: event.id,
         });
@@ -1965,10 +1966,12 @@ const EnhancedTourEditForm = () => {
                                         : "primary.main"
                                       : item.type === "travel"
                                         ? "secondary.main"
-                                        : "grey.400",
+                                        : item.type === "from_office"
+                                          ? "info.main"
+                                          : "grey.400",
                                   color: "white",
                                   border:
-                                    item.type === "empty"
+                                    item.type === "empty" || item.type === "from_office"
                                       ? "2px solid"
                                       : item.isOverlapping
                                         ? "3px solid"
@@ -1976,9 +1979,11 @@ const EnhancedTourEditForm = () => {
                                   borderColor:
                                     item.type === "empty"
                                       ? "grey.400"
-                                      : item.isOverlapping
-                                        ? "error.dark"
-                                        : "transparent",
+                                      : item.type === "from_office"
+                                        ? "info.main"
+                                        : item.isOverlapping
+                                          ? "error.dark"
+                                          : "transparent",
                                   backgroundColor:
                                     item.type === "empty"
                                       ? "transparent"
@@ -2005,6 +2010,9 @@ const EnhancedTourEditForm = () => {
                                   <LocationOn sx={{ fontSize: 16 }} />
                                 )}
                                 {item.type === "travel" && (
+                                  <DirectionsCar sx={{ fontSize: 16 }} />
+                                )}
+                                {item.type === "from_office" && (
                                   <DirectionsCar sx={{ fontSize: 16 }} />
                                 )}
                                 {item.type === "empty" && (
@@ -2407,6 +2415,30 @@ const EnhancedTourEditForm = () => {
                                         ? ` • ${segment.estimated_distance_km.toFixed(1)}km`
                                         : "";
                                     })()}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {item.type === "from_office" && (
+                                <Box>
+                                  <Typography
+                                    variant="body2"
+                                    color="primary.main"
+                                    sx={{ fontWeight: "bold" }}
+                                  >
+                                    🏢 Travel from office
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    {record?.office_address || "Office"} → first patient
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                  >
+                                    {item.startTime} - {item.endTime} • {item.duration} min
                                   </Typography>
                                 </Box>
                               )}
