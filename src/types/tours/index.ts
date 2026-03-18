@@ -1,3 +1,16 @@
+export interface LongTermPackageRef {
+  id: number;
+  code: string;
+  description: string;
+}
+
+export interface TourType {
+  id: number;
+  name: string;
+  description?: string;
+  long_term_packages: LongTermPackageRef[];
+}
+
 export interface Event {
   id: number;
   patient_id: number;
@@ -11,6 +24,7 @@ export interface Event {
   notes: string;
   event_address?: string;
   event_type: string;
+  care_codes?: string[];
   created_at?: string;
   updated_at?: string;
 }
@@ -24,6 +38,8 @@ export interface Tour {
   time_start?: string;
   time_end?: string;
   break_duration?: number; // minutes
+  tour_type_id?: number | null;
+  tour_type_name?: string;
   events: Event[];
   total_distance_km: number;
   total_travel_time_minutes?: number;

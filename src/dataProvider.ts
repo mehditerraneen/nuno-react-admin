@@ -498,6 +498,28 @@ export const dataProvider: MyDataProvider = {
       }
     }
 
+    // Handle tour-types getOne
+    if (resource === "tour-types") {
+      const url = `${apiUrl}/tours/tour-types/${params.id}`;
+      console.log("🌐 Making getOne request to tour-types endpoint:", url);
+
+      try {
+        const response = await httpClient(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📊 TourType getOne response:", data);
+
+        return { data };
+      } catch (error: any) {
+        console.error("❌ Error getting one tour-type:", error);
+        throw error;
+      }
+    }
+
     // Handle employees getOne with standard REST endpoint
     if (resource === "employees") {
       const url = `${apiUrl}/employees/${params.id}`;
@@ -636,6 +658,29 @@ export const dataProvider: MyDataProvider = {
         }
       }
 
+      // Handle tour-types resource
+      if (resource === "tour-types") {
+        const url = `${apiUrl}/tours/tour-types`;
+        const response = await httpClient(url, {
+          method: "POST",
+          body: JSON.stringify(params.data),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📊 Create tour-type response:", data);
+
+        if (data && typeof data === "object" && data.id) {
+          return { data };
+        } else {
+          console.error("❌ TourType creation response missing id:", data);
+          throw new Error("TourType creation response must include an id");
+        }
+      }
+
       // Handle tours resource with /fast/ prefix
       if (resource === "tours") {
         const url = `${apiUrl}/tours`;
@@ -714,6 +759,29 @@ export const dataProvider: MyDataProvider = {
   update: async (resource: string, params: any) => {
     console.log("🔍 Updating for resource:", resource, "with params:", params);
     try {
+      // Handle tour-types resource
+      if (resource === "tour-types") {
+        const url = `${apiUrl}/tours/tour-types/${params.id}`;
+        const response = await httpClient(url, {
+          method: "PUT",
+          body: JSON.stringify(params.data),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📊 Update tour-type response:", data);
+
+        if (data && typeof data === "object" && data.id) {
+          return { data };
+        } else {
+          console.error("❌ TourType update response missing id:", data);
+          throw new Error("TourType update response must include an id");
+        }
+      }
+
       // Handle tours resource with /fast/ prefix
       if (resource === "tours") {
         const url = `${apiUrl}/tours/${params.id}`;
@@ -807,6 +875,20 @@ export const dataProvider: MyDataProvider = {
   delete: async (resource: string, params: any) => {
     console.log("🔍 Deleting for resource:", resource, "with params:", params);
     try {
+      // Handle tour-types resource
+      if (resource === "tour-types") {
+        const url = `${apiUrl}/tours/tour-types/${params.id}`;
+        const response = await httpClient(url, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return { data: params.previousData || { id: params.id } };
+      }
+
       // Handle tours resource with /fast/ prefix
       if (resource === "tours") {
         const url = `${apiUrl}/tours/${params.id}`;
@@ -1088,6 +1170,70 @@ export const dataProvider: MyDataProvider = {
         }
       } catch (error: any) {
         console.error("❌ Error fetching medication-plans:", error);
+        throw error;
+      }
+    }
+
+    // Handle tour-types resource
+    if (resource === "tour-types") {
+      const url = `${apiUrl}/tours/tour-types`;
+      console.log("🌐 Making request to tour-types endpoint:", url);
+
+      try {
+        const response = await httpClient(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📊 TourTypes list response:", data);
+
+        if (Array.isArray(data)) {
+          return {
+            data: data,
+            total: data.length,
+          };
+        } else if (data && typeof data === "object" && data.data && Array.isArray(data.data)) {
+          return data;
+        } else {
+          console.error("❌ Unexpected tour-types response format:", data);
+          throw new Error("Expected array or React Admin format for tour-types");
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching tour-types:", error);
+        throw error;
+      }
+    }
+
+    // Handle long-term-packages resource (for tour type management)
+    if (resource === "long-term-packages") {
+      const url = `${apiUrl}/tours/long-term-packages`;
+      console.log("🌐 Making request to long-term-packages endpoint:", url);
+
+      try {
+        const response = await httpClient(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📊 LongTermPackages list response:", data);
+
+        if (Array.isArray(data)) {
+          return {
+            data: data,
+            total: data.length,
+          };
+        } else if (data && typeof data === "object" && data.data && Array.isArray(data.data)) {
+          return data;
+        } else {
+          console.error("❌ Unexpected long-term-packages response format:", data);
+          throw new Error("Expected array or React Admin format for long-term-packages");
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching long-term-packages:", error);
         throw error;
       }
     }

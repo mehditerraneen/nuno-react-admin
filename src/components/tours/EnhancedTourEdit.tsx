@@ -69,7 +69,7 @@ import {
   ArrowUpward,
   ArrowDownward,
 } from "@mui/icons-material";
-import { Tour, Event } from "../../types/tours";
+import { Tour, Event, TourType } from "../../types/tours";
 import { EventProximityResponse } from "../../dataProvider";
 
 interface AvailableEvent extends Event {
@@ -193,6 +193,8 @@ const EnhancedTourEditForm = () => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [lastDroppedEventId, setLastDroppedEventId] = useState<number | null>(null);
   const [patientSearch, setPatientSearch] = useState("");
+  const [tourTypes, setTourTypes] = useState<TourType[]>([]);
+  const [selectedTourTypeId, setSelectedTourTypeId] = useState<number | null>(null);
   const [tourBreaks, setTourBreaks] = useState<Array<{
     id: number; break_type: string; start_time: string; end_time: string;
     duration_minutes?: number; location?: string; notes?: string;
@@ -221,9 +223,11 @@ const EnhancedTourEditForm = () => {
       loadEmployees();
       loadPatients();
       loadEventTypes();
+      loadTourTypes();
       loadAvailableEvents();
       setAssignedEvents(record.events || []);
       setTourBreaks(record.breaks || []);
+      setSelectedTourTypeId(record.tour_type_id ?? null);
 
       // Store original form values for comparison
       setOriginalFormValues({
@@ -535,6 +539,19 @@ const EnhancedTourEditForm = () => {
       setEventTypes(response.data);
     } catch (error) {
       notify("Failed to load event types", { type: "error" });
+    }
+  };
+
+  const loadTourTypes = async () => {
+    try {
+      const response = await dataProvider.getList("tour-types", {
+        pagination: { page: 1, perPage: 100 },
+        sort: { field: "name", order: "ASC" },
+        filter: {},
+      });
+      setTourTypes(response.data as TourType[]);
+    } catch (error) {
+      console.error("Failed to load tour types:", error);
     }
   };
 
@@ -1282,6 +1299,7 @@ const EnhancedTourEditForm = () => {
           time_end: currentFormValues.time_end,
           break_duration: currentFormValues.break_duration,
           employee_id: record.employee_id,
+          tour_type_id: selectedTourTypeId,
           ...(validationState.statistics
             ? { total_distance_km: validationState.statistics.total_distance_km }
             : {}),
@@ -1339,17 +1357,31 @@ const EnhancedTourEditForm = () => {
   const assignedEventsForTour = availableEvents.filter(
     (e) => e.assigned_to_tour === record?.id,
   );
+  const selectedTourType = tourTypes.find((tt) => tt.id === selectedTourTypeId);
+  const tourTypePackageCodeSet = selectedTourType
+    ? new Set(selectedTourType.long_term_packages.map((pkg) => pkg.code))
+    : null;
+
   const unassignedEvents = availableEvents.filter(
     (e) => e.is_available && !e.assigned_to_tour && e.event_type !== "BIRTHDAY",
   );
-  const filteredUnassignedEvents = patientSearch.trim()
+
+  // Filter by tour type long-term packages if a tour type is selected
+  const careCodeFilteredEvents = tourTypePackageCodeSet
     ? unassignedEvents.filter((e) => {
+        if (!e.care_codes || e.care_codes.length === 0) return false;
+        return e.care_codes.some((code) => tourTypePackageCodeSet.has(code));
+      })
+    : unassignedEvents;
+
+  const filteredUnassignedEvents = patientSearch.trim()
+    ? careCodeFilteredEvents.filter((e) => {
         const name = getPatientName(e.patient_id).toLowerCase();
         const notes = (e.notes || "").toLowerCase();
         const search = patientSearch.trim().toLowerCase();
         return name.includes(search) || notes.includes(search);
       })
-    : unassignedEvents;
+    : careCodeFilteredEvents;
   const conflictingEvents = assignedEventsForTour.filter((e) =>
     isEventOutsideTourHours(e),
   );
@@ -1419,6 +1451,40 @@ const EnhancedTourEditForm = () => {
                     >
                       <SelectInput optionText="name" size="small" />
                     </ReferenceInput>
+
+                    {/* Tour Type */}
+                    <FormControl fullWidth size="small">
+                      <InputLabel id="tour-type-label">Tour Type</InputLabel>
+                      <Select
+                        labelId="tour-type-label"
+                        value={selectedTourTypeId ?? ""}
+                        label="Tour Type"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newId = val === "" ? null : (val as number);
+                          setSelectedTourTypeId(newId);
+                          formContext?.setValue("tour_type_id", newId);
+                        }}
+                      >
+                        <MenuItem value="">
+                          <em>None (show all events)</em>
+                        </MenuItem>
+                        {tourTypes.map((tt) => (
+                          <MenuItem key={tt.id} value={tt.id}>
+                            {tt.name}
+                            {tt.long_term_packages.length > 0 && (
+                              <Typography
+                                component="span"
+                                variant="caption"
+                                sx={{ ml: 1, color: "text.secondary" }}
+                              >
+                                ({tt.long_term_packages.length} packages)
+                              </Typography>
+                            )}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Box>
                 </Grid>
 
@@ -2601,7 +2667,7 @@ const EnhancedTourEditForm = () => {
             <Grid xs={12} md={6}>
               <Card>
                 <CardHeader
-                  title={`Available Events (${patientSearch ? `${filteredUnassignedEvents.length}/` : ""}${unassignedEvents.length})`}
+                  title={`Available Events (${patientSearch || selectedTourType ? `${filteredUnassignedEvents.length}/` : ""}${unassignedEvents.length})`}
                   avatar={<AddIcon color="info" />}
                 />
                 <CardContent>
@@ -2648,6 +2714,14 @@ const EnhancedTourEditForm = () => {
                       sx: { fontSize: "0.85rem", height: 36 },
                     }}
                   />
+                  {selectedTourType && (
+                    <Alert severity="info" sx={{ mb: 1, py: 0 }}>
+                      <Typography variant="caption">
+                        Filtered by tour type <strong>{selectedTourType.name}</strong>
+                        {" "}({selectedTourType.long_term_packages.map((pkg) => pkg.code).join(", ")})
+                      </Typography>
+                    </Alert>
+                  )}
 
                   {filteredUnassignedEvents.length === 0 ? (
                     <Alert severity="warning">

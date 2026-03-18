@@ -24,6 +24,11 @@ import {
   EmployeeCreate,
 } from "./components/tours/EmployeeManagement";
 import {
+  TourTypeList,
+  TourTypeEdit,
+  TourTypeCreate,
+} from "./components/tours/TourTypeManagement";
+import {
   MedicationPlanList,
   MedicationPlanEdit,
   MedicationPlanCreate,
@@ -121,6 +126,14 @@ export const App = () => (
       show={TourShow}
       options={{ label: "Tours" }}
     />
+    <Resource
+      name="tour-types"
+      list={TourTypeList}
+      edit={TourTypeEdit}
+      create={TourTypeCreate}
+      options={{ label: "Tour Types" }}
+    />
+    <Resource name="long-term-packages" />
     <Resource
       name="medication-plans"
       list={MedicationPlanList}
