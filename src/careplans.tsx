@@ -83,6 +83,8 @@ export const CarePlanList = () => (
       <NumberField source="plan_number" />
       <DateField source="plan_start_date" />
       <BooleanField source="last_valid_plan" />
+      <DateField source="updated_on" label="Updated" showTime />
+      <TextField source="updated_by" label="Updated By" />
       <ShowButton />
       <EditButton />
     </Datagrid>

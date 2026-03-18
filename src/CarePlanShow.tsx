@@ -270,6 +270,22 @@ export const CarePlanShow = () => (
         label="Linked CNS Care Plan"
         emptyText="No CNS care plan linked"
       />
+      <Box sx={{ display: "flex", gap: 4, mt: 1, mb: 1, p: 1.5, bgcolor: "grey.50", borderRadius: 1 }}>
+        <Box>
+          <Typography variant="caption" color="text.secondary">Created</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <DateField source="created_on" showTime />
+            <TextField source="created_by" />
+          </Box>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="text.secondary">Last Updated</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <DateField source="updated_on" showTime />
+            <TextField source="updated_by" emptyText="—" />
+          </Box>
+        </Box>
+      </Box>
       <CarePlanDetails />
     </SimpleShowLayout>
   </Show>
