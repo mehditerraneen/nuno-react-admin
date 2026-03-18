@@ -677,13 +677,27 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 if (emp.employee_id !== employeeId) return emp;
 
                 const updatedShifts = { ...emp.shifts };
+                const existingShift = updatedShifts[day];
                 if (shiftCode && shiftType) {
-                    updatedShifts[day] = {
+                    const newShift: any = {
                         shift_code: shiftCode,
                         color: shiftType.color_code || '#ccc',
                         hours: typeof shiftType.hours === 'number' ? shiftType.hours : parseFloat(shiftType.hours) || 0,
                         source: 'MANUAL',
                     };
+                    // Preserve optimizer origin for diff display
+                    if (existingShift?.optimizer_original) {
+                        newShift.optimizer_original = existingShift.optimizer_original;
+                        newShift.is_modified_from_optimizer = shiftCode !== existingShift.optimizer_original.shift_code;
+                    } else if (existingShift?.source === 'OPTIMIZER') {
+                        // First manual edit of an optimizer cell — capture the original
+                        newShift.optimizer_original = {
+                            shift_code: existingShift.shift_code,
+                            hours: existingShift.hours,
+                        };
+                        newShift.is_modified_from_optimizer = shiftCode !== existingShift.shift_code;
+                    }
+                    updatedShifts[day] = newShift;
                 } else {
                     // Delete shift
                     delete updatedShifts[day];
@@ -1144,6 +1158,10 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     row[`day_${day}_color`] = shift?.color || '';
                     row[`day_${day}_hours`] = shift?.hours || 0;
                     row[`day_${day}_source`] = shift?.source || '';
+                    // Optimizer diff tracking
+                    if (shift?.is_modified_from_optimizer) {
+                        row[`day_${day}_optimizer_original`] = shift.optimizer_original;
+                    }
                 });
             }
 
@@ -1331,9 +1349,11 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         const colorField = field + '_color';
         const sourceField = field + '_source';
         const hoursField = field + '_hours';
+        const optimizerOriginalField = field + '_optimizer_original';
         const color = params.data[colorField];
         const source = params.data[sourceField];
         const hours = params.data[hoursField] || 0;
+        const optimizerOriginal = params.data[optimizerOriginalField];
         const sourceInfo = getSourceInfo(source);
 
         const status = calendarData?.planning?.status;
@@ -1439,15 +1459,27 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             >
                 {shiftCode ? (
                     <>
-                        <Tooltip title={`${shiftCode} (${hours}h)${source ? ' - ' + sourceInfo.label : ''} | Glisser pour copier`}>
+                        <Tooltip title={
+                            optimizerOriginal
+                                ? `${shiftCode} (${hours}h) — modifié de ${optimizerOriginal.shift_code} (${optimizerOriginal.hours}h) proposé par l'optimiseur`
+                                : `${shiftCode} (${hours}h)${source ? ' - ' + sourceInfo.label : ''} | Glisser pour copier`
+                        }>
                             <div
                                 draggable={isEditable}
                                 onDragStart={handleDragStart}
-                                style={{ cursor: isEditable ? 'grab' : 'default' }}
+                                style={{ cursor: isEditable ? 'grab' : 'default', position: 'relative' }}
                             >
                                 <Chip
                                     label={
                                         <Box display="flex" alignItems="center" gap={0.5}>
+                                            {optimizerOriginal && (
+                                                <span style={{
+                                                    textDecoration: 'line-through',
+                                                    opacity: 0.5,
+                                                    fontSize: '0.55rem',
+                                                    marginRight: 1,
+                                                }}>{optimizerOriginal.shift_code}</span>
+                                            )}
                                             <span>{shiftCode}</span>
                                             {sourceInfo.icon && <span style={{ fontSize: '0.65rem' }}>{sourceInfo.icon}</span>}
                                         </Box>
@@ -1462,6 +1494,8 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                         fontSize: '0.65rem',
                                         height: 22,
                                         borderLeft: source ? `3px solid ${sourceInfo.borderColor}` : undefined,
+                                        // Orange dashed bottom border for optimizer-modified cells
+                                        borderBottom: optimizerOriginal ? '2px dashed #FF9800' : undefined,
                                         '& .MuiChip-deleteIcon': { color: 'rgba(0,0,0,0.5)' },
                                     }}
                                 />
