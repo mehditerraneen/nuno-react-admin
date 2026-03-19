@@ -137,7 +137,7 @@ export const CarePlanOverlapView = () => {
             plan_number: cp.plan_number,
             plan_start_date: cp.plan_start_date,
             last_valid_plan: cp.last_valid_plan,
-            selected: true, // Select all by default
+            selected: false, // None selected by default — user picks which to compare
           })),
         );
       } catch (error) {
@@ -290,7 +290,7 @@ export const CarePlanOverlapView = () => {
         Détection des Chevauchements de Soins
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Sélectionnez les plans de soins actifs puis lancez l'analyse pour détecter
+        Sélectionnez les plans de soins à comparer puis lancez l'analyse pour détecter
         les chevauchements horaires entre les passages.
       </Typography>
 
