@@ -36,6 +36,7 @@ import {
   CarePlanDetailsSummary,
 } from "./components/DurationSummary";
 import { formatDurationDisplay } from "./utils/timeUtils";
+import { CarePlanPrintButton } from "./components/CarePlanPrintView";
 
 // Custom field to display package duration with daily calculation
 const PackageDurationField = ({ record }: { record: any }) => {
@@ -66,6 +67,7 @@ const CarePlanDetails = () => {
   const record = useRecordContext();
   const dataProvider = useDataProvider<MyDataProvider>();
   const [details, setDetails] = useState<CarePlanDetail[]>([]);
+  const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -82,7 +84,6 @@ const CarePlanDetails = () => {
       dataProvider
         .getCarePlanDetails(record.id)
         .then((data: CarePlanDetail[]) => {
-          console.log("✅ Care plan details fetched:", data);
           setDetails(data);
           setLoading(false);
         })
@@ -91,6 +92,13 @@ const CarePlanDetails = () => {
           setError(fetchError);
           setLoading(false);
         });
+      // Fetch patient for print view
+      if (record.patient_id) {
+        dataProvider
+          .getOne("patients", { id: record.patient_id })
+          .then((res: any) => setPatient(res.data))
+          .catch(() => {});
+      }
     } else {
       setLoading(false);
     }
@@ -135,14 +143,19 @@ const CarePlanDetails = () => {
         mb={2}
       >
         <Typography variant="h6">Care Plan Details</Typography>
-        <Button
-          variant="contained"
-          onClick={handleOpenCreateDialog}
-          startIcon={<AddIcon />}
-          data-testid="add-new-detail-button"
-        >
-          Add New Detail
-        </Button>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          {details.length > 0 && (
+            <CarePlanPrintButton record={record} patient={patient} details={details} />
+          )}
+          <Button
+            variant="contained"
+            onClick={handleOpenCreateDialog}
+            startIcon={<AddIcon />}
+            data-testid="add-new-detail-button"
+          >
+            Add New Detail
+          </Button>
+        </Box>
       </Box>
 
       {!details || details.length === 0 ? (
