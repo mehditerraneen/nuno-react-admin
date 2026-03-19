@@ -638,8 +638,8 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                               label="Quantity"
                               required
                               defaultValue={1}
-                              min={1}
-                              step={1}
+                              min={0.01}
+                              step={0.01}
                               helperText="Default: 1"
                               sx={{ maxWidth: 120 }}
                             />
