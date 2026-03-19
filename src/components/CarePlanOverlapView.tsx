@@ -50,6 +50,7 @@ interface CarePlanSummary {
 
 interface SessionSlot {
   carePlanId: number;
+  detailId: number;
   patientName: string;
   planNumber: number;
   detailName: string;
@@ -62,11 +63,21 @@ interface SessionSlot {
   duration: number;
 }
 
+interface FixSuggestion {
+  sessionIndex: number; // which session to move (0 or 1)
+  label: string;
+  newStart: string;
+  newEnd: string;
+  carePlanId: number;
+  detailId: number;
+}
+
 interface Overlap {
   day: string;
   timeRange: string;
   sessions: SessionSlot[];
   overlapMinutes: number;
+  fix: FixSuggestion;
 }
 
 const DAY_NAMES = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -192,6 +203,7 @@ export const CarePlanOverlapView = () => {
           for (const dayIdx of activeDays) {
             sessions.push({
               carePlanId: cp.id,
+              detailId: detail.id,
               patientName: cp.patient_name,
               planNumber: cp.plan_number,
               detailName: detail.name,
@@ -230,11 +242,45 @@ export const CarePlanOverlapView = () => {
                   o.sessions.some((s) => s === b),
               );
               if (!existing) {
+                // Compute fix: move the later session to start after the earlier one ends
+                // Pick the shorter session to move (less disruption)
+                const moveIdx = a.duration <= b.duration ? 0 : 1;
+                const stayer = moveIdx === 0 ? b : a;
+                const mover = moveIdx === 0 ? a : b;
+                // Move mover to right after stayer, or before stayer
+                const afterStart = stayer.endMin;
+                const afterEnd = afterStart + mover.duration;
+                const beforeEnd = stayer.startMin;
+                const beforeStart = beforeEnd - mover.duration;
+
+                // Prefer "after" if it fits in the day, else "before"
+                let fix: FixSuggestion;
+                if (afterEnd <= 23 * 60) {
+                  fix = {
+                    sessionIndex: moveIdx,
+                    label: `Décaler "${mover.detailName}" (${mover.patientName}) à ${minToTime(afterStart)}–${minToTime(afterEnd)}`,
+                    newStart: minToTime(afterStart),
+                    newEnd: minToTime(afterEnd),
+                    carePlanId: mover.carePlanId,
+                    detailId: mover.detailId,
+                  };
+                } else {
+                  fix = {
+                    sessionIndex: moveIdx,
+                    label: `Décaler "${mover.detailName}" (${mover.patientName}) à ${minToTime(Math.max(0, beforeStart))}–${minToTime(beforeEnd)}`,
+                    newStart: minToTime(Math.max(0, beforeStart)),
+                    newEnd: minToTime(beforeEnd),
+                    carePlanId: mover.carePlanId,
+                    detailId: mover.detailId,
+                  };
+                }
+
                 detected.push({
                   day: DAY_NAMES[dayIdx],
                   timeRange: `${minToTime(overlapStart)}–${minToTime(overlapEnd)}`,
                   sessions: [a, b],
                   overlapMinutes: overlapEnd - overlapStart,
+                  fix,
                 });
               }
             }
@@ -359,6 +405,7 @@ export const CarePlanOverlapView = () => {
                       <TableCell sx={{ fontWeight: 600 }}>Créneau</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Durée</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Sessions en conflit</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Correction proposée</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -384,6 +431,35 @@ export const CarePlanOverlapView = () => {
                               );
                             })}
                           </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title={`Appliquer: ${o.fix.newStart}–${o.fix.newEnd}`}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="success"
+                              onClick={async () => {
+                                try {
+                                  await dataProvider.updateCarePlanDetail(
+                                    o.fix.carePlanId,
+                                    o.fix.detailId,
+                                    {
+                                      time_start: o.fix.newStart,
+                                      time_end: o.fix.newEnd,
+                                    },
+                                  );
+                                  notify(`Session modifiée: ${o.fix.newStart}–${o.fix.newEnd}`, { type: "success" });
+                                  // Re-analyze after fix
+                                  handleAnalyze();
+                                } catch (err) {
+                                  notify("Erreur lors de la modification", { type: "error" });
+                                }
+                              }}
+                              sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                            >
+                              {o.fix.label}
+                            </Button>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}
