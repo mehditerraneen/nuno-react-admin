@@ -78,6 +78,7 @@ interface AvailableEvent extends Event {
   assigned_to_tour?: number;
   is_available: boolean;
   patient_name?: string;
+  care_plan_detail_ids?: number[];  // CNS MedicalCareSummaryPerPatientDetail IDs
 }
 
 // Validation interfaces
@@ -503,6 +504,19 @@ const EnhancedTourEditForm = () => {
       for (const cp of validPlans) {
         const details = await (dataProvider as any).getCarePlanDetails(cp.id);
 
+        // Fetch CNS details to map LongTermCareItem IDs → CNS detail IDs
+        let cnsDetailsByItemId: Record<number, number> = {};
+        if (cp.medical_care_summary_per_patient_id) {
+          try {
+            const cnsDetails = await (dataProvider as any).getCnsCarePlanDetails(cp.medical_care_summary_per_patient_id);
+            for (const cd of cnsDetails) {
+              if (cd.item?.id) {
+                cnsDetailsByItemId[cd.item.id] = cd.id;
+              }
+            }
+          } catch { /* ignore */ }
+        }
+
         for (const detail of details) {
           // Check if this detail is scheduled for this day of week
           const occs = detail.params_occurrence || [];
@@ -527,8 +541,12 @@ const EnhancedTourEditForm = () => {
               code: item.long_term_care_item.code,
               desc: item.long_term_care_item.description || "",
               qty: item.quantity,
+              itemId: item.long_term_care_item.id,
             }));
           const codes = codeItems.map((c: any) => c.code);
+          const cnsPlanDetailIds = codeItems
+            .map((c: any) => cnsDetailsByItemId[c.itemId])
+            .filter(Boolean);
           const codesText = codeItems.map((c: any) =>
             `${c.code}${c.qty > 1 ? ` x${c.qty}` : ""}`,
           ).join(", ");
@@ -548,6 +566,7 @@ const EnhancedTourEditForm = () => {
             notes: noteParts.join(" | "),
             event_type: "CARE_PLAN",
             care_codes: codes,
+            care_plan_detail_ids: cnsPlanDetailIds,
             is_available: true,
             assigned_to_tour: undefined,
             patient_name: undefined,
@@ -1416,6 +1435,7 @@ const EnhancedTourEditForm = () => {
               notes: event.notes || "",
               event_type_enum: "ASS_DEP", // Assurance dépendance
               tour_id: record.id,
+              care_plan_detail_ids: (event as AvailableEvent).care_plan_detail_ids || [],
             },
           });
           console.log("Created real event from care plan session:", created.data.id);
