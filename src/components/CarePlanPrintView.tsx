@@ -14,7 +14,7 @@ import {
   IconButton,
   Paper,
 } from "@mui/material";
-import { Print as PrintIcon, Close as CloseIcon } from "@mui/icons-material";
+import { Print as PrintIcon, Close as CloseIcon, PictureAsPdf as PdfIcon } from "@mui/icons-material";
 import { useDataProvider, Identifier } from "react-admin";
 import {
   type CarePlanDetail,
@@ -529,81 +529,39 @@ export const CarePlanPrintButton: React.FC<PrintButtonProps> = ({
   patient,
   details,
 }) => {
-  const [open, setOpen] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
-  const handlePrint = () => {
-    const content = printRef.current;
-    if (!content) return;
-
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Plan de Soins - ${patient?.name || ""} ${patient?.first_name || ""}</title>
-        <style>
-          @page {
-            size: A4;
-            margin: 15mm;
-          }
-          body {
-            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-            color: #333;
-            font-size: 11pt;
-            line-height: 1.5;
-            margin: 0;
-            padding: 0;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-          @media print {
-            .no-print { display: none !important; }
-          }
-        </style>
-      </head>
-      <body>${content.innerHTML}</body>
-      </html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-    }, 300);
+  const handleDownloadPdf = async () => {
+    if (!record?.id) return;
+    setDownloading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL || "";
+      const { authenticatedFetch } = await import("../dataProvider");
+      const response = await authenticatedFetch(`${apiUrl}/careplans/${record.id}/pdf`);
+      if (!response.ok) throw new Error("PDF generation failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      // Clean up after a delay
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      console.error("Failed to download PDF:", error);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
-    <>
-      <Button
-        variant="outlined"
-        startIcon={<PrintIcon />}
-        onClick={() => setOpen(true)}
-        size="small"
-      >
-        Version imprimable
-      </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 2, pt: 1 }}>
-          <Typography variant="h6">Apercu avant impression</Typography>
-          <Box>
-            <Button variant="contained" startIcon={<PrintIcon />} onClick={handlePrint} sx={{ mr: 1 }}>
-              Imprimer
-            </Button>
-            <IconButton onClick={() => setOpen(false)}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </Box>
-        <DialogContent sx={{ backgroundColor: "#f5f5f5" }}>
-          <Paper sx={{ backgroundColor: "white", boxShadow: 3 }}>
-            <PrintContent ref={printRef} record={record} patient={patient} details={details} />
-          </Paper>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Button
+      variant="outlined"
+      startIcon={<PdfIcon />}
+      onClick={handleDownloadPdf}
+      size="small"
+      disabled={downloading}
+      color="error"
+    >
+      {downloading ? "Génération..." : "PDF"}
+    </Button>
   );
 };
 
