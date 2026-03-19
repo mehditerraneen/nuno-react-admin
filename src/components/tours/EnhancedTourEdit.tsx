@@ -515,6 +515,12 @@ const EnhancedTourEditForm = () => {
           const timeEnd = detail.time_end?.substring(0, 5) || "";
           if (!timeStart || !timeEnd) continue;
 
+          // Filter by tour time window
+          const formValues = getCurrentFormValues();
+          const tourStart = formValues.time_start || record?.time_start || "00:00";
+          const tourEnd = formValues.time_end || record?.time_end || "23:59";
+          if (timeStart < tourStart || timeEnd > tourEnd) continue;
+
           const codes = (detail.longtermcareitemquantity_set || []).map(
             (item: any) => item.long_term_care_item?.code,
           ).filter(Boolean);
@@ -1358,11 +1364,12 @@ const EnhancedTourEditForm = () => {
     setIsSaving(true);
 
     try {
-      // Process time changes first
+      // Process time changes first (skip virtual events)
       for (const [eventIdStr, timeChange] of Object.entries(
         pendingTimeChanges,
       )) {
         const eventId = parseInt(eventIdStr);
+        if (eventId < 0) continue; // virtual event, will be created with correct times
         const event = availableEvents.find((e) => e.id === eventId);
         if (event) {
           await dataProvider.update("events", {
@@ -1380,8 +1387,27 @@ const EnhancedTourEditForm = () => {
       // Process assignments
       for (const eventId of pendingChanges.toAssign) {
         const event = availableEvents.find((e) => e.id === eventId);
-        if (event) {
-          const effectiveTimes = getEffectiveEventTimes(event);
+        if (!event) continue;
+
+        const effectiveTimes = getEffectiveEventTimes(event);
+
+        if (eventId < 0) {
+          // Virtual event from care plan — create a real event first
+          const created = await dataProvider.create("events", {
+            data: {
+              patient_id: event.patient_id,
+              day: record.date,
+              time_start_event: effectiveTimes.time_start,
+              time_end_event: effectiveTimes.time_end,
+              state: 1,
+              notes: event.notes || "",
+              event_type_enum: "CARE",
+              tour_id: record.id,
+            },
+          });
+          console.log("Created real event from care plan session:", created.data.id);
+        } else {
+          // Real event — just assign to tour
           await dataProvider.update("events", {
             id: eventId,
             data: {
@@ -1395,8 +1421,9 @@ const EnhancedTourEditForm = () => {
         }
       }
 
-      // Process removals
+      // Process removals (skip virtual events — they were never saved)
       for (const eventId of pendingChanges.toRemove) {
+        if (eventId < 0) continue;
         const event = availableEvents.find((e) => e.id === eventId);
         if (event) {
           await dataProvider.update("events", {
