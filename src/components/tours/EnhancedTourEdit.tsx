@@ -1399,9 +1399,9 @@ const EnhancedTourEditForm = () => {
               day: record.date,
               time_start_event: effectiveTimes.time_start,
               time_end_event: effectiveTimes.time_end,
-              state: 1,
+              state: 1, // Waiting for validation
               notes: event.notes || "",
-              event_type_enum: "CARE",
+              event_type_enum: "ASS_DEP", // Assurance dépendance
               tour_id: record.id,
             },
           });
