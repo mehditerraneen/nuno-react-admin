@@ -248,19 +248,34 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
     return total + sessionDuration * actualDays;
   }, 0);
 
-  // Sum weekly_package per unique code (weekly budget counts once per code)
-  const weeklyByCode = new Map<string, number>();
+  // Per-code stats: weekly_package (counted once), session_duration, total weekly occurrences
+  const codeStats = new Map<string, { weeklyPkg: number; sessionDur: number; totalOccurrences: number }>();
   details.forEach((detail) => {
+    const daysPerWeek = calculateActualDaysPerWeek(detail.params_occurrence) || 1;
     detail.longtermcareitemquantity_set.forEach((item) => {
       const code = item.long_term_care_item.code;
       const wp = item.long_term_care_item.weekly_package || 0;
-      if (!weeklyByCode.has(code) || wp > (weeklyByCode.get(code) || 0)) {
-        weeklyByCode.set(code, wp);
+      const sd =
+        (item.long_term_care_item as any).session_duration ||
+        (wp / 7);
+      const existing = codeStats.get(code);
+      if (existing) {
+        existing.totalOccurrences += item.quantity * daysPerWeek;
+      } else {
+        codeStats.set(code, {
+          weeklyPkg: wp,
+          sessionDur: sd,
+          totalOccurrences: item.quantity * daysPerWeek,
+        });
       }
     });
   });
-  const totalCareItemsDuration = Array.from(weeklyByCode.values()).reduce(
-    (sum, v) => sum + v,
+  const totalCareItemsDuration = Array.from(codeStats.values()).reduce(
+    (sum, v) => sum + v.weeklyPkg,
+    0,
+  );
+  const totalConsumed = Array.from(codeStats.values()).reduce(
+    (sum, v) => sum + Math.round(v.sessionDur * v.totalOccurrences * 100) / 100,
     0,
   );
 
@@ -404,7 +419,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
               <TableCell align="right" sx={{ fontWeight: 600 }}>Session (min)</TableCell>
               <TableCell align="right" sx={{ fontWeight: 600 }}>Weekly Pkg (min)</TableCell>
               <TableCell align="right" sx={{ fontWeight: 600 }}>Qty × Session</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Qty × Weekly</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Consumed/wk</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -413,8 +428,9 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
               let totalSession = 0;
               return (
                 <>
-                  {details.flatMap((detail, detailIndex) =>
-                    detail.longtermcareitemquantity_set.map((item, itemIndex) => {
+                  {details.flatMap((detail, detailIndex) => {
+                    const daysPerWeek = calculateActualDaysPerWeek(detail.params_occurrence) || 1;
+                    return detail.longtermcareitemquantity_set.map((item, itemIndex) => {
                       const code = item.long_term_care_item.code;
                       const sessionDur =
                         (item.long_term_care_item as any).session_duration ||
@@ -423,45 +439,42 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
                       const isDuplicate = seenCodes.has(code);
                       seenCodes.add(code);
                       totalSession += sessionDur * item.quantity;
+                      const stats = codeStats.get(code);
+                      const consumed = stats
+                        ? Math.round(stats.sessionDur * stats.totalOccurrences * 100) / 100
+                        : 0;
                       return (
                         <TableRow
                           key={`${detailIndex}-${itemIndex}`}
-                          sx={{
-                            "&:nth-of-type(odd)": { backgroundColor: "#fafafa" },
-                            ...(isDuplicate && { opacity: 0.6 }),
-                          }}
+                          sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}
                         >
                           <TableCell>
-                            <Typography variant="caption">{detail.name}</Typography>
+                            <Typography variant="caption">
+                              {detail.name} ({daysPerWeek}x/wk)
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Chip label={code} size="small" variant="outlined" />
                           </TableCell>
                           <TableCell>{item.quantity}</TableCell>
                           <TableCell align="right">{Math.round(sessionDur * 100) / 100}</TableCell>
-                          <TableCell align="right">
-                            {isDuplicate ? (
-                              <Typography variant="caption" color="text.disabled" title="Already counted">
-                                ({weeklyPkg})
-                              </Typography>
-                            ) : (
-                              weeklyPkg
-                            )}
-                          </TableCell>
+                          <TableCell align="right">{weeklyPkg}</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 600 }}>
                             {Math.round(sessionDur * item.quantity * 100) / 100}
                           </TableCell>
                           <TableCell align="right" sx={{ fontWeight: 600 }}>
                             {isDuplicate ? (
-                              <Typography variant="caption" color="text.disabled">—</Typography>
+                              <Typography variant="caption" color="text.disabled">
+                                (incl. above)
+                              </Typography>
                             ) : (
-                              weeklyPkg
+                              consumed
                             )}
                           </TableCell>
                         </TableRow>
                       );
-                    }),
-                  )}
+                    });
+                  })}
                   <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
                     <TableCell colSpan={5} sx={{ fontWeight: 700 }}>
                       TOTAL
@@ -470,7 +483,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
                       {Math.round(totalSession * 100) / 100}
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>
-                      {totalCareItemsDuration}
+                      {Math.round(totalConsumed * 100) / 100}
                     </TableCell>
                   </TableRow>
                 </>
