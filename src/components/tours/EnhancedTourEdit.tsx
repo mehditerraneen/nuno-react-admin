@@ -1597,6 +1597,44 @@ const EnhancedTourEditForm = () => {
                     />
                     <DateInput source="date" size="small" />
 
+                    {/* Day of week quick selector */}
+                    <ToggleButtonGroup
+                      value={(() => {
+                        const dateVal = formContext?.getValues("date") || record?.date;
+                        if (!dateVal) return null;
+                        const d = new Date(dateVal);
+                        const js = d.getDay();
+                        return js === 0 ? 6 : js - 1; // 0=Mon..6=Sun
+                      })()}
+                      exclusive
+                      onChange={(_, dow) => {
+                        if (dow === null) return;
+                        // Find the next occurrence of this day from today
+                        const today = new Date();
+                        const currentDow = today.getDay() === 0 ? 6 : today.getDay() - 1;
+                        let diff = dow - currentDow;
+                        if (diff <= 0) diff += 7;
+                        const target = new Date(today);
+                        target.setDate(today.getDate() + diff);
+                        const iso = target.toISOString().split("T")[0];
+                        formContext?.setValue("date", iso);
+                        // Reload events for new day
+                        setTimeout(() => loadEventsByMode(iso), 0);
+                      }}
+                      size="small"
+                      sx={{ flexWrap: "wrap" }}
+                    >
+                      {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map((label, idx) => (
+                        <ToggleButton
+                          key={idx}
+                          value={idx}
+                          sx={{ px: 1, py: 0.25, fontSize: "0.7rem", minWidth: 32 }}
+                        >
+                          {label}
+                        </ToggleButton>
+                      ))}
+                    </ToggleButtonGroup>
+
                     {/* Time inputs - Compact layout */}
                     <Box sx={{ display: "flex", gap: 1 }}>
                       <TextInput
