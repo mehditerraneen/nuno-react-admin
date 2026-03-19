@@ -248,17 +248,21 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
     return total + sessionDuration * actualDays;
   }, 0);
 
-  // Sum weekly_package directly (already the weekly total)
-  const totalCareItemsDuration = details.reduce((total, detail) => {
-    return (
-      total +
-      detail.longtermcareitemquantity_set.reduce(
-        (subtotal, item) =>
-          subtotal + (item.long_term_care_item.weekly_package || 0) * item.quantity,
-        0,
-      )
-    );
-  }, 0);
+  // Sum weekly_package per unique code (weekly budget counts once per code)
+  const weeklyByCode = new Map<string, number>();
+  details.forEach((detail) => {
+    detail.longtermcareitemquantity_set.forEach((item) => {
+      const code = item.long_term_care_item.code;
+      const wp = item.long_term_care_item.weekly_package || 0;
+      if (!weeklyByCode.has(code) || wp > (weeklyByCode.get(code) || 0)) {
+        weeklyByCode.set(code, wp);
+      }
+    });
+  });
+  const totalCareItemsDuration = Array.from(weeklyByCode.values()).reduce(
+    (sum, v) => sum + v,
+    0,
+  );
 
   if (details.length === 0) {
     return null;
@@ -404,60 +408,74 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {details.flatMap((detail, detailIndex) =>
-              detail.longtermcareitemquantity_set.map((item, itemIndex) => {
-                const sessionDur =
-                  (item.long_term_care_item as any).session_duration ||
-                  (item.long_term_care_item.weekly_package || 0) / 7;
-                const weeklyPkg = item.long_term_care_item.weekly_package || 0;
-                return (
-                  <TableRow
-                    key={`${detailIndex}-${itemIndex}`}
-                    sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}
-                  >
-                    <TableCell>
-                      <Typography variant="caption">{detail.name}</Typography>
+            {(() => {
+              const seenCodes = new Set<string>();
+              let totalSession = 0;
+              return (
+                <>
+                  {details.flatMap((detail, detailIndex) =>
+                    detail.longtermcareitemquantity_set.map((item, itemIndex) => {
+                      const code = item.long_term_care_item.code;
+                      const sessionDur =
+                        (item.long_term_care_item as any).session_duration ||
+                        (item.long_term_care_item.weekly_package || 0) / 7;
+                      const weeklyPkg = item.long_term_care_item.weekly_package || 0;
+                      const isDuplicate = seenCodes.has(code);
+                      seenCodes.add(code);
+                      totalSession += sessionDur * item.quantity;
+                      return (
+                        <TableRow
+                          key={`${detailIndex}-${itemIndex}`}
+                          sx={{
+                            "&:nth-of-type(odd)": { backgroundColor: "#fafafa" },
+                            ...(isDuplicate && { opacity: 0.6 }),
+                          }}
+                        >
+                          <TableCell>
+                            <Typography variant="caption">{detail.name}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip label={code} size="small" variant="outlined" />
+                          </TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell align="right">{Math.round(sessionDur * 100) / 100}</TableCell>
+                          <TableCell align="right">
+                            {isDuplicate ? (
+                              <Typography variant="caption" color="text.disabled" title="Already counted">
+                                ({weeklyPkg})
+                              </Typography>
+                            ) : (
+                              weeklyPkg
+                            )}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>
+                            {Math.round(sessionDur * item.quantity * 100) / 100}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>
+                            {isDuplicate ? (
+                              <Typography variant="caption" color="text.disabled">—</Typography>
+                            ) : (
+                              weeklyPkg
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }),
+                  )}
+                  <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
+                    <TableCell colSpan={5} sx={{ fontWeight: 700 }}>
+                      TOTAL
                     </TableCell>
-                    <TableCell>
-                      <Chip label={item.long_term_care_item.code} size="small" variant="outlined" />
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      {Math.round(totalSession * 100) / 100}
                     </TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell align="right">{Math.round(sessionDur * 100) / 100}</TableCell>
-                    <TableCell align="right">{weeklyPkg}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>
-                      {Math.round(sessionDur * item.quantity * 100) / 100}
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>
-                      {weeklyPkg * item.quantity}
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      {totalCareItemsDuration}
                     </TableCell>
                   </TableRow>
-                );
-              }),
-            )}
-            {/* Totals row */}
-            <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
-              <TableCell colSpan={5} sx={{ fontWeight: 700 }}>
-                TOTAL
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700 }}>
-                {Math.round(
-                  details.reduce(
-                    (total, detail) =>
-                      total +
-                      detail.longtermcareitemquantity_set.reduce((sub, item) => {
-                        const sd =
-                          (item.long_term_care_item as any).session_duration ||
-                          (item.long_term_care_item.weekly_package || 0) / 7;
-                        return sub + sd * item.quantity;
-                      }, 0),
-                    0,
-                  ) * 100,
-                ) / 100}
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700 }}>
-                {totalCareItemsDuration}
-              </TableCell>
-            </TableRow>
+                </>
+              );
+            })()}
           </TableBody>
         </Table>
       </TableContainer>
