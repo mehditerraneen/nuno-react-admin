@@ -358,7 +358,7 @@ const PrintContent = React.forwardRef<HTMLDivElement, CarePlanPrintViewProps>(
                           <TableCell sx={cell}>{item.long_term_care_item.code}</TableCell>
                           <TableCell sx={cell}>{item.long_term_care_item.description || "—"}</TableCell>
                           <TableCell align="center" sx={cell}>{item.quantity}</TableCell>
-                          <TableCell align="right" sx={cell}>{Math.round(sd * 100) / 100} min</TableCell>
+                          <TableCell align="right" sx={cell}>{Math.round(sd * item.quantity * 100) / 100} min</TableCell>
                         </TableRow>
                       );
                     })}
