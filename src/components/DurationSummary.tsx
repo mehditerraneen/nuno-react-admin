@@ -1,8 +1,21 @@
 import React from "react";
-import { Box, Typography, Chip, Paper, Divider } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Chip,
+  Paper,
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import {
   AccessTime as TimeIcon,
   CalendarToday as CalendarIcon,
+  ListAlt as ListIcon,
 } from "@mui/icons-material";
 import {
   calculateSessionDuration,
@@ -366,6 +379,88 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
           </Paper>
         ))}
       </Box>
+
+      {/* Detailed breakdown table */}
+      <Divider sx={{ my: 2 }} />
+      <Typography
+        variant="h6"
+        gutterBottom
+        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+      >
+        <ListIcon color="primary" />
+        Breakdown by Code
+      </Typography>
+      <TableContainer component={Paper} variant="outlined">
+        <Table size="small">
+          <TableHead>
+            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+              <TableCell sx={{ fontWeight: 600 }}>Detail</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Code</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Qty</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Session (min)</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Weekly Pkg (min)</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Qty × Session</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Qty × Weekly</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {details.flatMap((detail, detailIndex) =>
+              detail.longtermcareitemquantity_set.map((item, itemIndex) => {
+                const sessionDur =
+                  (item.long_term_care_item as any).session_duration ||
+                  (item.long_term_care_item.weekly_package || 0) / 7;
+                const weeklyPkg = item.long_term_care_item.weekly_package || 0;
+                return (
+                  <TableRow
+                    key={`${detailIndex}-${itemIndex}`}
+                    sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}
+                  >
+                    <TableCell>
+                      <Typography variant="caption">{detail.name}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={item.long_term_care_item.code} size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell align="right">{Math.round(sessionDur * 100) / 100}</TableCell>
+                    <TableCell align="right">{weeklyPkg}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>
+                      {Math.round(sessionDur * item.quantity * 100) / 100}
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>
+                      {weeklyPkg * item.quantity}
+                    </TableCell>
+                  </TableRow>
+                );
+              }),
+            )}
+            {/* Totals row */}
+            <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
+              <TableCell colSpan={5} sx={{ fontWeight: 700 }}>
+                TOTAL
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                {Math.round(
+                  details.reduce(
+                    (total, detail) =>
+                      total +
+                      detail.longtermcareitemquantity_set.reduce((sub, item) => {
+                        const sd =
+                          (item.long_term_care_item as any).session_duration ||
+                          (item.long_term_care_item.weekly_package || 0) / 7;
+                        return sub + sd * item.quantity;
+                      }, 0),
+                    0,
+                  ) * 100,
+                ) / 100}
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                {totalCareItemsDuration}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Paper>
   );
 };
