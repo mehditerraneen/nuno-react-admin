@@ -77,7 +77,7 @@ export function isValidTimeFormat(
 export function parseTimeString(
   timeString: string,
 ): { hours: number; minutes: number } | null {
-  const match = timeString.match(/^(\d{2}):(\d{2})$/);
+  const match = timeString.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
   if (match) {
     const hours = parseInt(match[1], 10);
     const minutes = parseInt(match[2], 10);
