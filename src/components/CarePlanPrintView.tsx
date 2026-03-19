@@ -48,10 +48,27 @@ const formatDate = (d: string | null | undefined) => {
   });
 };
 
+interface Branding {
+  company_name: string;
+  company_tagline: string;
+  company_website: string;
+  company_email: string;
+  logo_url: string;
+}
+
 const PrintContent = React.forwardRef<HTMLDivElement, CarePlanPrintViewProps>(
   ({ record, patient, details }, ref) => {
     const dataProvider = useDataProvider<MyDataProvider>();
     const [missingCodes, setMissingCodes] = useState<any[]>([]);
+    const [branding, setBranding] = useState<Branding | null>(null);
+
+    useEffect(() => {
+      const apiUrl = (import.meta.env.VITE_SIMPLE_REST_URL || "").replace(/\/fast\/?$/, "");
+      fetch(`${apiUrl}/branding`)
+        .then((r) => r.json())
+        .then((data) => setBranding(data))
+        .catch(() => {});
+    }, []);
 
     useEffect(() => {
       if (record?.medical_care_summary_per_patient_id) {
@@ -127,16 +144,37 @@ const PrintContent = React.forwardRef<HTMLDivElement, CarePlanPrintViewProps>(
       <Box ref={ref} sx={{ p: 4, maxWidth: 800, mx: "auto", ...printStyles }}>
         {/* Header */}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 3 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: "#1976d2", mb: 0.5 }}>
-              Plan de Soins
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Plan n&deg;{record?.plan_number}
-            </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {branding?.logo_url && (
+              <img
+                src={branding.logo_url}
+                alt={branding.company_name}
+                style={{ maxHeight: 60, maxWidth: 150, objectFit: "contain" }}
+              />
+            )}
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: "#1976d2", mb: 0.5 }}>
+                Plan de Soins
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Plan n&deg;{record?.plan_number}
+              </Typography>
+            </Box>
           </Box>
           <Box sx={{ textAlign: "right" }}>
-            <Typography variant="body2" color="text.secondary">
+            {branding && (
+              <>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {branding.company_name}
+                </Typography>
+                {branding.company_tagline && (
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {branding.company_tagline}
+                  </Typography>
+                )}
+              </>
+            )}
+            <Typography variant="caption" color="text.secondary">
               {formatDate(new Date().toISOString())}
             </Typography>
           </Box>
@@ -467,10 +505,10 @@ const PrintContent = React.forwardRef<HTMLDivElement, CarePlanPrintViewProps>(
         <Divider sx={{ mt: 4, mb: 2 }} />
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="caption" color="text.secondary">
-            Plan de soins n&deg;{record?.plan_number} — {patientName}
+            {branding?.company_name || ""} — Plan de soins n&deg;{record?.plan_number} — {patientName}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Imprime le {formatDate(new Date().toISOString())}
+            {branding?.company_email || ""} | {formatDate(new Date().toISOString())}
           </Typography>
         </Box>
       </Box>
