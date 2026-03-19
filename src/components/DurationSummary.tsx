@@ -7,7 +7,6 @@ import {
 import {
   calculateSessionDuration,
   calculateCareItemsDailyDuration,
-  calculateCareItemsActualWeeklyDuration,
   calculateActualDaysPerWeek,
   formatDurationDisplay,
 } from "../utils/timeUtils";
@@ -19,12 +18,6 @@ interface DurationSummaryProps {
 }
 
 export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
-  console.log("📋 DurationSummary - detail:", detail);
-  console.log(
-    "📋 DurationSummary - longtermcareitemquantity_set:",
-    detail.longtermcareitemquantity_set,
-  );
-
   // Calculate session duration from time_start to time_end
   const sessionDuration = calculateSessionDuration(
     detail.time_start,
@@ -35,28 +28,20 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
   const actualDaysPerWeek = calculateActualDaysPerWeek(
     detail.params_occurrence,
   );
-  const occurrencesPerWeek = detail.params_occurrence.length; // For display only
 
-  // Calculate daily duration from care items' weekly_package
-  const careItemsDailyDuration = calculateCareItemsDailyDuration(
+  // Per-session duration from care items (uses session_duration field)
+  const careItemsSessionDuration = calculateCareItemsDailyDuration(
     detail.longtermcareitemquantity_set,
   );
 
-  // Calculate actual weekly duration based on occurrences
-  const careItemsActualWeeklyDuration = calculateCareItemsActualWeeklyDuration(
-    detail.longtermcareitemquantity_set,
-    detail.params_occurrence,
+  // Weekly total from weekly_package (the actual weekly budget)
+  const careItemsWeeklyTotal = detail.longtermcareitemquantity_set.reduce(
+    (total, item) => total + (item.long_term_care_item.weekly_package || 0) * item.quantity,
+    0,
   );
 
-  console.log("📋 DurationSummary - calculations:", {
-    careItemsDailyDuration,
-    careItemsActualWeeklyDuration,
-    occurrencesPerWeek,
-    actualDaysPerWeek,
-  });
-
-  // Calculate actual weekly time based on session duration and actual days
-  const actualWeeklySessionTime = sessionDuration * actualDaysPerWeek;
+  // Weekly session time = session duration * days per week
+  const actualWeeklySessionTime = sessionDuration * (actualDaysPerWeek || 1);
 
   return (
     <Paper
@@ -125,8 +110,8 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
 
         <Divider orientation="vertical" flexItem />
 
-        {/* Care Items Daily Duration */}
-        {careItemsDailyDuration > 0 && (
+        {/* Care Items Per-Session Duration */}
+        {careItemsSessionDuration > 0 && (
           <Box
             sx={{
               display: "flex",
@@ -135,10 +120,10 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              Care Items Daily
+              Care Items/Session
             </Typography>
             <Chip
-              label={formatDurationDisplay(careItemsDailyDuration)}
+              label={formatDurationDisplay(careItemsSessionDuration)}
               color="info"
               variant="outlined"
               size="small"
@@ -146,8 +131,8 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
           </Box>
         )}
 
-        {/* Care Items Actual Weekly Duration */}
-        {careItemsActualWeeklyDuration > 0 && (
+        {/* Care Items Weekly Package Total */}
+        {careItemsWeeklyTotal > 0 && (
           <Box
             sx={{
               display: "flex",
@@ -159,7 +144,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
               Care Package/Week
             </Typography>
             <Chip
-              label={formatDurationDisplay(careItemsActualWeeklyDuration)}
+              label={formatDurationDisplay(careItemsWeeklyTotal)}
               color="info"
               variant="filled"
               size="small"
@@ -187,26 +172,25 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
         </Box>
       </Box>
 
-      {/* Show breakdown if care items have weekly packages */}
-      {careItemsDailyDuration > 0 && (
+      {/* Show breakdown if care items have data */}
+      {careItemsSessionDuration > 0 && (
         <Box sx={{ mt: 2 }}>
           <Typography variant="caption" color="text.secondary" gutterBottom>
-            Care Items Breakdown (Daily → Actual Weekly):
+            Care Items Breakdown (Session → Weekly Package):
           </Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
             {detail.longtermcareitemquantity_set.map((item, index) => {
-              const itemWeeklyPackage =
-                item.long_term_care_item.weekly_package || 0;
-              const itemDailyDuration = (itemWeeklyPackage / 7) * item.quantity;
-              const itemActualWeeklyDuration =
-                itemDailyDuration * actualDaysPerWeek;
+              const sessionDur =
+                (item.long_term_care_item as any).session_duration ||
+                (item.long_term_care_item.weekly_package || 0) / 7;
+              const weeklyPkg = (item.long_term_care_item.weekly_package || 0) * item.quantity;
 
-              if (itemWeeklyPackage === 0) return null;
+              if (sessionDur === 0 && weeklyPkg === 0) return null;
 
               return (
                 <Chip
                   key={index}
-                  label={`${item.long_term_care_item.code}: ${formatDurationDisplay(itemDailyDuration)}/day → ${formatDurationDisplay(itemActualWeeklyDuration)}/week (${item.quantity}x)`}
+                  label={`${item.long_term_care_item.code}: ${formatDurationDisplay(sessionDur)}/session — ${formatDurationDisplay(weeklyPkg)}/week (${item.quantity}x)`}
                   size="small"
                   variant="outlined"
                   color="default"
@@ -218,13 +202,12 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
       )}
 
       {/* Warning if session time doesn't match care package time */}
-      {careItemsActualWeeklyDuration > 0 &&
-        actualWeeklySessionTime !== careItemsActualWeeklyDuration && (
+      {careItemsWeeklyTotal > 0 &&
+        Math.abs(actualWeeklySessionTime - careItemsWeeklyTotal) > 5 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="warning.main">
-              ⚠️ Session time ({formatDurationDisplay(actualWeeklySessionTime)}
-              /week) differs from care package time (
-              {formatDurationDisplay(careItemsActualWeeklyDuration)}/week)
+              Session time ({formatDurationDisplay(actualWeeklySessionTime)}
+              /week) differs from care package ({formatDurationDisplay(careItemsWeeklyTotal)}/week)
             </Typography>
           </Box>
         )}
@@ -248,16 +231,18 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
       detail.time_start,
       detail.time_end,
     );
-    const actualDays = calculateActualDaysPerWeek(detail.params_occurrence);
+    const actualDays = calculateActualDaysPerWeek(detail.params_occurrence) || 1;
     return total + sessionDuration * actualDays;
   }, 0);
 
+  // Sum weekly_package directly (already the weekly total)
   const totalCareItemsDuration = details.reduce((total, detail) => {
     return (
       total +
-      calculateCareItemsActualWeeklyDuration(
-        detail.longtermcareitemquantity_set,
-        detail.params_occurrence,
+      detail.longtermcareitemquantity_set.reduce(
+        (subtotal, item) =>
+          subtotal + (item.long_term_care_item.weekly_package || 0) * item.quantity,
+        0,
       )
     );
   }, 0);
