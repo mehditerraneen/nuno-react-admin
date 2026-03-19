@@ -996,20 +996,53 @@ const EnhancedTourEditForm = () => {
       const eventEndMinutes = timeToMinutes(effectiveTimes.time_end);
       const isOverlapping = overlappingEventIds.has(event.id);
 
-      // Add gap or "travel from office" segment before first event
+      // Add gap before event
       if (currentTime < eventStartMinutes) {
         const isFirstGap = index === 0;
-        const nextEvent =
-          index < sortedEvents.length - 1 ? sortedEvents[index] : null;
-        timelineItems.push({
-          type: isFirstGap ? "from_office" : "empty",
-          startTime: minutesToTime(currentTime),
-          endTime: effectiveTimes.time_start,
-          duration: eventStartMinutes - currentTime,
-          canRemove: !isFirstGap && nextEvent ? true : false,
-          currentEventId: index > 0 ? sortedEvents[index - 1].id : null,
-          nextEventId: event.id,
-        });
+        const gapDuration = eventStartMinutes - currentTime;
+
+        if (isFirstGap) {
+          // Split into travel from office + free time if gap is large
+          const estimatedTravel = 15; // default 15 min travel from office
+          if (gapDuration > estimatedTravel) {
+            timelineItems.push({
+              type: "from_office",
+              startTime: minutesToTime(currentTime),
+              endTime: minutesToTime(currentTime + estimatedTravel),
+              duration: estimatedTravel,
+              currentEventId: null,
+              nextEventId: event.id,
+            });
+            timelineItems.push({
+              type: "empty",
+              startTime: minutesToTime(currentTime + estimatedTravel),
+              endTime: effectiveTimes.time_start,
+              duration: gapDuration - estimatedTravel,
+              canRemove: true,
+              currentEventId: null,
+              nextEventId: event.id,
+            });
+          } else {
+            timelineItems.push({
+              type: "from_office",
+              startTime: minutesToTime(currentTime),
+              endTime: effectiveTimes.time_start,
+              duration: gapDuration,
+              currentEventId: null,
+              nextEventId: event.id,
+            });
+          }
+        } else {
+          timelineItems.push({
+            type: "empty",
+            startTime: minutesToTime(currentTime),
+            endTime: effectiveTimes.time_start,
+            duration: gapDuration,
+            canRemove: true,
+            currentEventId: index > 0 ? sortedEvents[index - 1].id : null,
+            nextEventId: event.id,
+          });
+        }
       }
 
       // Add the event with overlap information
