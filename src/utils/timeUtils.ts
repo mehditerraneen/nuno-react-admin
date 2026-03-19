@@ -273,27 +273,21 @@ export function calculateDurationInMinutes(
  */
 export function formatDurationDisplay(totalMinutes: number): string {
   if (totalMinutes === 0) {
-    return "0min";
+    return "0 min";
   }
 
-  // Round to 2 decimal places
-  const roundedMinutes = Math.round(totalMinutes * 100) / 100;
+  // Round to nearest integer for clean display
+  const rounded = Math.round(totalMinutes);
 
-  const hours = Math.floor(roundedMinutes / 60);
-  const minutes = roundedMinutes % 60;
-
-  // Format minutes to 2 decimal places if needed
-  const formatMinutes = (mins: number) => {
-    return mins % 1 === 0 ? mins.toString() : mins.toFixed(2);
-  };
-
-  if (hours === 0) {
-    return `${formatMinutes(minutes)}min`;
-  } else if (minutes === 0) {
-    return `${hours}h`;
-  } else {
-    return `${hours}h ${formatMinutes(minutes)}min`;
+  if (rounded < 60) {
+    return `${rounded} min`;
   }
+
+  const hours = Math.floor(rounded / 60);
+  const mins = rounded % 60;
+  const hoursText = mins === 0 ? `${hours}h` : `${hours}h${String(mins).padStart(2, "0")}`;
+
+  return `${rounded} min (${hoursText})`;
 }
 
 /**

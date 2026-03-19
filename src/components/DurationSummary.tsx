@@ -307,7 +307,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
             }}
           >
             <Typography variant="subtitle1" color="text.secondary">
-              Total Care Package Time
+              Sum Weekly Packages (ref.)
             </Typography>
             <Typography variant="h4" color="info.main" fontWeight="bold">
               {formatDurationDisplay(totalCareItemsDuration)}
