@@ -47,6 +47,8 @@ import {
   MenuItem,
   TextField,
   LinearProgress,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import {
   DragIndicator,
@@ -193,6 +195,7 @@ const EnhancedTourEditForm = () => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [lastDroppedEventId, setLastDroppedEventId] = useState<number | null>(null);
   const [patientSearch, setPatientSearch] = useState("");
+  const [tourMode, setTourMode] = useState<"events" | "careplans">("events");
   const [tourTypes, setTourTypes] = useState<TourType[]>([]);
   const [selectedTourTypeId, setSelectedTourTypeId] = useState<number | null>(null);
   const [tourBreaks, setTourBreaks] = useState<Array<{
@@ -224,7 +227,11 @@ const EnhancedTourEditForm = () => {
       loadPatients();
       loadEventTypes();
       loadTourTypes();
-      loadAvailableEvents();
+      if (tourMode === "careplans") {
+        loadCarePlanEvents();
+      } else {
+        loadAvailableEvents();
+      }
       setAssignedEvents(record.events || []);
       setTourBreaks(record.breaks || []);
       setSelectedTourTypeId(record.tour_type_id ?? null);
@@ -464,20 +471,94 @@ const EnhancedTourEditForm = () => {
     }
   };
 
+  const loadCarePlanEvents = async (customDate?: string) => {
+    const dateToUse = customDate || record?.date;
+    if (!dateToUse) return;
+
+    setEventsLoading(true);
+    try {
+      // Determine day of week for the tour date (0=Mon..6=Sun)
+      const d = new Date(dateToUse);
+      const jsDow = d.getDay(); // 0=Sun..6=Sat
+      const dow = jsDow === 0 ? 6 : jsDow - 1; // convert to 0=Mon..6=Sun
+      const dowStr = String(dow);
+
+      // Fetch all active care plans
+      const cpResponse = await dataProvider.getList("careplans", {
+        pagination: { page: 1, perPage: 200 },
+        sort: { field: "id", order: "ASC" },
+        filter: { last_valid_plan: true },
+      });
+
+      const virtualEvents: AvailableEvent[] = [];
+      let virtualId = -1;
+
+      for (const cp of cpResponse.data) {
+        const details = await (dataProvider as any).getCarePlanDetails(cp.id);
+
+        for (const detail of details) {
+          // Check if this detail is scheduled for this day of week
+          const occs = detail.params_occurrence || [];
+          const isActiveDay =
+            occs.some((o: any) => o.value === "*") ||
+            occs.some((o: any) => o.value === dowStr);
+          if (!isActiveDay) continue;
+
+          const timeStart = detail.time_start?.substring(0, 5) || "";
+          const timeEnd = detail.time_end?.substring(0, 5) || "";
+          if (!timeStart || !timeEnd) continue;
+
+          const codes = (detail.longtermcareitemquantity_set || []).map(
+            (item: any) => item.long_term_care_item?.code,
+          ).filter(Boolean);
+
+          virtualEvents.push({
+            id: virtualId--,
+            patient_id: cp.patient_id,
+            date: dateToUse,
+            time_start: timeStart,
+            time_end: timeEnd,
+            state: 1 as any,
+            notes: detail.care_actions || "",
+            event_type: "CARE_PLAN",
+            care_codes: codes,
+            is_available: true,
+            assigned_to_tour: undefined,
+            patient_name: undefined, // will be resolved by getPatientName
+          });
+        }
+      }
+
+      setAvailableEvents(virtualEvents);
+      notify(`Loaded ${virtualEvents.length} care plan sessions for ${dateToUse} (${["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"][dow]})`, {
+        type: "info",
+      });
+    } catch (error) {
+      notify("Failed to load care plan events", { type: "error" });
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  const loadEventsByMode = (dateOverride?: string) => {
+    if (tourMode === "careplans") {
+      loadCarePlanEvents(dateOverride);
+    } else {
+      loadAvailableEvents(dateOverride);
+    }
+  };
+
   const refreshEventsWithCurrentForm = () => {
-    // Just reload with the form's current date - loadAvailableEvents will handle time filtering
     const formValues = getCurrentFormValues();
 
-    // Alternative: Try to get values from DOM if form context fails
     if (!formValues.date || formValues.date === record?.date) {
       try {
         const dateInput = document.querySelector(
           'input[name="date"]',
         ) as HTMLInputElement;
         const domDate = dateInput?.value || record?.date;
-        loadAvailableEvents(domDate);
+        loadEventsByMode(domDate);
 
-        // Update original values and clear refresh flag
         setOriginalFormValues({
           date: formValues.date,
           time_start: formValues.time_start,
@@ -491,9 +572,8 @@ const EnhancedTourEditForm = () => {
       }
     }
 
-    loadAvailableEvents(formValues.date);
+    loadEventsByMode(formValues.date);
 
-    // Update original values and clear refresh flag
     setOriginalFormValues({
       date: formValues.date,
       time_start: formValues.time_start,
@@ -1485,6 +1565,41 @@ const EnhancedTourEditForm = () => {
                         ))}
                       </Select>
                     </FormControl>
+
+                    {/* Events Source Mode */}
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
+                        Source
+                      </Typography>
+                      <ToggleButtonGroup
+                        value={tourMode}
+                        exclusive
+                        onChange={(_, val) => {
+                          if (val) {
+                            setTourMode(val);
+                            setAvailableEvents([]);
+                            setPendingChanges({ toAssign: [], toRemove: [] });
+                            // Reload with new mode after state update
+                            setTimeout(() => {
+                              if (val === "careplans") {
+                                loadCarePlanEvents();
+                              } else {
+                                loadAvailableEvents();
+                              }
+                            }, 0);
+                          }
+                        }}
+                        size="small"
+                        fullWidth
+                      >
+                        <ToggleButton value="events">
+                          Événements
+                        </ToggleButton>
+                        <ToggleButton value="careplans">
+                          Plans de soins
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </Box>
                   </Box>
                 </Grid>
 
@@ -2693,8 +2808,9 @@ const EnhancedTourEditForm = () => {
                   )}
                   <Box sx={{ mb: 1 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Events for {currentFormValues.date} that can be assigned
-                      to tours
+                      {tourMode === "careplans"
+                        ? `Sessions from care plans for ${currentFormValues.date}`
+                        : `Events for ${currentFormValues.date} that can be assigned to tours`}
                     </Typography>
                     {!needsRefresh && (
                       <Typography variant="caption" color="text.secondary">
