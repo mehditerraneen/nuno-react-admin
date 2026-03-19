@@ -1,5 +1,6 @@
-import { Box } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import {
   List,
   Datagrid,
@@ -70,6 +71,15 @@ const carePlanFilters = [
 const CarePlanListActions = () => (
   <TopToolbar>
     <FilterButton />
+    <Button
+      component={Link}
+      to="/careplan-overlaps"
+      startIcon={<CompareArrowsIcon />}
+      size="small"
+      color="warning"
+    >
+      Chevauchements
+    </Button>
     <CreateButton />
     <ExportButton />
   </TopToolbar>
