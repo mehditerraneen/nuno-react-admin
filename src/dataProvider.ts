@@ -1919,6 +1919,12 @@ export const dataProvider: MyDataProvider = {
           data: transformedItems,
           total: data.total,
         };
+      } else if (Array.isArray(data)) {
+        console.log("✅ Converting plain array response to React Admin format");
+        return {
+          data: data,
+          total: data.length,
+        };
       } else {
         console.error("❌ Unexpected response format:", data);
         throw new Error(
