@@ -521,9 +521,22 @@ const EnhancedTourEditForm = () => {
           const tourEnd = formValues.time_end || record?.time_end || "23:59";
           if (timeStart < tourStart || timeEnd > tourEnd) continue;
 
-          const codes = (detail.longtermcareitemquantity_set || []).map(
-            (item: any) => item.long_term_care_item?.code,
-          ).filter(Boolean);
+          const codeItems = (detail.longtermcareitemquantity_set || [])
+            .filter((item: any) => item.long_term_care_item?.code)
+            .map((item: any) => ({
+              code: item.long_term_care_item.code,
+              desc: item.long_term_care_item.description || "",
+              qty: item.quantity,
+            }));
+          const codes = codeItems.map((c: any) => c.code);
+          const codesText = codeItems.map((c: any) =>
+            `${c.code}${c.qty > 1 ? ` x${c.qty}` : ""}`,
+          ).join(", ");
+          const noteParts = [
+            detail.name,
+            detail.care_actions,
+            codesText ? `Codes: ${codesText}` : "",
+          ].filter(Boolean);
 
           virtualEvents.push({
             id: virtualId--,
@@ -532,7 +545,7 @@ const EnhancedTourEditForm = () => {
             time_start: timeStart,
             time_end: timeEnd,
             state: 1 as any,
-            notes: detail.care_actions || "",
+            notes: noteParts.join(" | "),
             event_type: "CARE_PLAN",
             care_codes: codes,
             is_available: true,
