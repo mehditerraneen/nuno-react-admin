@@ -80,7 +80,7 @@ export const CnsCarePlanList = () => (
         label="Patient"
         source="patient_id"
         reference="patients"
-        link="show"
+        link={false}
       >
         {/* No child, so it uses the global recordRepresentation */}
       </ReferenceField>
