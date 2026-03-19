@@ -4,28 +4,29 @@ import {
   TextField,
   DateField,
   NumberField,
-  ReferenceField, // Added for displaying patient name
+  ReferenceField,
   ReferenceInput,
   AutocompleteInput,
   DateInput,
+  FunctionField,
   useListContext,
   TopToolbar,
   FilterButton,
   sanitizeListRestProps,
   FilterForm,
+  ShowButton,
 } from "react-admin";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Chip } from "@mui/material";
 
 const cnsCarePlanFilters = [
   <ReferenceInput
     label="Patient"
     source="patient_id"
-    reference="patients_with_cns_plan" // Use the new virtual resource
+    reference="patients_with_cns_plan"
     alwaysOn
     key="patient_filter"
   >
-    {/* optionText is removed to default to the recordRepresentation */}
-    <AutocompleteInput sx={{ minWidth: 200 }} />
+    <AutocompleteInput sx={{ minWidth: 250 }} />
   </ReferenceInput>,
   <DateInput
     label="Start Date"
@@ -42,8 +43,6 @@ const cnsCarePlanFilters = [
 ];
 
 const ListActions = () => {
-  // className is not directly available from useListContext for TopToolbar like this.
-  // TopToolbar will inherit className if ListActions is passed a className prop by its parent.
   const { displayedFilters, ...rest } = useListContext();
   return (
     <TopToolbar {...sanitizeListRestProps(rest)}>
@@ -54,46 +53,80 @@ const ListActions = () => {
 };
 
 const EmptyList = () => (
-  <Box textAlign="center" m={1}>
-    <Typography variant="h6" paragraph>
+  <Box textAlign="center" m={4}>
+    <Typography variant="h6" paragraph color="text.secondary">
       No CNS care plans found.
     </Typography>
-    <Typography variant="body1">
+    <Typography variant="body2" color="text.secondary">
       Try adjusting filters or check if records exist.
     </Typography>
   </Box>
 );
 
-// Changed to functional component without props for now to resolve lint warning,
-// can be reverted if props are needed and type issue is resolved.
 export const CnsCarePlanList = () => (
   <List
     filters={cnsCarePlanFilters}
     actions={<ListActions />}
     empty={<EmptyList />}
-    title="CNS Detailed Care Plans"
+    title="CNS Care Plans"
     perPage={25}
+    sort={{ field: "date_of_decision", order: "DESC" }}
   >
-    <Datagrid bulkActionButtons={false} rowClick="show">
-      <TextField source="plan_number" label="Plan Number" />
+    <Datagrid
+      bulkActionButtons={false}
+      rowClick="show"
+      sx={{
+        "& .RaDatagrid-headerCell": {
+          fontWeight: 600,
+          backgroundColor: "#f5f5f5",
+        },
+      }}
+    >
       <ReferenceField
         label="Patient"
         source="patient_id"
         reference="patients"
         link={false}
-      >
-        {/* No child, so it uses the global recordRepresentation */}
-      </ReferenceField>
-      <DateField source="date_of_decision" label="Decision Date" />
-      <NumberField source="level_of_needs" label="Level of Needs" />
-      <DateField source="start_of_support" label="Support Start" />
-      <DateField source="end_of_support" label="Support End" />
-      <NumberField source="packageLevel" label="Package Level" />
-      <DateField source="request_start_date" label="Period Start" />
-      <DateField source="request_end_date" label="Period End" />
+      />
+      <TextField source="plan_number" label="Plan #" />
+      <FunctionField
+        label="Level"
+        render={(record: any) =>
+          record?.level_of_needs != null ? (
+            <Chip
+              label={record.level_of_needs}
+              size="small"
+              color={
+                record.level_of_needs >= 10
+                  ? "error"
+                  : record.level_of_needs >= 5
+                    ? "warning"
+                    : "success"
+              }
+            />
+          ) : null
+        }
+      />
+      <DateField source="start_of_support" label="Start" />
+      <DateField source="end_of_support" label="End" />
+      <DateField source="date_of_decision" label="Decision" />
       <TextField source="referent" label="Referent" />
-      <DateField source="date_of_evaluation" label="Evaluation Date" />
-      <DateField source="date_of_notification" label="Notification Date" />
+      <FunctionField
+        label="Period"
+        render={(record: any) => {
+          if (!record?.request_start_date) return null;
+          const start = new Date(record.request_start_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+          const end = record.request_end_date
+            ? new Date(record.request_end_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })
+            : "...";
+          return (
+            <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
+              {start} — {end}
+            </Typography>
+          );
+        }}
+      />
+      <ShowButton />
     </Datagrid>
   </List>
 );

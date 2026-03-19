@@ -1,6 +1,5 @@
 import {
   Show,
-  SimpleShowLayout,
   TextField,
   DateField,
   NumberField,
@@ -8,10 +7,33 @@ import {
   BooleanField,
   useRecordContext,
   useDataProvider,
-  Datagrid,
   Loading,
 } from "react-admin";
-import { Typography } from "@mui/material";
+import {
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Chip,
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Alert,
+} from "@mui/material";
+import {
+  Person,
+  CalendarToday,
+  Gavel,
+  LocalHospital,
+  Assignment,
+  BarChart,
+} from "@mui/icons-material";
 import { useState, useEffect } from "react";
 import {
   type MyDataProvider,
@@ -19,21 +41,57 @@ import {
 } from "./dataProvider";
 
 const CnsCarePlanTitle = () => {
-  // Note: The record might not be loaded yet when title is rendered.
-  // We might need to use useRecordContext or fetch the record if title needs dynamic data.
-  // For now, a static title or one based on id (if available directly) is safer.
-  // const record = useRecordContext();
-  // return <span>CNS Care Plan {record ? `"${record.plan_number}"` : ""}</span>;
-  return <span>CNS Care Plan Details</span>;
+  const record = useRecordContext();
+  return (
+    <span>
+      CNS Care Plan {record ? `#${record.plan_number}` : ""}
+    </span>
+  );
 };
 
-// Component to fetch and display the details of a CNS Care Plan
+const FieldGroup = ({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) => (
+  <Card variant="outlined" sx={{ height: "100%" }}>
+    <CardContent>
+      <Typography
+        variant="subtitle1"
+        fontWeight={600}
+        sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+      >
+        {icon}
+        {title}
+      </Typography>
+      {children}
+    </CardContent>
+  </Card>
+);
+
+const LabelValue = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <Box sx={{ mb: 1.5 }}>
+    <Typography variant="caption" color="text.secondary" display="block">
+      {label}
+    </Typography>
+    <Box sx={{ mt: 0.25 }}>{children}</Box>
+  </Box>
+);
+
 const CnsCarePlanDetailsGrid = () => {
   const record = useRecordContext();
   const dataProvider = useDataProvider<MyDataProvider>();
-  const [details, setDetails] = useState<MedicalCareSummaryPerPatientDetail[]>(
-    [],
-  );
+  const [details, setDetails] = useState<MedicalCareSummaryPerPatientDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -46,13 +104,12 @@ const CnsCarePlanDetailsGrid = () => {
           setDetails(data);
           setLoading(false);
         })
-        .catch((error) => {
-          console.error("Error fetching CNS care plan details:", error);
-          setError(error);
+        .catch((err) => {
+          console.error("Error fetching CNS care plan details:", err);
+          setError(err);
           setLoading(false);
         });
     } else {
-      // If there's no record, we're not loading and there's no data.
       setLoading(false);
     }
   }, [record, dataProvider]);
@@ -60,77 +117,231 @@ const CnsCarePlanDetailsGrid = () => {
   if (loading) return <Loading />;
   if (error) {
     return (
-      <Typography color="error">
+      <Alert severity="error" sx={{ mt: 2 }}>
         Could not fetch care plan details: {error.message}
-      </Typography>
+      </Alert>
     );
   }
   if (!details || details.length === 0) {
-    return null; // Don't render anything if there are no details
+    return (
+      <Alert severity="info" sx={{ mt: 2 }}>
+        No care items linked to this plan.
+      </Alert>
+    );
   }
 
   return (
-    <>
-      <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 2 }}>
-        Care Plan Items
+    <Box sx={{ mt: 3 }}>
+      <Typography
+        variant="h6"
+        fontWeight={600}
+        sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+      >
+        <Assignment color="primary" />
+        Care Plan Items ({details.length})
       </Typography>
-      <Datagrid data={details} bulkActionButtons={false} optimized>
-        <TextField source="item.code" label="Item Code" />
-        <TextField source="item.description" label="Item Description" />
-        <TextField source="custom_description" label="Custom Description" />
-        <NumberField source="number_of_care" label="# of Care" />
-        <TextField source="periodicity" label="Periodicity" />
-      </Datagrid>
-    </>
+      <TableContainer component={Paper} variant="outlined">
+        <Table size="small">
+          <TableHead>
+            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+              <TableCell sx={{ fontWeight: 600 }}>Code</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Custom Description</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 600 }}>
+                # of Care
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Periodicity</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {details.map((detail, index) => (
+              <TableRow
+                key={index}
+                sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}
+              >
+                <TableCell>
+                  <Chip label={detail.item?.code || "—"} size="small" variant="outlined" />
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {detail.item?.description || "—"}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" color="text.secondary">
+                    {detail.custom_description || "—"}
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Chip
+                    label={detail.number_of_care}
+                    size="small"
+                    color="primary"
+                    variant="filled"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">{detail.periodicity || "—"}</Typography>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+};
+
+const CnsCarePlanShowContent = () => {
+  const record = useRecordContext();
+  if (!record) return <Loading />;
+
+  return (
+    <Box sx={{ p: 2 }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 3,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Typography variant="h5" fontWeight={600}>
+            Plan #{record.plan_number}
+          </Typography>
+          {record.level_of_needs != null && (
+            <Chip
+              label={`Level ${record.level_of_needs}`}
+              color={
+                record.level_of_needs >= 10
+                  ? "error"
+                  : record.level_of_needs >= 5
+                    ? "warning"
+                    : "success"
+              }
+              icon={<BarChart />}
+            />
+          )}
+        </Box>
+        <ReferenceField
+          source="patient_id"
+          reference="patients"
+          link={false}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Person color="primary" />
+            <Typography variant="h6" color="primary">
+              <TextField source="name" /> <TextField source="first_name" />
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              (<TextField source="code_sn" />)
+            </Typography>
+          </Box>
+        </ReferenceField>
+      </Box>
+
+      <Grid container spacing={2}>
+        {/* Dates & Decision */}
+        <Grid item xs={12} md={4}>
+          <FieldGroup title="Decision" icon={<Gavel color="primary" />}>
+            <LabelValue label="Decision Date">
+              <DateField source="date_of_decision" />
+            </LabelValue>
+            <LabelValue label="Decision Number">
+              <TextField source="decision_number" emptyText="—" />
+            </LabelValue>
+            <LabelValue label="Referent">
+              <TextField source="referent" emptyText="—" />
+            </LabelValue>
+            <LabelValue label="Evaluation Date">
+              <DateField source="date_of_evaluation" emptyText="—" />
+            </LabelValue>
+          </FieldGroup>
+        </Grid>
+
+        {/* Support Period */}
+        <Grid item xs={12} md={4}>
+          <FieldGroup title="Support Period" icon={<CalendarToday color="primary" />}>
+            <LabelValue label="Start of Support">
+              <DateField source="start_of_support" />
+            </LabelValue>
+            <LabelValue label="End of Support">
+              <DateField source="end_of_support" emptyText="Ongoing" />
+            </LabelValue>
+            <LabelValue label="Notification Date">
+              <DateField source="date_of_notification" emptyText="—" />
+            </LabelValue>
+            <LabelValue label="Notification to Provider">
+              <DateField source="date_of_notification_to_provider" emptyText="—" />
+            </LabelValue>
+          </FieldGroup>
+        </Grid>
+
+        {/* Packages & Benefits */}
+        <Grid item xs={12} md={4}>
+          <FieldGroup title="Packages" icon={<LocalHospital color="primary" />}>
+            <LabelValue label="Special Package">
+              <TextField source="special_package" emptyText="—" />
+            </LabelValue>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <LabelValue label="Nature Package">
+                <NumberField source="nature_package" emptyText="—" />
+              </LabelValue>
+              <LabelValue label="Cash Package">
+                <NumberField source="cash_package" emptyText="—" />
+              </LabelValue>
+            </Box>
+            <LabelValue label="FMI Right">
+              <BooleanField source="fmi_right" />
+            </LabelValue>
+            <LabelValue label="SN Code Aidant">
+              <TextField source="sn_code_aidant" emptyText="—" />
+            </LabelValue>
+          </FieldGroup>
+        </Grid>
+      </Grid>
+
+      {/* Plan transitions */}
+      {(record.date_of_change_to_new_plan || record.date_of_start_of_plan_for_us || record.packageLevel) && (
+        <>
+          <Divider sx={{ my: 3 }} />
+          <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {record.packageLevel != null && (
+              <LabelValue label="Package Level">
+                <Chip label={record.packageLevel} color="info" size="small" />
+              </LabelValue>
+            )}
+            {record.date_of_change_to_new_plan && (
+              <LabelValue label="Change to New Plan">
+                <DateField source="date_of_change_to_new_plan" />
+              </LabelValue>
+            )}
+            {record.date_of_start_of_plan_for_us && (
+              <LabelValue label="Start of Plan for Us">
+                <DateField source="date_of_start_of_plan_for_us" />
+              </LabelValue>
+            )}
+            {record.request_start_date && (
+              <LabelValue label="Request Period">
+                <Typography variant="body2">
+                  <DateField source="request_start_date" /> — <DateField source="request_end_date" />
+                </Typography>
+              </LabelValue>
+            )}
+          </Box>
+        </>
+      )}
+
+      {/* Care Items Table */}
+      <CnsCarePlanDetailsGrid />
+    </Box>
   );
 };
 
 export const CnsCarePlanShow = () => (
   <Show title={<CnsCarePlanTitle />}>
-    <SimpleShowLayout>
-      <Typography variant="h6" gutterBottom>
-        Plan Details
-      </Typography>
-      <TextField source="plan_number" label="Plan Number" />
-      <ReferenceField label="Patient" source="patient_id" reference="patients">
-        <TextField source="name" />
-      </ReferenceField>
-      <DateField source="date_of_decision" label="Decision Date" />
-      <TextField source="decision_number" label="Decision Number" />
-      <NumberField source="level_of_needs" label="Level of Needs" />
-      <DateField source="start_of_support" label="Support Start" />
-      <DateField source="end_of_support" label="Support End" />
-      <TextField source="referent" label="Referent" />
-      <DateField source="date_of_evaluation" label="Evaluation Date" />
-      <DateField source="date_of_notification" label="Notification Date" />
-      <DateField
-        source="date_of_notification_to_provider"
-        label="Notification to Provider Date"
-      />
-      <TextField source="special_package" label="Special Package" />
-      <NumberField source="nature_package" label="Nature Package" />
-      <NumberField source="cash_package" label="Cash Package" />
-      <BooleanField source="fmi_right" label="FMI Right" />
-      <TextField source="sn_code_aidant" label="SN Code Aidant" />
-      <DateField
-        source="date_of_change_to_new_plan"
-        label="Change to New Plan Date"
-      />
-      <DateField
-        source="date_of_start_of_plan_for_us"
-        label="Start of Plan for Us Date"
-      />
-
-      {/* Display the grid of care plan details */}
-      <CnsCarePlanDetailsGrid />
-
-      {/* Fields specific to patient-filtered view, will only show if present */}
-      <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-        Request Specific Details (if applicable)
-      </Typography>
-      <NumberField source="packageLevel" label="Package Level (Request)" />
-      <DateField source="request_start_date" label="Period Start (Request)" />
-      <DateField source="request_end_date" label="Period End (Request)" />
-    </SimpleShowLayout>
+    <CnsCarePlanShowContent />
   </Show>
 );
