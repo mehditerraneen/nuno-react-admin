@@ -521,6 +521,11 @@ export const dataProvider: MyDataProvider = {
       }
     }
 
+    // Handle patients_with_cns_plan as alias for patients
+    if (resource === "patients_with_cns_plan") {
+      return dataProvider.getOne("patients", params);
+    }
+
     // Handle employees getOne with standard REST endpoint
     if (resource === "employees") {
       const url = `${apiUrl}/employees/${params.id}`;
