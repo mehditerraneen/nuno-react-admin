@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -11,12 +11,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Alert,
 } from "@mui/material";
 import {
   AccessTime as TimeIcon,
   CalendarToday as CalendarIcon,
   ListAlt as ListIcon,
+  Warning as WarningIcon,
 } from "@mui/icons-material";
+import { useDataProvider, Identifier } from "react-admin";
 import {
   calculateSessionDuration,
   calculateCareItemsDailyDuration,
@@ -233,11 +236,48 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
 
 interface CarePlanDetailsSummaryProps {
   details: CarePlanDetail[];
+  cnsCarePlanId?: Identifier;
 }
 
 export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
   details,
+  cnsCarePlanId,
 }) => {
+  const dataProvider = useDataProvider<any>();
+  const [missingCodes, setMissingCodes] = useState<
+    Array<{ code: string; description?: string; number_of_care: number; periodicity: string; weekly_package?: number }>
+  >([]);
+
+  useEffect(() => {
+    if (!cnsCarePlanId) return;
+
+    // Collect codes used in care plan details
+    const usedCodes = new Set<string>();
+    details.forEach((detail) => {
+      detail.longtermcareitemquantity_set.forEach((item) => {
+        usedCodes.add(item.long_term_care_item.code);
+      });
+    });
+
+    // Fetch CNS care plan details and find missing codes
+    dataProvider
+      .getCnsCarePlanDetails(cnsCarePlanId)
+      .then((cnsDetails: any[]) => {
+        const missing = cnsDetails
+          .filter((d: any) => d.item?.code && !usedCodes.has(d.item.code))
+          .map((d: any) => ({
+            code: d.item.code,
+            description: d.custom_description || d.item.description || "",
+            number_of_care: d.number_of_care,
+            periodicity: d.periodicity,
+            weekly_package: d.item.weekly_package,
+          }));
+        setMissingCodes(missing);
+      })
+      .catch((err: any) => {
+        console.error("Failed to fetch CNS details for missing codes:", err);
+      });
+  }, [cnsCarePlanId, details, dataProvider]);
   // Calculate total weekly durations across all details
   const totalSessionTime = details.reduce((total, detail) => {
     const sessionDuration = calculateSessionDuration(
@@ -492,6 +532,52 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Missing CNS Codes */}
+      {missingCodes.length > 0 && (
+        <>
+          <Divider sx={{ my: 2 }} />
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <WarningIcon color="warning" />
+            Missing CNS Codes ({missingCodes.length})
+          </Typography>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            These codes are in the CNS care plan but not used in any session.
+          </Alert>
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: "#fff3e0" }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Code</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Description (CNS)</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>Frequency</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Weekly Pkg (min)</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {missingCodes.map((mc, index) => (
+                  <TableRow key={index} sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fff8e1" } }}>
+                    <TableCell>
+                      <Chip label={mc.code} size="small" color="warning" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{mc.description || "—"}</Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      {mc.number_of_care}/{mc.periodicity === "W" ? "wk" : mc.periodicity === "D" ? "day" : mc.periodicity}
+                    </TableCell>
+                    <TableCell align="right">{mc.weekly_package || "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
     </Paper>
   );
 };

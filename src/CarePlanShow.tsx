@@ -228,7 +228,10 @@ const CarePlanDetails = () => {
           ))}
 
           {/* Overall Care Plan Duration Summary */}
-          <CarePlanDetailsSummary details={details} />
+          <CarePlanDetailsSummary
+            details={details}
+            cnsCarePlanId={record?.medical_care_summary_per_patient_id}
+          />
         </>
       )}
 
