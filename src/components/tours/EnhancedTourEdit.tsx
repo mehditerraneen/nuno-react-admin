@@ -483,17 +483,24 @@ const EnhancedTourEditForm = () => {
       const dow = jsDow === 0 ? 6 : jsDow - 1; // convert to 0=Mon..6=Sun
       const dowStr = String(dow);
 
-      // Fetch all active care plans
+      // Fetch active care plans (last valid)
       const cpResponse = await dataProvider.getList("careplans", {
         pagination: { page: 1, perPage: 200 },
         sort: { field: "id", order: "ASC" },
-        filter: { last_valid_plan: true },
+        filter: { last_valid_plan: true, patient_is_active: true },
+      });
+
+      // Filter by validity: plan must cover the tour date
+      const validPlans = cpResponse.data.filter((cp: any) => {
+        if (cp.plan_start_date && cp.plan_start_date > dateToUse) return false;
+        if (cp.plan_end_date && cp.plan_end_date < dateToUse) return false;
+        return true;
       });
 
       const virtualEvents: AvailableEvent[] = [];
       let virtualId = -1;
 
-      for (const cp of cpResponse.data) {
+      for (const cp of validPlans) {
         const details = await (dataProvider as any).getCarePlanDetails(cp.id);
 
         for (const detail of details) {
@@ -524,15 +531,17 @@ const EnhancedTourEditForm = () => {
             care_codes: codes,
             is_available: true,
             assigned_to_tour: undefined,
-            patient_name: undefined, // will be resolved by getPatientName
+            patient_name: undefined,
           });
         }
       }
 
+      const dayName = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"][dow];
       setAvailableEvents(virtualEvents);
-      notify(`Loaded ${virtualEvents.length} care plan sessions for ${dateToUse} (${["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"][dow]})`, {
-        type: "info",
-      });
+      notify(
+        `${virtualEvents.length} sessions from ${validPlans.length} valid plans for ${dayName} ${dateToUse}`,
+        { type: "info" },
+      );
     } catch (error) {
       notify("Failed to load care plan events", { type: "error" });
     } finally {
