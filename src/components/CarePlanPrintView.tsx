@@ -170,6 +170,131 @@ const PrintContent = React.forwardRef<HTMLDivElement, CarePlanPrintViewProps>(
           </Box>
         </Box>
 
+        {/* Weekly Calendar Grid */}
+        {(() => {
+          const DAYS = [
+            { value: "0", label: "Lun" },
+            { value: "1", label: "Mar" },
+            { value: "2", label: "Mer" },
+            { value: "3", label: "Jeu" },
+            { value: "4", label: "Ven" },
+            { value: "5", label: "Sam" },
+            { value: "6", label: "Dim" },
+          ];
+
+          // Build schedule: for each day, collect sessions that occur on that day
+          const daySchedule: Map<string, Array<{ name: string; timeStart: string; timeEnd: string; duration: number; codes: string[] }>> = new Map();
+          DAYS.forEach((d) => daySchedule.set(d.value, []));
+
+          details.forEach((detail) => {
+            const isEveryDay = detail.params_occurrence.some((o: CareOccurrence) => o.value === "*");
+            const activeDays = isEveryDay
+              ? DAYS.map((d) => d.value)
+              : detail.params_occurrence.map((o: CareOccurrence) => o.value).filter((v) => v !== "x");
+            const dur = calculateSessionDuration(detail.time_start, detail.time_end);
+            const codes = detail.longtermcareitemquantity_set.map((item) => item.long_term_care_item.code);
+            activeDays.forEach((dayVal) => {
+              const list = daySchedule.get(dayVal);
+              if (list) {
+                list.push({
+                  name: detail.name,
+                  timeStart: formatTime(detail.time_start),
+                  timeEnd: formatTime(detail.time_end),
+                  duration: dur,
+                  codes,
+                });
+              }
+            });
+          });
+
+          // Sort each day's sessions by start time
+          daySchedule.forEach((sessions) => sessions.sort((a, b) => a.timeStart.localeCompare(b.timeStart)));
+
+          return (
+            <Box sx={{ mb: 3, pageBreakInside: "avoid" }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, color: "#1976d2" }}>
+                Planning Hebdomadaire
+              </Typography>
+              <Table size="small" sx={{ tableLayout: "fixed" }}>
+                <TableHead>
+                  <TableRow>
+                    {DAYS.map((d) => (
+                      <TableCell
+                        key={d.value}
+                        align="center"
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: "9pt",
+                          padding: "6px 4px",
+                          backgroundColor: d.value === "5" || d.value === "6" ? "#e8eaf6" : "#f0f4f8",
+                          borderBottom: "2px solid #1976d2",
+                          color: "#1976d2",
+                          width: `${100 / 7}%`,
+                        }}
+                      >
+                        {d.label}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <TableRow sx={{ verticalAlign: "top" }}>
+                    {DAYS.map((d) => {
+                      const sessions = daySchedule.get(d.value) || [];
+                      const dayTotal = sessions.reduce((s, sess) => s + sess.duration, 0);
+                      return (
+                        <TableCell
+                          key={d.value}
+                          sx={{
+                            padding: "4px",
+                            borderBottom: "1px solid #e0e0e0",
+                            backgroundColor: d.value === "5" || d.value === "6" ? "#f5f5ff" : "white",
+                            verticalAlign: "top",
+                          }}
+                        >
+                          {sessions.length === 0 ? (
+                            <Typography variant="caption" color="text.disabled" sx={{ display: "block", textAlign: "center", py: 1 }}>
+                              —
+                            </Typography>
+                          ) : (
+                            <>
+                              {sessions.map((sess, i) => (
+                                <Box
+                                  key={i}
+                                  sx={{
+                                    mb: 0.5,
+                                    p: 0.5,
+                                    backgroundColor: "#e3f2fd",
+                                    borderRadius: 0.5,
+                                    borderLeft: "3px solid #1976d2",
+                                  }}
+                                >
+                                  <Typography sx={{ fontSize: "8pt", fontWeight: 600, lineHeight: 1.3 }}>
+                                    {sess.timeStart}–{sess.timeEnd}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: "7pt", color: "#555", lineHeight: 1.2 }}>
+                                    {sess.name}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: "7pt", color: "#888", lineHeight: 1.2 }}>
+                                    {sess.codes.join(", ")} ({sess.duration} min)
+                                  </Typography>
+                                </Box>
+                              ))}
+                              <Typography sx={{ fontSize: "7pt", fontWeight: 600, textAlign: "center", color: "#1976d2", mt: 0.5 }}>
+                                Total: {dayTotal} min
+                              </Typography>
+                            </>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </Box>
+          );
+        })()}
+
         {/* Schedule Details */}
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, color: "#1976d2" }}>
           Programme de Soins
