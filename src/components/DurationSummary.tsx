@@ -266,6 +266,17 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
     return null;
   }
 
+  // Monthly estimates (28–31 days)
+  const dailyFromWeekly = totalSessionTime / 7;
+  const monthly28 = Math.round(dailyFromWeekly * 28);
+  const monthly30 = Math.round(dailyFromWeekly * 30);
+  const monthly31 = Math.round(dailyFromWeekly * 31);
+
+  const dailyCareFromWeekly = totalCareItemsDuration / 7;
+  const monthlyCare28 = Math.round(dailyCareFromWeekly * 28);
+  const monthlyCare30 = Math.round(dailyCareFromWeekly * 30);
+  const monthlyCare31 = Math.round(dailyCareFromWeekly * 31);
+
   return (
     <Paper
       sx={{
@@ -333,6 +344,42 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
             {details.length}
           </Typography>
         </Box>
+      </Box>
+
+      {/* Monthly Estimates */}
+      <Divider sx={{ my: 2 }} />
+      <Typography
+        variant="h6"
+        gutterBottom
+        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+      >
+        <CalendarIcon color="primary" />
+        Monthly Estimates
+      </Typography>
+      <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+        {[
+          { days: 28, session: monthly28, care: monthlyCare28 },
+          { days: 30, session: monthly30, care: monthlyCare30 },
+          { days: 31, session: monthly31, care: monthlyCare31 },
+        ].map(({ days, session, care }) => (
+          <Paper
+            key={days}
+            variant="outlined"
+            sx={{ p: 1.5, minWidth: 140, textAlign: "center" }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              {days} days
+            </Typography>
+            <Typography variant="h6" color="primary" fontWeight="bold">
+              {formatDurationDisplay(session)}
+            </Typography>
+            {totalCareItemsDuration > 0 && (
+              <Typography variant="caption" color="info.main">
+                pkg: {formatDurationDisplay(care)}
+              </Typography>
+            )}
+          </Paper>
+        ))}
       </Box>
     </Paper>
   );

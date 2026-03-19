@@ -18,6 +18,9 @@ import {
   Chip,
   Divider,
   Tooltip,
+  IconButton,
+  Popover,
+  TextField as MuiTextField,
 } from "@mui/material";
 import {
   ExpandMore as ExpandMoreIcon,
@@ -29,6 +32,7 @@ import {
   Add as AddIcon,
   AccessTime as AccessTimeIcon,
   Error as ErrorIcon,
+  Edit as EditIcon,
 } from "@mui/icons-material";
 import AddLongTermCareItemButton from "./AddLongTermCareItemButton";
 import {
@@ -38,12 +42,98 @@ import {
   ReferenceInput,
   SelectInput,
   NumberInput,
+  useDataProvider,
+  useNotify,
+  useRefresh,
 } from "react-admin";
+import { useWatch } from "react-hook-form";
 import { SmartTimeInput } from "./SmartTimeInput";
 import { SmartOccurrenceInput } from "./SmartOccurrenceInput";
 import { LiveDurationCalculator } from "./LiveDurationCalculator";
 import { formatDurationDisplay } from "../utils/timeUtils";
 import { LongTermCareItem } from "../dataProvider";
+
+const EditWeeklyPackageButton = ({ itemId, currentValue }: { itemId: number; currentValue: number | null }) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [value, setValue] = useState(currentValue ?? "");
+  const [saving, setSaving] = useState(false);
+  const dataProvider = useDataProvider();
+  const notify = useNotify();
+  const refresh = useRefresh();
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await dataProvider.update("longtermcareitems", {
+        id: itemId,
+        data: { id: itemId, weekly_package: Number(value) || 0 },
+        previousData: { id: itemId },
+      });
+      notify("Duration updated", { type: "success" });
+      setAnchorEl(null);
+      refresh();
+    } catch (error) {
+      notify("Failed to update duration", { type: "error" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <IconButton
+        size="small"
+        onClick={(e) => { e.stopPropagation(); setAnchorEl(e.currentTarget); setValue(currentValue ?? ""); }}
+        title="Edit weekly duration"
+        sx={{ ml: 0.5, p: 0.25 }}
+      >
+        <EditIcon sx={{ fontSize: 14 }} />
+      </IconButton>
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1, minWidth: 200 }}>
+          <Typography variant="subtitle2">Weekly package (min)</Typography>
+          <MuiTextField
+            size="small"
+            type="number"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            autoFocus
+            onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+          />
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </Box>
+      </Popover>
+    </>
+  );
+};
+
+const useSelectedCareItemIds = (): number[] => {
+  const items = useWatch({ name: "long_term_care_items" }) || [];
+  return items
+    .map((item: any) => item?.long_term_care_item_id)
+    .filter((id: any) => id != null);
+};
+
+const validateNoDuplicate = (value: any, allValues: any, props: any) => {
+  if (!value || !allValues?.long_term_care_items) return undefined;
+  const occurrences = allValues.long_term_care_items.filter(
+    (item: any) => item?.long_term_care_item_id === value,
+  );
+  return occurrences.length > 1 ? "This care code is already selected" : undefined;
+};
 
 interface TabbedCareFormLayoutProps {
   mode: "create" | "edit";
@@ -514,24 +604,28 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                               required
                             >
                               <SelectInput
+                                validate={validateNoDuplicate}
                                 optionText={(choice: LongTermCareItem) => {
-                                  const dailyDuration =
-                                    (choice.weekly_package || 0) / 7;
-                                  const dailyText =
-                                    dailyDuration > 0
-                                      ? ` (${formatDurationDisplay(dailyDuration)}/day)`
+                                  const wp = choice.weekly_package || 0;
+                                  const weeklyText =
+                                    wp > 0
+                                      ? ` (${formatDurationDisplay(wp)}/wk)`
                                       : "";
 
                                   return (
                                     <Tooltip
-                                      title={`${choice.description || "No description"}${choice.weekly_package ? ` • Weekly package: ${formatDurationDisplay(choice.weekly_package)}` : ""}`}
+                                      title={`${choice.description || "No description"}${wp ? ` • ${formatDurationDisplay(wp)}/week` : " • No duration set — click pencil to add"}`}
                                       placement="right"
                                       arrow
                                     >
-                                      <span>
+                                      <Box component="span" sx={{ display: "inline-flex", alignItems: "center" }}>
                                         {choice.code}
-                                        {dailyText}
-                                      </span>
+                                        {weeklyText || " —"}
+                                        <EditWeeklyPackageButton
+                                          itemId={choice.id}
+                                          currentValue={choice.weekly_package ?? null}
+                                        />
+                                      </Box>
                                     </Tooltip>
                                   );
                                 }}

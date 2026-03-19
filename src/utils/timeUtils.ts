@@ -316,26 +316,17 @@ export function calculateSessionDuration(
  */
 export function calculateCareItemsDailyDuration(
   careItems: Array<{
-    long_term_care_item: { weekly_package?: number };
+    long_term_care_item: { weekly_package?: number; session_duration?: number };
     quantity: number;
   }>,
 ): number {
-  console.log("📊 calculateCareItemsDailyDuration called with:", careItems);
-
-  return careItems.reduce((total, item, index) => {
-    const weeklyPackage = item.long_term_care_item.weekly_package || 0;
-    const dailyPackage = weeklyPackage / 7; // Convert weekly to daily
-    const itemDailyDuration = dailyPackage * item.quantity;
-
-    console.log(`📊 Item ${index}:`, {
-      weekly_package: weeklyPackage,
-      daily_package: dailyPackage,
-      quantity: item.quantity,
-      itemDailyDuration,
-      runningTotal: total + itemDailyDuration,
-    });
-
-    return total + itemDailyDuration;
+  return careItems.reduce((total, item) => {
+    // Use session_duration if available, fall back to weekly_package / 7
+    const sessionDuration =
+      (item.long_term_care_item as any).session_duration ||
+      (item.long_term_care_item.weekly_package || 0) / 7;
+    const itemDuration = sessionDuration * item.quantity;
+    return total + itemDuration;
   }, 0);
 }
 

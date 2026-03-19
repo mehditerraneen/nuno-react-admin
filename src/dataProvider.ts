@@ -55,6 +55,7 @@ export interface LongTermCareItem {
   code: string;
   description?: string;
   weekly_package?: number; // Duration in minutes per week for this care item
+  session_duration?: number; // Duration of a single session in minutes
   type?: string; // Type of care item (e.g., "Prestations Aidant", "Prestations Prestataire")
   category?: string; // Alternative field name for item category
   prestataire_type?: string; // Another potential field name

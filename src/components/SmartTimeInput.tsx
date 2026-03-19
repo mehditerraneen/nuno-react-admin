@@ -50,7 +50,10 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
 }) => {
   const { setValue, watch } = useFormContext();
   const { data: allCareItems } =
-    useGetList<LongTermCareItem>("longtermcareitems");
+    useGetList<LongTermCareItem>("longtermcareitems", {
+      pagination: { page: 1, perPage: 500 },
+      sort: { field: "code", order: "ASC" },
+    });
 
   // Watch form values
   const timeStart = useWatch({ name: "time_start" });
