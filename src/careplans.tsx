@@ -1,6 +1,7 @@
-import { Box, Button } from "@mui/material";
+import { Box, Button, Chip } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   List,
   Datagrid,
@@ -20,9 +21,9 @@ import {
   ReferenceField,
   ReferenceInput,
   AutocompleteInput,
-  Link, // Added for linking to related CNS Care Plan
-  FunctionField, // Added for custom rendering in ReferenceField
-  RaRecord, // Import RaRecord for proper typing
+  Link,
+  FunctionField,
+  RaRecord,
   useDataProvider,
   useNotify,
   Identifier,
@@ -33,7 +34,7 @@ import {
 } from "react-admin";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
-import { type MyDataProvider } from "./dataProvider"; // Import custom data provider type
+import { type MyDataProvider } from "./dataProvider";
 
 // Define Patient interface based on used fields and API response
 interface Patient extends RaRecord<number> {
@@ -86,13 +87,42 @@ const CarePlanListActions = () => (
 );
 
 export const CarePlanList = () => (
-  <List filters={carePlanFilters} actions={<CarePlanListActions />}>
-    <Datagrid rowClick="show">
+  <List
+    filters={carePlanFilters}
+    actions={<CarePlanListActions />}
+    sort={{ field: "patient_id", order: "ASC" }}
+  >
+    <Datagrid
+      rowClick="show"
+      rowSx={(record) =>
+        record.last_valid_plan
+          ? {
+              backgroundColor: "#e8f5e9",
+              borderLeft: "4px solid #4caf50",
+              "& td": { fontWeight: 600 },
+            }
+          : { borderLeft: "4px solid transparent" }
+      }
+    >
       <TextField source="id" />
       <ReferenceField source="patient_id" reference="patients" />
       <NumberField source="plan_number" />
       <DateField source="plan_start_date" />
-      <BooleanField source="last_valid_plan" />
+      <FunctionField
+        source="last_valid_plan"
+        label="Plan valide"
+        render={(record: any) =>
+          record.last_valid_plan ? (
+            <Chip
+              icon={<CheckCircleIcon />}
+              label="Plan actif"
+              color="success"
+              size="small"
+              variant="filled"
+            />
+          ) : null
+        }
+      />
       <DateField source="updated_on" label="Updated" showTime />
       <TextField source="updated_by" label="Updated By" />
       <ShowButton />
