@@ -1249,7 +1249,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 let empTotalHours = 0;
                 if (employee.shifts) {
                     Object.values(employee.shifts).forEach((shift: any) => {
-                        if (shift && shift.hours && shift.shift_code !== 'OFF') {
+                        if (shift && shift.hours && !['OFF', 'LEAVE'].includes(shift.shift_category)) {
                             empTotalHours += shift.hours;
                         }
                     });
@@ -1271,12 +1271,12 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         });
 
         return filteredEmployees.map((emp: any) => {
-            // Calculate total hours from shifts - including CP (paid leave)
-            // OFF is the only shift that doesn't count towards hours
+            // Calculate total hours from shifts
+            // Exclude OFF and LEAVE category shifts (OFF, DES, CP, CONG, etc.)
             let calculatedTotalHours = 0;
             if (emp.shifts) {
                 Object.values(emp.shifts).forEach((shift: any) => {
-                    if (shift && shift.hours && shift.shift_code !== 'OFF') {
+                    if (shift && shift.hours && !['OFF', 'LEAVE'].includes(shift.shift_category)) {
                         calculatedTotalHours += shift.hours;
                     }
                 });
