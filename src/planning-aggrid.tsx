@@ -698,6 +698,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 if (shiftCode && shiftType) {
                     const newShift: any = {
                         shift_code: shiftCode,
+                        shift_category: shiftType.shift_category || 'OTHER',
                         color: shiftType.color_code || '#ccc',
                         hours: typeof shiftType.hours === 'number' ? shiftType.hours : parseFloat(shiftType.hours) || 0,
                         source: 'MANUAL',
