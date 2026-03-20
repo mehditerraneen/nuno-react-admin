@@ -73,6 +73,11 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HistoryIcon from '@mui/icons-material/History';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import StopCircleIcon from '@mui/icons-material/StopCircle';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -566,6 +571,17 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const [optimizerFailureMessage, setOptimizerFailureMessage] = useState<string | undefined>(undefined);
     const [expandedValidationRows, setExpandedValidationRows] = useState<Set<number>>(new Set());
 
+    // Batch optimization states
+    const [batchDialog, setBatchDialog] = useState(false);
+    const [batchCompareDialog, setBatchCompareDialog] = useState(false);
+    const [batchPreset, setBatchPreset] = useState<'QUICK' | 'STANDARD' | 'EXHAUSTIVE'>('QUICK');
+    const [batchStarting, setBatchStarting] = useState(false);
+    const [batchRuns, setBatchRuns] = useState<any[]>([]);
+    const [activeBatchRun, setActiveBatchRun] = useState<any>(null);
+    const [batchTopTrials, setBatchTopTrials] = useState<any[]>([]);
+    const [batchPolling, setBatchPolling] = useState(false);
+    const [applyingTrial, setApplyingTrial] = useState<number | null>(null);
+
     // New shift form
     const [newShift, setNewShift] = useState({
         code: '', name: '', start_time: '', end_time: '',
@@ -649,6 +665,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
 
     useEffect(() => {
         loadData();
+        loadBatchRuns();
     }, [loadData]);
 
     // Load hidden employees
@@ -856,6 +873,143 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         } finally {
             setClearing(false);
         }
+    };
+
+    // ============ Batch Optimization Handlers ============
+
+    const loadBatchRuns = async () => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize`);
+            if (response.ok) {
+                const data = await response.json();
+                setBatchRuns(data.runs || []);
+                // Check for active run
+                const active = (data.runs || []).find((r: any) => r.status === 'RUNNING' || r.status === 'PENDING');
+                if (active) {
+                    setActiveBatchRun(active);
+                    startBatchPolling(active.id);
+                }
+            }
+        } catch (e) {
+            console.error('Error loading batch runs:', e);
+        }
+    };
+
+    const startBatchPolling = (runId: number) => {
+        if (batchPolling) return;
+        setBatchPolling(true);
+        const interval = setInterval(async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${runId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setActiveBatchRun(data);
+                    setBatchTopTrials(data.top_trials || []);
+                    // Update in runs list
+                    setBatchRuns(prev => prev.map(r => r.id === data.id ? { ...r, ...data } : r));
+                    if (data.status === 'COMPLETED' || data.status === 'FAILED' || data.status === 'CANCELLED') {
+                        clearInterval(interval);
+                        setBatchPolling(false);
+                        if (data.status === 'COMPLETED') {
+                            notify(`Batch optimization terminée: ${data.completed_trials} essais, meilleur score: ${data.best_score?.toFixed(0)}`, { type: 'success' });
+                        } else if (data.status === 'FAILED') {
+                            notify(`Batch optimization échouée: ${data.error_message}`, { type: 'error' });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Polling error:', e);
+                clearInterval(interval);
+                setBatchPolling(false);
+            }
+        }, 10000); // Poll every 10s
+    };
+
+    const handleStartBatch = async () => {
+        try {
+            setBatchStarting(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preset: batchPreset }),
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to start batch');
+            }
+            const result = await response.json();
+            notify(`${result.message}`, { type: 'success' });
+            setActiveBatchRun(result);
+            setBatchDialog(false);
+            startBatchPolling(result.id);
+            loadBatchRuns();
+        } catch (error: any) {
+            notify(`${error.message}`, { type: 'error' });
+        } finally {
+            setBatchStarting(false);
+        }
+    };
+
+    const handleCancelBatch = async (runId: number) => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${runId}/cancel`, {
+                method: 'POST',
+            });
+            if (response.ok) {
+                notify('Batch optimization annulée', { type: 'info' });
+                setActiveBatchRun(null);
+                setBatchPolling(false);
+                loadBatchRuns();
+            }
+        } catch (e: any) {
+            notify(`Erreur: ${e.message}`, { type: 'error' });
+        }
+    };
+
+    const handleApplyTrial = async (runId: number, trialId: number) => {
+        if (!window.confirm('Appliquer cette solution? Les affectations non verrouillées seront remplacées.')) return;
+        try {
+            setApplyingTrial(trialId);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${runId}/trial/${trialId}/apply`, {
+                method: 'POST',
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to apply');
+            }
+            const result = await response.json();
+            notify(`${result.message}`, { type: 'success' });
+            setBatchCompareDialog(false);
+            loadData();
+            refresh();
+        } catch (error: any) {
+            notify(`${error.message}`, { type: 'error' });
+        } finally {
+            setApplyingTrial(null);
+        }
+    };
+
+    const handleOpenBatchCompare = async () => {
+        await loadBatchRuns();
+        // Load details for latest completed run
+        const completedRun = batchRuns.find(r => r.status === 'COMPLETED') || (activeBatchRun?.status === 'COMPLETED' ? activeBatchRun : null);
+        if (completedRun) {
+            try {
+                const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${completedRun.id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setActiveBatchRun(data);
+                    setBatchTopTrials(data.top_trials || []);
+                }
+            } catch (e) { /* ignore */ }
+        }
+        setBatchCompareDialog(true);
     };
 
     // CSV Import
@@ -1972,6 +2126,27 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                 <Button startIcon={<AutoAwesomeIcon />} onClick={() => setOptimizeDialog(true)} color="success" variant="contained" disabled={!isDraft} label="Optimiser" />
                             </span>
                         </Tooltip>
+                        <Tooltip title={activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) ? `Batch en cours: ${activeBatchRun.progress_percent}%` : !isDraft ? "Mode Brouillon requis" : "Optimisation batch (overnight)"}>
+                            <span>
+                                <Button
+                                    startIcon={batchPolling ? <CircularProgress size={16} /> : <RocketLaunchIcon />}
+                                    onClick={() => {
+                                        if (activeBatchRun && activeBatchRun.status === 'COMPLETED') {
+                                            handleOpenBatchCompare();
+                                        } else if (activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status)) {
+                                            handleOpenBatchCompare();
+                                        } else {
+                                            loadBatchRuns();
+                                            setBatchDialog(true);
+                                        }
+                                    }}
+                                    color="secondary"
+                                    variant={batchPolling ? "contained" : "outlined"}
+                                    disabled={!isDraft && !batchPolling}
+                                    label={batchPolling ? `Batch ${activeBatchRun?.progress_percent || 0}%` : "Batch"}
+                                />
+                            </span>
+                        </Tooltip>
                         <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
                             <span>
                                 <Button startIcon={<DeleteSweepIcon />} onClick={handleClearOptimizerShifts} color="warning" variant="outlined" disabled={!isDraft || clearing} label={clearing ? "..." : "Effacer auto"} />
@@ -2162,6 +2337,226 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     </Box>
                 </DialogContent>
                 <DialogActions><MuiButton onClick={() => setOptimizeDialog(false)} disabled={optimizing}>Annuler</MuiButton></DialogActions>
+            </Dialog>
+
+            {/* Batch Optimization Start Dialog */}
+            <Dialog open={batchDialog} onClose={() => setBatchDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle><Box display="flex" alignItems="center" gap={1}><RocketLaunchIcon color="secondary" /> Optimisation Batch</Box></DialogTitle>
+                <DialogContent>
+                    <Box display="flex" flexDirection="column" gap={2} mt={2}>
+                        <Typography variant="body2" color="text.secondary">
+                            Lance une exploration intensive de paramètres en arrière-plan. Idéal pour lancer le soir et retrouver les meilleures solutions le matin.
+                        </Typography>
+                        <ToggleButtonGroup value={batchPreset} exclusive onChange={(e, v) => v && setBatchPreset(v)} fullWidth color="secondary">
+                            <ToggleButton value="QUICK">
+                                <Box textAlign="center" p={1}>
+                                    <Typography fontWeight="bold">Rapide</Typography>
+                                    <Typography variant="caption">50 essais / ~50 min</Typography>
+                                </Box>
+                            </ToggleButton>
+                            <ToggleButton value="STANDARD">
+                                <Box textAlign="center" p={1}>
+                                    <Typography fontWeight="bold">Standard</Typography>
+                                    <Typography variant="caption">200 essais / ~7h</Typography>
+                                </Box>
+                            </ToggleButton>
+                            <ToggleButton value="EXHAUSTIVE">
+                                <Box textAlign="center" p={1}>
+                                    <Typography fontWeight="bold">Exhaustif</Typography>
+                                    <Typography variant="caption">500+ essais / ~25h</Typography>
+                                </Box>
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                        <Alert severity="info">
+                            L'optimisation utilise Optuna (recherche bayésienne) pour explorer des milliers de combinaisons de paramètres.
+                            Les 10 meilleures solutions sont conservées pour comparaison.
+                        </Alert>
+                        {batchRuns.length > 0 && (
+                            <Box>
+                                <Typography variant="subtitle2" gutterBottom>Runs précédents:</Typography>
+                                {batchRuns.slice(0, 3).map(r => (
+                                    <Chip
+                                        key={r.id}
+                                        label={`#${r.id} ${r.preset} - ${r.status} (${r.completed_trials}/${r.total_trials})`}
+                                        size="small"
+                                        color={r.status === 'COMPLETED' ? 'success' : r.status === 'RUNNING' ? 'warning' : 'default'}
+                                        sx={{ mr: 0.5, mb: 0.5 }}
+                                        onClick={() => {
+                                            setBatchDialog(false);
+                                            setActiveBatchRun(r);
+                                            if (r.status === 'COMPLETED') handleOpenBatchCompare();
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        )}
+                        <MuiButton
+                            variant="contained"
+                            color="secondary"
+                            size="large"
+                            startIcon={batchStarting ? <CircularProgress size={20} color="inherit" /> : <RocketLaunchIcon />}
+                            onClick={handleStartBatch}
+                            disabled={batchStarting}
+                            fullWidth
+                        >
+                            {batchStarting ? 'Démarrage...' : `Lancer (${batchPreset})`}
+                        </MuiButton>
+                    </Box>
+                </DialogContent>
+                <DialogActions><MuiButton onClick={() => setBatchDialog(false)}>Annuler</MuiButton></DialogActions>
+            </Dialog>
+
+            {/* Batch Compare Dialog */}
+            <Dialog open={batchCompareDialog} onClose={() => setBatchCompareDialog(false)} maxWidth="lg" fullWidth>
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <CompareArrowsIcon color="secondary" />
+                            <Typography variant="h6">Comparaison des solutions batch</Typography>
+                        </Box>
+                        {activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) && (
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <CircularProgress size={20} />
+                                <Typography variant="body2" color="text.secondary">
+                                    {activeBatchRun.completed_trials}/{activeBatchRun.total_trials} essais ({activeBatchRun.progress_percent}%)
+                                </Typography>
+                                <MuiButton
+                                    size="small"
+                                    color="error"
+                                    startIcon={<StopCircleIcon />}
+                                    onClick={() => handleCancelBatch(activeBatchRun.id)}
+                                >
+                                    Arrêter
+                                </MuiButton>
+                            </Box>
+                        )}
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {activeBatchRun && (
+                        <Box mb={2}>
+                            <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+                                <Chip label={`Preset: ${activeBatchRun.preset}`} />
+                                <Chip label={`Statut: ${activeBatchRun.status}`} color={activeBatchRun.status === 'COMPLETED' ? 'success' : activeBatchRun.status === 'RUNNING' ? 'warning' : 'default'} />
+                                <Chip label={`${activeBatchRun.completed_trials} réussis / ${activeBatchRun.failed_trials} échoués`} />
+                                {activeBatchRun.best_score && <Chip icon={<EmojiEventsIcon />} label={`Meilleur: ${activeBatchRun.best_score.toFixed(0)}`} color="success" />}
+                                {activeBatchRun.duration_seconds && <Chip label={`Durée: ${(activeBatchRun.duration_seconds / 60).toFixed(0)} min`} />}
+                            </Box>
+                            {/* Progress bar */}
+                            {['RUNNING', 'PENDING'].includes(activeBatchRun.status) && (
+                                <Box sx={{ width: '100%', mb: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ width: '100%', bgcolor: '#e0e0e0', borderRadius: 1, height: 8 }}>
+                                            <Box sx={{ width: `${activeBatchRun.progress_percent}%`, bgcolor: 'secondary.main', borderRadius: 1, height: 8, transition: 'width 0.5s' }} />
+                                        </Box>
+                                        <Typography variant="caption">{activeBatchRun.progress_percent}%</Typography>
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
+                    )}
+                    {batchTopTrials.length > 0 ? (
+                        <TableContainer>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>#</TableCell>
+                                        <TableCell>Score</TableCell>
+                                        <TableCell>Algorithme</TableCell>
+                                        <TableCell>Temps</TableCell>
+                                        <TableCell>Couverture</TableCell>
+                                        <TableCell>Heures totales</TableCell>
+                                        <TableCell>Poids clés</TableCell>
+                                        <TableCell>Action</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {batchTopTrials.map((trial: any, idx: number) => (
+                                        <TableRow key={trial.id} sx={idx === 0 ? { bgcolor: 'success.light', '& td': { fontWeight: 'bold' } } : {}}>
+                                            <TableCell>
+                                                <Box display="flex" alignItems="center" gap={0.5}>
+                                                    {idx === 0 && <EmojiEventsIcon fontSize="small" color="warning" />}
+                                                    {trial.trial_number}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>{trial.score?.toFixed(0)}</TableCell>
+                                            <TableCell><Chip label={trial.algorithm} size="small" /></TableCell>
+                                            <TableCell>{trial.solve_time?.toFixed(1)}s</TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={trial.statistics?.coverage_requirements_met ? 'OK' : 'Non'}
+                                                    size="small"
+                                                    color={trial.statistics?.coverage_requirements_met ? 'success' : 'error'}
+                                                />
+                                            </TableCell>
+                                            <TableCell>{trial.statistics?.total_hours?.toFixed(0) || '-'}h</TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                                                    sf:{trial.objective_weights?.shortfall_penalty} uc:{trial.objective_weights?.unused_capacity_penalty} wh:{trial.objective_weights?.work_hours_bonus}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <MuiButton
+                                                    size="small"
+                                                    variant={idx === 0 ? "contained" : "outlined"}
+                                                    color="success"
+                                                    startIcon={applyingTrial === trial.id ? <CircularProgress size={14} /> : <PlayArrowIcon />}
+                                                    onClick={() => handleApplyTrial(activeBatchRun.id, trial.id)}
+                                                    disabled={applyingTrial !== null}
+                                                >
+                                                    Appliquer
+                                                </MuiButton>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    ) : (
+                        <Box textAlign="center" py={4}>
+                            {activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) ? (
+                                <>
+                                    <CircularProgress sx={{ mb: 2 }} />
+                                    <Typography color="text.secondary">Optimisation en cours... Les résultats apparaîtront ici.</Typography>
+                                </>
+                            ) : (
+                                <Typography color="text.secondary">Aucun résultat disponible. Lancez une optimisation batch.</Typography>
+                            )}
+                        </Box>
+                    )}
+                    {/* Previous runs */}
+                    {batchRuns.length > 1 && (
+                        <Box mt={3}>
+                            <Typography variant="subtitle2" gutterBottom>Historique des runs:</Typography>
+                            {batchRuns.filter(r => r.id !== activeBatchRun?.id).slice(0, 5).map(r => (
+                                <Chip
+                                    key={r.id}
+                                    label={`#${r.id} ${r.preset} - ${r.status} (score: ${r.best_score?.toFixed(0) || 'N/A'})`}
+                                    size="small"
+                                    sx={{ mr: 0.5, mb: 0.5, cursor: 'pointer' }}
+                                    color={r.status === 'COMPLETED' ? 'success' : 'default'}
+                                    onClick={async () => {
+                                        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                                        const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${r.id}`);
+                                        if (response.ok) {
+                                            const data = await response.json();
+                                            setActiveBatchRun(data);
+                                            setBatchTopTrials(data.top_trials || []);
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    {!batchPolling && (
+                        <MuiButton onClick={() => { setBatchCompareDialog(false); setBatchDialog(true); }} color="secondary" startIcon={<RocketLaunchIcon />}>
+                            Nouveau batch
+                        </MuiButton>
+                    )}
+                    <MuiButton onClick={() => setBatchCompareDialog(false)}>Fermer</MuiButton>
+                </DialogActions>
             </Dialog>
 
             {/* Shift Creation Dialog */}
