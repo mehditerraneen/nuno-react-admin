@@ -1249,7 +1249,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 let empTotalHours = 0;
                 if (employee.shifts) {
                     Object.values(employee.shifts).forEach((shift: any) => {
-                        if (shift && shift.hours && !['OFF', 'LEAVE'].includes(shift.shift_category)) {
+                        if (shift && shift.hours && shift.shift_category !== 'OFF') {
                             empTotalHours += shift.hours;
                         }
                     });
@@ -1272,11 +1272,11 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
 
         return filteredEmployees.map((emp: any) => {
             // Calculate total hours from shifts
-            // Exclude OFF and LEAVE category shifts (OFF, DES, CP, CONG, etc.)
+            // Exclude only OFF category (OFF, DES) — LEAVE (CP, CONG) counts as paid hours
             let calculatedTotalHours = 0;
             if (emp.shifts) {
                 Object.values(emp.shifts).forEach((shift: any) => {
-                    if (shift && shift.hours && !['OFF', 'LEAVE'].includes(shift.shift_category)) {
+                    if (shift && shift.hours && shift.shift_category !== 'OFF') {
                         calculatedTotalHours += shift.hours;
                     }
                 });
