@@ -1249,9 +1249,11 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 // Calculate hours from shifts (same logic as row data)
                 let empTotalHours = 0;
                 if (employee.shifts) {
+                    const nonWorkCodes = ['OFF', 'DES'];
                     Object.values(employee.shifts).forEach((shift: any) => {
-                        if (shift && shift.hours && shift.shift_category !== 'OFF') {
-                            empTotalHours += shift.hours;
+                        if (shift && shift.hours) {
+                            const isOff = shift.shift_category === 'OFF' || (!shift.shift_category && nonWorkCodes.includes(shift.shift_code));
+                            if (!isOff) empTotalHours += shift.hours;
                         }
                     });
                 }
@@ -1274,11 +1276,13 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         return filteredEmployees.map((emp: any) => {
             // Calculate total hours from shifts
             // Exclude only OFF category (OFF, DES) — LEAVE (CP, CONG) counts as paid hours
+            const nonWorkCodes = ['OFF', 'DES'];
             let calculatedTotalHours = 0;
             if (emp.shifts) {
                 Object.values(emp.shifts).forEach((shift: any) => {
-                    if (shift && shift.hours && shift.shift_category !== 'OFF') {
-                        calculatedTotalHours += shift.hours;
+                    if (shift && shift.hours) {
+                        const isOff = shift.shift_category === 'OFF' || (!shift.shift_category && nonWorkCodes.includes(shift.shift_code));
+                        if (!isOff) calculatedTotalHours += shift.hours;
                     }
                 });
             }
