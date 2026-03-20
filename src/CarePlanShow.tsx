@@ -175,7 +175,7 @@ const CarePlanDetails = () => {
       ) : (
         <>
           {details.map((detail) => (
-            <Paper key={detail.id} sx={{ p: 2, mb: 2 }}>
+            <Paper key={detail.id} sx={{ p: 2, mb: 2, maxWidth: 800 }}>
               <Box
                 display="flex"
                 justifyContent="space-between"

@@ -65,6 +65,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
       sx={{
         p: 2,
         mt: 2,
+        maxWidth: 800,
         backgroundColor: "#f5f5f5",
         border: "1px solid #e0e0e0",
       }}
@@ -339,6 +340,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
       sx={{
         p: 3,
         mt: 2,
+        maxWidth: 800,
         backgroundColor: "#e3f2fd",
         border: "2px solid #2196f3",
       }}
