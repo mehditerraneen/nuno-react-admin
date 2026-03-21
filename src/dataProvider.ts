@@ -526,6 +526,22 @@ export const dataProvider: MyDataProvider = {
       return dataProvider.getOne("patients", params);
     }
 
+    // Handle shift-types getOne
+    if (resource === "shift-types") {
+      const url = `${apiUrl}/planning/shift-types/${params.id}`;
+      try {
+        const response = await httpClient(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return { data: data.data || data };
+      } catch (error: any) {
+        console.error("❌ Error getting one shift-type:", error);
+        throw error;
+      }
+    }
+
     // Handle employees getOne with standard REST endpoint
     if (resource === "employees") {
       const url = `${apiUrl}/employees/${params.id}`;
@@ -664,6 +680,22 @@ export const dataProvider: MyDataProvider = {
         }
       }
 
+      // Handle shift-types resource
+      if (resource === "shift-types") {
+        const url = `${apiUrl}/planning/shift-types`;
+        const response = await httpClient(url, {
+          method: "POST",
+          body: JSON.stringify(params.data),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.detail || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        const result = data.data || data;
+        return { data: result };
+      }
+
       // Handle tour-types resource
       if (resource === "tour-types") {
         const url = `${apiUrl}/tours/tour-types`;
@@ -765,6 +797,23 @@ export const dataProvider: MyDataProvider = {
   update: async (resource: string, params: any) => {
     console.log("🔍 Updating for resource:", resource, "with params:", params);
     try {
+      // Handle shift-types resource
+      if (resource === "shift-types") {
+        const url = `${apiUrl}/planning/shift-types/${params.id}`;
+        const response = await httpClient(url, {
+          method: "PUT",
+          body: JSON.stringify(params.data),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.detail || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        const result = data.data || data;
+        if (!result.id) result.id = params.id;
+        return { data: result };
+      }
+
       // Handle tour-types resource
       if (resource === "tour-types") {
         const url = `${apiUrl}/tours/tour-types/${params.id}`;
@@ -881,6 +930,18 @@ export const dataProvider: MyDataProvider = {
   delete: async (resource: string, params: any) => {
     console.log("🔍 Deleting for resource:", resource, "with params:", params);
     try {
+      // Handle shift-types resource (soft delete)
+      if (resource === "shift-types") {
+        const url = `${apiUrl}/planning/shift-types/${params.id}`;
+        const response = await httpClient(url, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return { data: params.previousData || { id: params.id } };
+      }
+
       // Handle tour-types resource
       if (resource === "tour-types") {
         const url = `${apiUrl}/tours/tour-types/${params.id}`;
@@ -1176,6 +1237,34 @@ export const dataProvider: MyDataProvider = {
         }
       } catch (error: any) {
         console.error("❌ Error fetching medication-plans:", error);
+        throw error;
+      }
+    }
+
+    // Handle shift-types resource
+    if (resource === "shift-types") {
+      const { filter = {} } = params;
+      const queryParams = new URLSearchParams();
+      // Pass active_only filter (default true in backend)
+      if (filter.active_only !== undefined) {
+        queryParams.set("active_only", filter.active_only.toString());
+      }
+      if (filter.category) {
+        queryParams.set("category", filter.category);
+      }
+      const url = `${apiUrl}/planning/shift-types?${queryParams.toString()}`;
+      try {
+        const response = await httpClient(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data && data.data && Array.isArray(data.data)) {
+          return data;
+        }
+        throw new Error("Expected React Admin format for shift-types");
+      } catch (error: any) {
+        console.error("❌ Error fetching shift-types:", error);
         throw error;
       }
     }

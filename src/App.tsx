@@ -29,6 +29,11 @@ import {
   TourTypeCreate,
 } from "./components/tours/TourTypeManagement";
 import {
+  ShiftTypeList,
+  ShiftTypeEdit,
+  ShiftTypeCreate,
+} from "./components/tours/ShiftTypeManagement";
+import {
   MedicationPlanList,
   MedicationPlanEdit,
   MedicationPlanCreate,
@@ -133,6 +138,13 @@ export const App = () => (
       edit={TourTypeEdit}
       create={TourTypeCreate}
       options={{ label: "Tour Types" }}
+    />
+    <Resource
+      name="shift-types"
+      list={ShiftTypeList}
+      edit={ShiftTypeEdit}
+      create={ShiftTypeCreate}
+      options={{ label: "Shift Types" }}
     />
     <Resource name="long-term-packages" />
     <Resource
