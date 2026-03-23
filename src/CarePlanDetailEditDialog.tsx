@@ -60,6 +60,7 @@ export const CarePlanDetailEditDialog: React.FC<
   const notify = useNotify();
   const [isSaving, setIsSaving] = React.useState(false);
   const [cnsItemIds, setCnsItemIds] = useState<number[]>([]);
+  const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<Record<string, string>>({});
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -80,8 +81,20 @@ export const CarePlanDetailEditDialog: React.FC<
           })
           .catch((error) => {
             console.error("Failed to fetch CNS item IDs:", error);
-            setCnsItemIds([-1]); // Use -1 to ensure no items match when error occurs
+            setCnsItemIds([-1]);
           });
+        dataProvider
+          .getCnsCarePlanDetails(cnsCarePlanId)
+          .then((details) => {
+            const descMap: Record<string, string> = {};
+            details.forEach((d: any) => {
+              if (d.item?.code && d.custom_description) {
+                descMap[d.item.code] = d.custom_description;
+              }
+            });
+            setCnsCustomDescriptions(descMap);
+          })
+          .catch(() => {});
       } else {
         // No CNS care plan associated, show no items (empty filter)
         console.log("No CNS care plan ID provided, hiding all items");
@@ -255,6 +268,7 @@ export const CarePlanDetailEditDialog: React.FC<
           <TabbedCareFormLayout
             mode="edit"
             cnsItemIds={cnsItemIds}
+            cnsCustomDescriptions={cnsCustomDescriptions}
             validationErrors={validationErrors}
           />
         </SimpleForm>

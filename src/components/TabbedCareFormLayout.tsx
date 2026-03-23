@@ -138,12 +138,14 @@ const validateNoDuplicate = (value: any, allValues: any, props: any) => {
 interface TabbedCareFormLayoutProps {
   mode: "create" | "edit";
   cnsItemIds: number[];
+  cnsCustomDescriptions?: Record<string, string>;
   validationErrors: Record<string, string>;
 }
 
 export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
   mode,
   cnsItemIds,
+  cnsCustomDescriptions = {},
   validationErrors,
 }) => {
   const [activeTab, setActiveTab] = useState(0);
@@ -612,9 +614,22 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                                       ? ` (${formatDurationDisplay(wp)}/wk)`
                                       : "";
 
+                                  const customDesc = cnsCustomDescriptions[choice.code];
+                                  const tooltipParts: string[] = [];
+                                  if (customDesc) tooltipParts.push(customDesc);
+                                  if (choice.description && choice.description !== customDesc) {
+                                    tooltipParts.push(choice.description);
+                                  }
+                                  if (!tooltipParts.length) tooltipParts.push("No description");
+                                  if (wp) {
+                                    tooltipParts.push(`${formatDurationDisplay(wp)}/week`);
+                                  } else {
+                                    tooltipParts.push("No duration set — click pencil to add");
+                                  }
+
                                   return (
                                     <Tooltip
-                                      title={`${choice.description || "No description"}${wp ? ` • ${formatDurationDisplay(wp)}/week` : " • No duration set — click pencil to add"}`}
+                                      title={tooltipParts.join(" • ")}
                                       placement="right"
                                       arrow
                                     >
