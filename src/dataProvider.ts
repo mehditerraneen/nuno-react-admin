@@ -1481,16 +1481,20 @@ export const dataProvider: MyDataProvider = {
       }
 
       // Handle general cnscareplans list (falls through if no specific filters)
-      // Django endpoint returns plain array, need to convert to React Admin format
       const queryParams = new URLSearchParams();
       const start = (page - 1) * perPage;
       const end = page * perPage;
       queryParams.set("_start", start.toString());
-      queryParams.set("_end", (end + 1).toString());
+      queryParams.set("_end", end.toString());
 
       if (field) {
         queryParams.set("_sort", field);
         queryParams.set("_order", order.toUpperCase());
+      }
+
+      // Pass filters (patient_id only, without dates)
+      if (params.filter?.patient_id) {
+        queryParams.set("patient_id", params.filter.patient_id.toString());
       }
 
       const url = `${apiUrl}/cnscareplans?${queryParams.toString()}`;
@@ -1503,14 +1507,21 @@ export const dataProvider: MyDataProvider = {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
+        // Read total from Content-Range header
+        const contentRange = response.headers.get("Content-Range");
         const data = await response.json();
-        console.log("📊 CNS care plans response:", data);
+
+        let total = 0;
+        if (contentRange) {
+          const match = contentRange.match(/\/(\d+)$/);
+          if (match) total = parseInt(match[1], 10);
+        }
 
         // Django endpoint returns plain array
         if (Array.isArray(data)) {
           return {
             data: data,
-            total: data.length,
+            total: total || data.length,
           };
         }
 
@@ -1521,7 +1532,7 @@ export const dataProvider: MyDataProvider = {
           data.data &&
           Array.isArray(data.data)
         ) {
-          return data;
+          return { ...data, total: total || data.total };
         }
 
         throw new Error("Unexpected cnscareplans response format");
