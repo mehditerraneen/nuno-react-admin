@@ -244,7 +244,7 @@ const CarePlanDetails = () => {
 
               <Typography variant="subtitle2">Care Items:</Typography>
               <ArrayField record={detail} source="longtermcareitemquantity_set">
-                <Datagrid bulkActionButtons={false} optimized>
+                <Datagrid bulkActionButtons={false} optimized rowClick={false}>
                   <TextField
                     source="long_term_care_item.code"
                     label="Item Code"
