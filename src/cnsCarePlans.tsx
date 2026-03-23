@@ -9,11 +9,6 @@ import {
   AutocompleteInput,
   DateInput,
   FunctionField,
-  useListContext,
-  TopToolbar,
-  FilterButton,
-  sanitizeListRestProps,
-  FilterForm,
   ShowButton,
 } from "react-admin";
 import { Box, Typography, Chip } from "@mui/material";
@@ -42,16 +37,6 @@ const cnsCarePlanFilters = [
   />,
 ];
 
-const ListActions = () => {
-  const { displayedFilters, ...rest } = useListContext();
-  return (
-    <TopToolbar {...sanitizeListRestProps(rest)}>
-      {displayedFilters && <FilterForm filters={displayedFilters} />}
-      <FilterButton />
-    </TopToolbar>
-  );
-};
-
 const EmptyList = () => (
   <Box textAlign="center" m={4}>
     <Typography variant="h6" paragraph color="text.secondary">
@@ -66,7 +51,6 @@ const EmptyList = () => (
 export const CnsCarePlanList = () => (
   <List
     filters={cnsCarePlanFilters}
-    actions={<ListActions />}
     empty={<EmptyList />}
     title="CNS Care Plans"
     perPage={25}
