@@ -97,7 +97,12 @@ export const App = () => (
       show={CnsCarePlanShow}
       options={{ label: "CNS Care Plans" }}
     />
-    <Resource name="patients_with_cns_plan" />
+    <Resource
+      name="patients_with_cns_plan"
+      recordRepresentation={(record) =>
+        `${record.name} ${record.first_name} (${record.code_sn})`
+      }
+    />
     <Resource
       name="patients"
       recordRepresentation={(record) =>
