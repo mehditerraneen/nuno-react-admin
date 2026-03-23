@@ -71,6 +71,7 @@ export interface LongTermCareItemQuantity {
   id: number;
   quantity: number;
   long_term_care_item: LongTermCareItem;
+  custom_description?: string; // From linked CNS Care Plan
 }
 
 export interface CarePlanDetail {

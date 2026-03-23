@@ -149,10 +149,12 @@ export const CarePlanDetailCreateDialog: React.FC<
         time_start: formattedData.time_start, // Properly formatted HH:MM
         time_end: formattedData.time_end, // Properly formatted HH:MM
         long_term_care_items:
-          formattedData.long_term_care_items?.map((item: any) => ({
-            long_term_care_item_id: item.long_term_care_item_id,
-            quantity: item.quantity || 1,
-          })) || [], // Transform array input format
+          formattedData.long_term_care_items
+            ?.filter((item: any) => item.long_term_care_item_id != null)
+            .map((item: any) => ({
+              long_term_care_item_id: item.long_term_care_item_id,
+              quantity: item.quantity || 1,
+            })) || [], // Transform array input format, filter out empty rows
         care_actions: formattedData.care_actions || "",
       };
 

@@ -57,6 +57,27 @@ const PackageDurationField = ({ record }: { record: any }) => {
   );
 };
 
+// Show custom_description from CNS Care Plan if available, otherwise generic description
+const ItemDescriptionField = ({ record }: { record: any }) => {
+  const customDesc = record?.custom_description;
+  const genericDesc = record?.long_term_care_item?.description;
+
+  if (customDesc) {
+    return (
+      <Box>
+        <Typography variant="body2">{customDesc}</Typography>
+        {genericDesc && genericDesc !== customDesc && (
+          <Typography variant="caption" color="text.secondary">
+            {genericDesc}
+          </Typography>
+        )}
+      </Box>
+    );
+  }
+
+  return <span>{genericDesc || "—"}</span>;
+};
+
 // Component to fetch and display the details of a Care Plan
 const CarePlanDetails = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
@@ -226,10 +247,7 @@ const CarePlanDetails = () => {
                     source="long_term_care_item.code"
                     label="Item Code"
                   />
-                  <TextField
-                    source="long_term_care_item.description"
-                    label="Item Description"
-                  />
+                  <ItemDescriptionField label="Item Description" />
                   <NumberField source="quantity" label="Quantity" />
                   <PackageDurationField label="Package Duration" />
                 </Datagrid>

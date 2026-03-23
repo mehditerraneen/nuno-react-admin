@@ -394,7 +394,7 @@ const PrintContent = React.forwardRef<HTMLDivElement, CarePlanPrintViewProps>(
                       return (
                         <TableRow key={i}>
                           <TableCell sx={cell}>{item.long_term_care_item.code}</TableCell>
-                          <TableCell sx={cell}>{item.long_term_care_item.description || "—"}</TableCell>
+                          <TableCell sx={cell}>{(item as any).custom_description || item.long_term_care_item.description || "—"}</TableCell>
                           <TableCell align="center" sx={cell}>{item.quantity}</TableCell>
                           <TableCell align="right" sx={cell}>{Math.round(sd * item.quantity * 100) / 100} min</TableCell>
                         </TableRow>
@@ -428,10 +428,12 @@ const PrintContent = React.forwardRef<HTMLDivElement, CarePlanPrintViewProps>(
                 <TableRow key={code}>
                   <TableCell sx={cell}>{code}</TableCell>
                   <TableCell sx={{ ...cell, fontSize: "9pt" }}>
-                    {details
-                      .flatMap((d) => d.longtermcareitemquantity_set)
-                      .find((i) => i.long_term_care_item.code === code)
-                      ?.long_term_care_item.description || "—"}
+                    {(() => {
+                      const match = details
+                        .flatMap((d) => d.longtermcareitemquantity_set)
+                        .find((i) => i.long_term_care_item.code === code);
+                      return (match as any)?.custom_description || match?.long_term_care_item.description || "—";
+                    })()}
                   </TableCell>
                   <TableCell align="right" sx={cell}>
                     {Math.round(stats.sessionDur * 100) / 100} min
