@@ -39,7 +39,8 @@ import { formatDurationDisplay } from "./utils/timeUtils";
 import { CarePlanPrintButton } from "./components/CarePlanPrintView";
 
 // Custom field to display package duration with daily calculation
-const PackageDurationField = ({ record }: { record: any }) => {
+const PackageDurationField = () => {
+  const record = useRecordContext();
   const weeklyPackage = record?.long_term_care_item?.weekly_package || 0;
   if (weeklyPackage === 0) {
     return <span>—</span>;
@@ -58,7 +59,8 @@ const PackageDurationField = ({ record }: { record: any }) => {
 };
 
 // Show custom_description from CNS Care Plan if available, otherwise generic description
-const ItemDescriptionField = ({ record }: { record: any }) => {
+const ItemDescriptionField = () => {
+  const record = useRecordContext();
   const customDesc = record?.custom_description;
   const genericDesc = record?.long_term_care_item?.description;
 
