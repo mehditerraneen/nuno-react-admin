@@ -2109,11 +2109,21 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                         {planning.status !== 'DRAFT' && (
                             <Chip icon={<HistoryIcon />} label="Suivi actif" color="info" size="small" variant="outlined" />
                         )}
-                        {planning.last_optimized_at && (
-                            <Tooltip title={`Algorithme: ${planning.last_optimization_algorithm || 'CP-SAT'}`}>
-                                <Chip icon={<AutoAwesomeIcon />} label={`Optimisé ${new Date(planning.last_optimized_at).toLocaleDateString('fr-FR')}`} color="success" size="small" variant="outlined" />
-                            </Tooltip>
-                        )}
+                        {planning.last_optimized_at && (() => {
+                            const d = new Date(planning.last_optimized_at);
+                            const dateStr = d.toLocaleDateString('fr-FR');
+                            const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                            const score = planning.last_optimization_score;
+                            const duration = planning.last_optimization_duration;
+                            const algo = planning.last_optimization_algorithm || 'CP-SAT';
+                            const scoreLabel = (score !== null && score !== undefined) ? ` — score: ${Math.round(score).toLocaleString('fr-FR')}` : '';
+                            const tooltip = `Algorithme: ${algo}${duration ? ` · Durée: ${duration.toFixed(1)}s` : ''}${(score !== null && score !== undefined) ? ` · Score: ${Math.round(score).toLocaleString('fr-FR')}` : ''}`;
+                            return (
+                                <Tooltip title={tooltip}>
+                                    <Chip icon={<AutoAwesomeIcon />} label={`Optimisé ${dateStr} ${timeStr}${scoreLabel}`} color="success" size="small" variant="outlined" />
+                                </Tooltip>
+                            );
+                        })()}
                     </Box>
                     <Box display="flex" gap={1} flexWrap="wrap">
                         <Button startIcon={<AddIcon />} onClick={() => setCreateShiftDialog(true)} color="secondary" variant="outlined" label="Créer shift" />
