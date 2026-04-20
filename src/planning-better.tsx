@@ -1409,15 +1409,12 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
             }
 
             const result = await response.json();
-            const orShiftsMsg = result.or_shifts_created > 0
-                ? ` | ${result.or_shifts_created} nouveau(x) shift(s) OR créé(s)`
-                : '';
             const algorithmBadge = result.algorithm === 'GA' ? ' 🧬 GA' :
                                    result.algorithm === 'HYBRID' ? ' 🔬 HYBRID' : ' 🤖 CP-SAT';
 
             // Show success notification
             notify(
-                `✅ ${result.message} (${result.assignments_created} affectations${orShiftsMsg} en ${result.optimization_time.toFixed(1)}s)${algorithmBadge}`,
+                `✅ ${result.message} (${result.assignments_created} affectations en ${result.optimization_time.toFixed(1)}s)${algorithmBadge}`,
                 { type: 'success' }
             );
 

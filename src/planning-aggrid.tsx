@@ -1296,8 +1296,8 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 hours_carryover: emp.hours_carryover || 0,
                 adjusted_max_monthly_hours: emp.adjusted_max_monthly_hours || emp.max_monthly_hours || 168,
                 daily_hours: emp.daily_hours || 8,
-                hours_exceeded: calculatedTotalHours > (emp.adjusted_max_monthly_hours || emp.max_monthly_hours || 168),
-                hours_over_limit: Math.max(0, calculatedTotalHours - (emp.adjusted_max_monthly_hours || emp.max_monthly_hours || 168)),
+                hours_exceeded: calculatedTotalHours > (emp.max_monthly_hours || 168),
+                hours_over_limit: Math.max(0, calculatedTotalHours - (emp.max_monthly_hours || 168)),
                 consecutive_days_violation: emp.consecutive_days_violation,
                 max_consecutive_days: emp.max_consecutive_days,
                 evening_to_morning_violation: emp.evening_to_morning_violation,
@@ -1735,7 +1735,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         const hours_carryover = typeof data.hours_carryover === 'number' ? data.hours_carryover : parseFloat(data.hours_carryover) || 0;
         const adjusted_max_monthly_hours = typeof data.adjusted_max_monthly_hours === 'number' ? data.adjusted_max_monthly_hours : parseFloat(data.adjusted_max_monthly_hours) || max_monthly_hours;
         const hours_over_limit = typeof data.hours_over_limit === 'number' ? data.hours_over_limit : parseFloat(data.hours_over_limit) || 0;
-        const hoursRatio = adjusted_max_monthly_hours > 0 ? total_hours / adjusted_max_monthly_hours : 0;
+        const hoursRatio = max_monthly_hours > 0 ? total_hours / max_monthly_hours : 0;
         const hasViolations = hours_exceeded || consecutive_days_violation || evening_to_morning_violation;
 
         return (
@@ -1818,7 +1818,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
 
                         {/* Hours display */}
                         <Tooltip title={hours_carryover !== 0
-                            ? `Plafond de base: ${max_monthly_hours.toFixed(1)}h · Report mois précédent: ${hours_carryover > 0 ? '+' : ''}${hours_carryover.toFixed(1)}h · Plafond ajusté: ${adjusted_max_monthly_hours.toFixed(1)}h`
+                            ? `Plafond mensuel: ${max_monthly_hours.toFixed(1)}h · Report mois précédent: ${hours_carryover > 0 ? '+' : ''}${hours_carryover.toFixed(1)}h (informatif, non contraignant)`
                             : `Plafond mensuel: ${max_monthly_hours.toFixed(1)}h`}>
                             <Typography
                                 variant="caption"
@@ -1830,7 +1830,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                     fontWeight: hours_exceeded || hoursRatio < 0.5 ? 'bold' : 'normal',
                                 }}
                             >
-                                {total_hours?.toFixed(1) || 0}h / {adjusted_max_monthly_hours?.toFixed(1) || 0}h
+                                {total_hours?.toFixed(1) || 0}h / {max_monthly_hours?.toFixed(1) || 0}h
                                 {hours_carryover !== 0 && (
                                     <span style={{ color: '#1976d2', fontWeight: 'normal' }}> ({hours_carryover > 0 ? '+' : ''}{hours_carryover.toFixed(1)}h report)</span>
                                 )}
