@@ -3,6 +3,7 @@ import { Route } from "react-router-dom";
 import { Layout } from "./Layout";
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
+import { i18nProvider } from "./i18n";
 import { LoginPage } from "./components/LoginPage";
 import { CarePlanList, CarePlanEdit, CarePlanCreate } from "./careplans";
 import { CnsCarePlanList } from "./cnsCarePlans";
@@ -81,6 +82,7 @@ export const App = () => (
     layout={AppLayout}
     dataProvider={dataProvider}
     authProvider={authProvider}
+    i18nProvider={i18nProvider}
     loginPage={LoginPage}
   >
     <Resource

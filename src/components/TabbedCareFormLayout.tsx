@@ -45,6 +45,8 @@ import {
   useDataProvider,
   useNotify,
   useRefresh,
+  useSimpleFormIterator,
+  useTranslate,
 } from "react-admin";
 import { useWatch } from "react-hook-form";
 import { SmartTimeInput } from "./SmartTimeInput";
@@ -120,6 +122,23 @@ const EditWeeklyPackageButton = ({ itemId, currentValue }: { itemId: number; cur
   );
 };
 
+const AddActionButton: React.FC = () => {
+  const { add } = useSimpleFormIterator();
+  const translate = useTranslate();
+  return (
+    <Button
+      size="small"
+      variant="contained"
+      color="warning"
+      startIcon={<AddIcon />}
+      sx={{ mt: 1 }}
+      onClick={() => add({ action_text: "", duration_minutes: 0 })}
+    >
+      {translate("care_plan_detail.actions.add")}
+    </Button>
+  );
+};
+
 const useSelectedCareItemIds = (): number[] => {
   const items = useWatch({ name: "long_term_care_items" }) || [];
   return items
@@ -148,6 +167,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
   cnsCustomDescriptions = {},
   validationErrors,
 }) => {
+  const translate = useTranslate();
   const [activeTab, setActiveTab] = useState(0);
   const [expandedAccordion, setExpandedAccordion] = useState<string | false>(
     "care-items",
@@ -178,6 +198,8 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
         return errorFields.filter((field) =>
           field.includes("long_term_care_item"),
         );
+      case 3: // Actions
+        return errorFields.filter((field) => field.startsWith("actions"));
       default:
         return [];
     }
@@ -202,25 +224,32 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
 
   const tabsData = [
     {
-      label: "Basic Info",
+      label: translate("care_plan_detail.tabs.basic_info"),
       icon: <InfoIcon />,
       color: "primary" as const,
-      description: "Care plan details and instructions",
+      description: translate("care_plan_detail.tabs.basic_info_desc"),
       hasErrors: getTabErrors(0).length > 0,
     },
     {
-      label: "Schedule",
+      label: translate("care_plan_detail.tabs.schedule"),
       icon: <ScheduleIcon />,
       color: "secondary" as const,
-      description: "Timing and occurrence patterns",
+      description: translate("care_plan_detail.tabs.schedule_desc"),
       hasErrors: getTabErrors(1).length > 0,
     },
     {
-      label: "Care Items",
+      label: translate("care_plan_detail.tabs.care_items"),
       icon: <CareIcon />,
       color: "success" as const,
-      description: "Long-term care items and quantities",
+      description: translate("care_plan_detail.tabs.care_items_desc"),
       hasErrors: getTabErrors(2).length > 0,
+    },
+    {
+      label: translate("care_plan_detail.tabs.actions"),
+      icon: <AssignmentIcon />,
+      color: "warning" as const,
+      description: translate("care_plan_detail.tabs.actions_desc"),
+      hasErrors: getTabErrors(3).length > 0,
     },
   ];
 
@@ -235,8 +264,8 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
         >
           <CareIcon color="primary" />
           {mode === "create"
-            ? "Add New Care Plan Detail"
-            : "Edit Care Plan Detail"}
+            ? translate("care_plan_detail.title_create")
+            : translate("care_plan_detail.title_edit")}
         </Typography>
 
         <Stepper activeStep={activeTab} sx={{ mt: 1 }}>
@@ -329,19 +358,19 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                 sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
               >
                 <InfoIcon color="primary" />
-                Basic Information
+                {translate("care_plan_detail.basic_info.section")}
               </Typography>
 
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <TextInput
                     source="name"
-                    label="Care Plan Detail Name"
+                    label={translate("care_plan_detail.basic_info.name")}
                     fullWidth
                     required
                     helperText={
                       validationErrors.name ||
-                      "Enter a descriptive name for this care plan detail"
+                      translate("care_plan_detail.basic_info.name_helper")
                     }
                     error={!!validationErrors.name}
                     sx={{ mb: 2 }}
@@ -351,14 +380,18 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                 <Grid item xs={12}>
                   <TextInput
                     source="care_actions"
-                    label="Care Actions & Instructions"
+                    label={translate(
+                      "care_plan_detail.basic_info.care_actions",
+                    )}
                     multiline
                     fullWidth
                     rows={4}
                     required
                     helperText={
                       validationErrors.care_actions ||
-                      "Describe the specific care actions to be performed during this session"
+                      translate(
+                        "care_plan_detail.basic_info.care_actions_helper",
+                      )
                     }
                     error={!!validationErrors.care_actions}
                   />
@@ -375,8 +408,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
                   <ScheduleIcon color="primary" />
-                  Next: Configure the schedule and timing for this care plan
-                  detail
+                  {translate("care_plan_detail.basic_info.next_hint")}
                 </Typography>
               </Paper>
             </Box>
@@ -391,7 +423,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                 sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
               >
                 <ScheduleIcon color="secondary" />
-                Schedule Configuration
+                {translate("care_plan_detail.schedule.section")}
               </Typography>
 
               {/* Horizontal Occurrences Display */}
@@ -405,14 +437,16 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
                   <CalendarIcon color="secondary" />
-                  Weekly Occurrence Pattern
+                  {translate("care_plan_detail.schedule.weekly_pattern")}
                 </Typography>
                 <Typography
                   variant="body2"
                   color="text.secondary"
                   sx={{ mb: 2 }}
                 >
-                  Select which days of the week this care should be provided
+                  {translate(
+                    "care_plan_detail.schedule.weekly_pattern_helper",
+                  )}
                 </Typography>
                 <SmartOccurrenceInput
                   source="params_occurrence_ids"
@@ -439,18 +473,20 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   }}
                 >
                   <AccessTimeIcon color="primary" fontSize="small" />
-                  Time Schedule
+                  {translate("care_plan_detail.schedule.time_schedule")}
                 </Typography>
 
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
                     <SmartTimeInput
                       source="time_start"
-                      label="Start Time"
+                      label={translate("care_plan_detail.schedule.time_start")}
                       required
                       helperText={
                         validationErrors.time_start ||
-                        "When does this care session begin?"
+                        translate(
+                          "care_plan_detail.schedule.time_start_helper",
+                        )
                       }
                       error={!!validationErrors.time_start}
                     />
@@ -458,13 +494,13 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   <Grid item xs={12} md={6}>
                     <SmartTimeInput
                       source="time_end"
-                      label="End Time"
+                      label={translate("care_plan_detail.schedule.time_end")}
                       required
                       autoSuggest={true}
                       dependsOnCareItems={true}
                       helperText={
                         validationErrors.time_end ||
-                        "End time (auto-suggested based on care items)"
+                        translate("care_plan_detail.schedule.time_end_helper")
                       }
                       error={!!validationErrors.time_end}
                     />
@@ -485,7 +521,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
                   <CareIcon color="success" />
-                  Next: Add the specific care items and quantities needed
+                  {translate("care_plan_detail.schedule.next_hint")}
                 </Typography>
               </Paper>
             </Box>
@@ -500,7 +536,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                 sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
               >
                 <CareIcon color="success" />
-                Care Items & Quantities
+                {translate("care_plan_detail.care_items.section")}
               </Typography>
 
               {/* Accordion Layout for Care Items */}
@@ -527,17 +563,21 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                     <CareIcon color="success" />
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="subtitle1">
-                        Long Term Care Items Configuration
+                        {translate(
+                          "care_plan_detail.care_items.long_term_config",
+                        )}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Configure care items with daily duration calculations
+                        {translate(
+                          "care_plan_detail.care_items.long_term_config_desc",
+                        )}
                       </Typography>
                     </Box>
                     <Chip
                       label={
                         expandedAccordion === "care-items"
-                          ? "Collapse"
-                          : "Expand to configure"
+                          ? translate("care_plan_detail.care_items.collapse")
+                          : translate("care_plan_detail.care_items.expand")
                       }
                       size="small"
                       variant="outlined"
@@ -558,7 +598,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                         boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                         position: "relative",
                         "&::after": {
-                          content: '"⚠️ Important"',
+                          content: `"⚠️ ${translate("care_plan_detail.care_items.important")}"`,
                           position: "absolute",
                           top: "-12px",
                           right: "10px",
@@ -572,16 +612,15 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                       }}
                     >
                       <Typography variant="body2" color="text.secondary">
-                        💡 <strong>Tips:</strong> Each care item shows its daily
-                        duration (weekly package ÷ 7). The end time will
-                        auto-suggest based on total daily duration. Quantity
-                        defaults to 1.
+                        💡 {translate("care_plan_detail.care_items.tip")}
                       </Typography>
                     </Paper>
 
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" gutterBottom>
-                        Long Term Care Items
+                        {translate(
+                          "care_plan_detail.care_items.long_term_items",
+                        )}
                       </Typography>
                     </Box>
 
@@ -601,7 +640,9 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                             <ReferenceInput
                               source="long_term_care_item_id"
                               reference="longtermcareitems"
-                              label="Care Item"
+                              label={translate(
+                                "care_plan_detail.care_items.care_item",
+                              )}
                               filter={careItemFilter}
                               required
                             >
@@ -650,12 +691,16 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                           <Grid item xs={12} md={3}>
                             <NumberInput
                               source="quantity"
-                              label="Quantity"
+                              label={translate(
+                                "care_plan_detail.care_items.quantity",
+                              )}
                               required
                               defaultValue={1}
                               min={0.01}
                               step={0.01}
-                              helperText="Default: 1"
+                              helperText={translate(
+                                "care_plan_detail.care_items.quantity_default",
+                              )}
                               sx={{ maxWidth: 120 }}
                             />
                           </Grid>
@@ -679,7 +724,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
                   <InfoIcon color="secondary" />
-                  Care Item Configuration Guidelines
+                  {translate("care_plan_detail.care_items.guidelines")}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
@@ -687,10 +732,15 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                       component="ul"
                       sx={{ fontSize: "0.875rem", pl: 2, m: 0 }}
                     >
-                      <li>Daily duration = weekly package ÷ 7 days</li>
                       <li>
-                        End time auto-suggests based on start time + total daily
-                        duration
+                        {translate(
+                          "care_plan_detail.care_items.guideline_daily",
+                        )}
+                      </li>
+                      <li>
+                        {translate(
+                          "care_plan_detail.care_items.guideline_endtime",
+                        )}
                       </li>
                     </Box>
                   </Grid>
@@ -699,12 +749,88 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                       component="ul"
                       sx={{ fontSize: "0.875rem", pl: 2, m: 0 }}
                     >
-                      <li>Quantity defaults to 1 for new items</li>
-                      <li>CNS filtering applies when care plan is linked</li>
+                      <li>
+                        {translate(
+                          "care_plan_detail.care_items.guideline_quantity",
+                        )}
+                      </li>
+                      <li>
+                        {translate(
+                          "care_plan_detail.care_items.guideline_cns",
+                        )}
+                      </li>
                     </Box>
                   </Grid>
                 </Grid>
               </Paper>
+            </Box>
+          )}
+
+          {/* Tab 4: Actions */}
+          {activeTab === 3 && (
+            <Box>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
+              >
+                <AssignmentIcon color="warning" />
+                {translate("care_plan_detail.actions.section")}
+              </Typography>
+
+              <Paper
+                variant="outlined"
+                sx={{ p: 2, mb: 3, backgroundColor: "#fff8e1" }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  💡 {translate("care_plan_detail.actions.tip")}
+                </Typography>
+              </Paper>
+
+              <ArrayInput source="actions" label="">
+                <SimpleFormIterator
+                  inline
+                  disableReordering={false}
+                  addButton={<AddActionButton />}
+                >
+                  <Grid
+                    container
+                    spacing={2}
+                    alignItems="flex-start"
+                    sx={{ mb: 2 }}
+                  >
+                    <Grid item xs={12} md={8}>
+                      <TextInput
+                        source="action_text"
+                        label={translate(
+                          "care_plan_detail.actions.action_label",
+                        )}
+                        fullWidth
+                        multiline
+                        rows={2}
+                        required
+                        helperText={translate(
+                          "care_plan_detail.actions.action_helper",
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                      <NumberInput
+                        source="duration_minutes"
+                        label={translate(
+                          "care_plan_detail.actions.duration_label",
+                        )}
+                        defaultValue={0}
+                        min={0}
+                        step={1}
+                        helperText={translate(
+                          "care_plan_detail.actions.duration_helper",
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+                </SimpleFormIterator>
+              </ArrayInput>
             </Box>
           )}
         </CardContent>

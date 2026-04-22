@@ -418,10 +418,25 @@ export function calculatePlannedWeeklyDuration(
 }
 
 /**
- * Calculate suggested end time based on start time and care package duration
+ * Sum the estimated duration (minutes) of a list of free-text actions.
+ */
+export function calculateActionsDuration(
+  actions?: Array<{ duration_minutes?: number | string | null }> | null,
+): number {
+  if (!actions || actions.length === 0) return 0;
+  return actions.reduce((total, action) => {
+    const raw = action?.duration_minutes;
+    const n = typeof raw === "number" ? raw : Number(raw);
+    return total + (Number.isFinite(n) && n > 0 ? n : 0);
+  }, 0);
+}
+
+/**
+ * Calculate suggested end time based on start time, care items and optional free-text actions.
  * @param startTime - Start time in HH:MM format
  * @param careItems - Array of care items with weekly_package and quantity
  * @param occurrences - Array of occurrence objects or number
+ * @param actions - Optional list of free-text actions with duration_minutes
  * @returns Suggested end time in HH:MM format
  */
 export function calculateSuggestedEndTime(
@@ -431,13 +446,16 @@ export function calculateSuggestedEndTime(
     quantity: number;
   }>,
   occurrences: any[] | number,
+  actions?: Array<{ duration_minutes?: number | string | null }> | null,
 ): string | null {
-  if (!startTime || careItems.length === 0) {
+  const actionsDuration = calculateActionsDuration(actions);
+  if (!startTime || (careItems.length === 0 && actionsDuration === 0)) {
     return null;
   }
 
   // Calculate daily duration needed
-  const dailyDuration = calculateCareItemsDailyDuration(careItems);
+  const dailyDuration =
+    calculateCareItemsDailyDuration(careItems) + actionsDuration;
 
   if (dailyDuration === 0) {
     return null;
@@ -478,6 +496,7 @@ export function checkSessionDurationMatch(
     long_term_care_item: { weekly_package?: number };
     quantity: number;
   }>,
+  actions?: Array<{ duration_minutes?: number | string | null }> | null,
 ): {
   matches: boolean;
   actualDuration: number;
@@ -486,8 +505,14 @@ export function checkSessionDurationMatch(
   difference: number;
 } {
   const actualDuration = calculateSessionDuration(startTime, endTime);
-  const expectedDuration = calculateCareItemsDailyDuration(careItems);
-  const suggestedEndTime = calculateSuggestedEndTime(startTime, careItems, 1);
+  const expectedDuration =
+    calculateCareItemsDailyDuration(careItems) + calculateActionsDuration(actions);
+  const suggestedEndTime = calculateSuggestedEndTime(
+    startTime,
+    careItems,
+    1,
+    actions,
+  );
   const difference = actualDuration - expectedDuration;
 
   return {

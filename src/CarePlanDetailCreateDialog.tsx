@@ -3,6 +3,7 @@ import {
   SimpleForm,
   useDataProvider,
   useNotify,
+  useTranslate,
   Identifier,
 } from "react-admin";
 import {
@@ -37,6 +38,7 @@ export const CarePlanDetailCreateDialog: React.FC<
 > = ({ open, onClose, carePlanId, cnsCarePlanId }) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
+  const translate = useTranslate();
   const [isSaving, setIsSaving] = React.useState(false);
   const [cnsItemIds, setCnsItemIds] = useState<number[]>([]);
   const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<Record<string, string>>({});
@@ -146,12 +148,17 @@ export const CarePlanDetailCreateDialog: React.FC<
       if (missingFields.length > 0) {
         const errors: Record<string, string> = {};
         missingFields.forEach((field) => {
-          errors[field] = `${field.replace("_", " ")} is required`;
+          errors[field] = translate("care_plan_detail.validation.required", {
+            field: field.replace("_", " "),
+          });
         });
         setValidationErrors(errors);
-        notify(`Please fill in required fields: ${missingFields.join(", ")}`, {
-          type: "error",
-        });
+        notify(
+          translate("care_plan_detail.validation.fill_required", {
+            fields: missingFields.join(", "),
+          }),
+          { type: "error" },
+        );
         return;
       }
 
@@ -169,6 +176,17 @@ export const CarePlanDetailCreateDialog: React.FC<
               quantity: item.quantity || 1,
             })) || [], // Transform array input format, filter out empty rows
         care_actions: formattedData.care_actions || "",
+        actions: (formattedData.actions || [])
+          .filter((a: any) => a && a.action_text && a.action_text.trim())
+          .map((a: any, idx: number) => {
+            const raw = a.duration_minutes;
+            const n = typeof raw === "number" ? raw : Number(raw);
+            return {
+              action_text: (a.action_text ?? "").trim(),
+              duration_minutes: Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0,
+              order: a.order ?? idx,
+            };
+          }),
       };
 
       // Store form data for debugging
@@ -181,7 +199,9 @@ export const CarePlanDetailCreateDialog: React.FC<
       );
 
       await dataProvider.createCarePlanDetail(carePlanId, dataToSave);
-      notify("Care plan detail created successfully", { type: "success" });
+      notify(translate("care_plan_detail.validation.create_success"), {
+        type: "success",
+      });
       onClose(); // Parent component will handle refresh
     } catch (error: any) {
       // Store error for debugging
@@ -212,10 +232,9 @@ export const CarePlanDetailCreateDialog: React.FC<
             type: "error",
           });
         } else {
-          notify(
-            "Could not create care plan detail. Please check your input.",
-            { type: "error" },
-          );
+          notify(translate("care_plan_detail.validation.create_error"), {
+            type: "error",
+          });
         }
       }
     } finally {
@@ -225,7 +244,7 @@ export const CarePlanDetailCreateDialog: React.FC<
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>Add New Care Plan Detail</DialogTitle>
+      <DialogTitle>{translate("care_plan_detail.title_create")}</DialogTitle>
       <DialogContent>
         <SimpleForm
           onSubmit={handleSubmit}
@@ -236,6 +255,7 @@ export const CarePlanDetailCreateDialog: React.FC<
             time_end: "",
             long_term_care_items: [],
             care_actions: "",
+            actions: [],
           }}
           toolbar={<></>} // Hide default toolbar
           id="care-plan-create-form"
@@ -264,7 +284,7 @@ export const CarePlanDetailCreateDialog: React.FC<
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isSaving}>
-          Cancel
+          {translate("care_plan_detail.cancel")}
         </Button>
         <Button
           type="submit"
@@ -272,7 +292,11 @@ export const CarePlanDetailCreateDialog: React.FC<
           variant="contained"
           disabled={isSaving}
         >
-          {isSaving ? <CircularProgress size={24} /> : "Save"}
+          {isSaving ? (
+            <CircularProgress size={24} />
+          ) : (
+            translate("care_plan_detail.save_create")
+          )}
         </Button>
       </DialogActions>
     </Dialog>

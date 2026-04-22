@@ -19,7 +19,7 @@ import {
   ListAlt as ListIcon,
   Warning as WarningIcon,
 } from "@mui/icons-material";
-import { useDataProvider, Identifier } from "react-admin";
+import { useDataProvider, useTranslate, Identifier } from "react-admin";
 import {
   calculateSessionDuration,
   calculateCareItemsDailyDuration,
@@ -27,13 +27,13 @@ import {
   formatDurationDisplay,
 } from "../utils/timeUtils";
 import { CarePlanDetail } from "../dataProvider";
-import { CareItemDebugger } from "./CareItemDebugger";
 
 interface DurationSummaryProps {
   detail: CarePlanDetail;
 }
 
 export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
+  const translate = useTranslate();
   // Calculate session duration from time_start to time_end
   const sessionDuration = calculateSessionDuration(
     detail.time_start,
@@ -76,7 +76,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
         sx={{ display: "flex", alignItems: "center", gap: 1 }}
       >
         <TimeIcon color="primary" />
-        Duration Summary
+        {translate("care_plan_summary.duration_summary")}
       </Typography>
 
       <Box
@@ -91,7 +91,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            Session Duration
+            {translate("care_plan_summary.session_duration")}
           </Typography>
           <Chip
             label={formatDurationDisplay(sessionDuration)}
@@ -110,13 +110,15 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            Days/Week
+            {translate("care_plan_summary.days_per_week")}
           </Typography>
           <Chip
             label={
               actualDaysPerWeek === 7
-                ? "7 (tous les jours)"
-                : `${actualDaysPerWeek}x`
+                ? translate("care_plan_summary.every_day")
+                : translate("care_plan_summary.times_per_week", {
+                    count: actualDaysPerWeek,
+                  })
             }
             color="secondary"
             variant="outlined"
@@ -137,7 +139,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              Care Items/Session
+              {translate("care_plan_summary.care_items_per_session")}
             </Typography>
             <Chip
               label={formatDurationDisplay(careItemsSessionDuration)}
@@ -158,7 +160,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              Care Package/Week
+              {translate("care_plan_summary.care_package_per_week")}
             </Typography>
             <Chip
               label={formatDurationDisplay(careItemsWeeklyTotal)}
@@ -178,7 +180,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            Weekly Session Time
+            {translate("care_plan_summary.weekly_session_time")}
           </Typography>
           <Chip
             label={formatDurationDisplay(actualWeeklySessionTime)}
@@ -193,7 +195,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
       {careItemsSessionDuration > 0 && (
         <Box sx={{ mt: 2 }}>
           <Typography variant="caption" color="text.secondary" gutterBottom>
-            Care Items Breakdown (Session → Weekly Package):
+            {translate("care_plan_summary.breakdown_session_weekly")}
           </Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
             {detail.longtermcareitemquantity_set.map((item, index) => {
@@ -223,14 +225,14 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
         Math.abs(actualWeeklySessionTime - careItemsWeeklyTotal) > 5 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="warning.main">
-              Session time ({formatDurationDisplay(actualWeeklySessionTime)}
-              /week) differs from care package ({formatDurationDisplay(careItemsWeeklyTotal)}/week)
+              {translate("care_plan_summary.session_mismatch", {
+                session: formatDurationDisplay(actualWeeklySessionTime),
+                pkg: formatDurationDisplay(careItemsWeeklyTotal),
+              })}
             </Typography>
           </Box>
         )}
 
-      {/* Debug Information */}
-      <CareItemDebugger detail={detail} />
     </Paper>
   );
 };
@@ -244,6 +246,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
   details,
   cnsCarePlanId,
 }) => {
+  const translate = useTranslate();
   const dataProvider = useDataProvider<any>();
   const [missingCodes, setMissingCodes] = useState<
     Array<{ code: string; description?: string; number_of_care: number; periodicity: string; weekly_package?: number }>
@@ -351,7 +354,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
         sx={{ display: "flex", alignItems: "center", gap: 1 }}
       >
         <TimeIcon color="primary" />
-        Total Care Plan Summary
+        {translate("care_plan_summary.total_title")}
       </Typography>
 
       <Box
@@ -365,7 +368,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
           }}
         >
           <Typography variant="subtitle1" color="text.secondary">
-            Total Weekly Session Time
+            {translate("care_plan_summary.total_weekly_session_time")}
           </Typography>
           <Typography variant="h4" color="primary" fontWeight="bold">
             {formatDurationDisplay(totalSessionTime)}
@@ -381,7 +384,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
             }}
           >
             <Typography variant="subtitle1" color="text.secondary">
-              Sum Weekly Packages (ref.)
+              {translate("care_plan_summary.sum_weekly_packages")}
             </Typography>
             <Typography variant="h4" color="info.main" fontWeight="bold">
               {formatDurationDisplay(totalCareItemsDuration)}
@@ -397,7 +400,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
           }}
         >
           <Typography variant="subtitle1" color="text.secondary">
-            Care Details Count
+            {translate("care_plan_summary.care_details_count")}
           </Typography>
           <Typography variant="h4" color="secondary.main" fontWeight="bold">
             {details.length}
@@ -413,7 +416,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
         sx={{ display: "flex", alignItems: "center", gap: 1 }}
       >
         <CalendarIcon color="primary" />
-        Monthly Estimates
+        {translate("care_plan_summary.monthly_estimates")}
       </Typography>
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
         {[
@@ -427,14 +430,16 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
             sx={{ p: 1.5, minWidth: 140, textAlign: "center" }}
           >
             <Typography variant="caption" color="text.secondary">
-              {days} days
+              {translate("care_plan_summary.days", { n: days })}
             </Typography>
             <Typography variant="h6" color="primary" fontWeight="bold">
               {formatDurationDisplay(session)}
             </Typography>
             {totalCareItemsDuration > 0 && (
               <Typography variant="caption" color="info.main">
-                pkg: {formatDurationDisplay(care)}
+                {translate("care_plan_summary.pkg_prefix", {
+                  value: formatDurationDisplay(care),
+                })}
               </Typography>
             )}
           </Paper>
@@ -449,19 +454,33 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
         sx={{ display: "flex", alignItems: "center", gap: 1 }}
       >
         <ListIcon color="primary" />
-        Breakdown by Code
+        {translate("care_plan_summary.breakdown_title")}
       </Typography>
       <TableContainer component={Paper} variant="outlined">
         <Table size="small">
           <TableHead>
             <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: 600 }}>Detail</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Code</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Qty</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Session (min)</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Weekly Pkg (min)</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Qty × Session</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Consumed/wk</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>
+                {translate("care_plan_summary.col_detail")}
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>
+                {translate("care_plan_summary.col_code")}
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>
+                {translate("care_plan_summary.col_qty")}
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>
+                {translate("care_plan_summary.col_session_min")}
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>
+                {translate("care_plan_summary.col_weekly_pkg_min")}
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>
+                {translate("care_plan_summary.col_qty_times_session")}
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>
+                {translate("care_plan_summary.col_consumed_per_week")}
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -507,7 +526,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
                           <TableCell align="right" sx={{ fontWeight: 600 }}>
                             {isDuplicate ? (
                               <Typography variant="caption" color="text.disabled">
-                                (incl. above)
+                                {translate("care_plan_summary.incl_above")}
                               </Typography>
                             ) : (
                               consumed
@@ -519,7 +538,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
                   })}
                   <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
                     <TableCell colSpan={5} sx={{ fontWeight: 700 }}>
-                      TOTAL
+                      {translate("care_plan_summary.total")}
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>
                       {Math.round(totalSession * 100) / 100}
@@ -545,19 +564,29 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
             sx={{ display: "flex", alignItems: "center", gap: 1 }}
           >
             <WarningIcon color="warning" />
-            Missing CNS Codes ({missingCodes.length})
+            {translate("care_plan_summary.missing_cns_codes", {
+              count: missingCodes.length,
+            })}
           </Typography>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            These codes are in the CNS care plan but not used in any session.
+            {translate("care_plan_summary.missing_cns_warning")}
           </Alert>
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ backgroundColor: "#fff3e0" }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Code</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Description (CNS)</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 600 }}>Frequency</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Weekly Pkg (min)</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {translate("care_plan_summary.col_code")}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {translate("care_plan_summary.col_description_cns")}
+                  </TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>
+                    {translate("care_plan_summary.col_frequency")}
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>
+                    {translate("care_plan_summary.col_weekly_pkg_min")}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -570,7 +599,12 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
                       <Typography variant="body2">{mc.description || "—"}</Typography>
                     </TableCell>
                     <TableCell align="center">
-                      {mc.number_of_care}/{mc.periodicity === "W" ? "wk" : mc.periodicity === "D" ? "day" : mc.periodicity}
+                      {mc.number_of_care}/
+                      {mc.periodicity === "W"
+                        ? translate("care_plan_summary.freq_wk")
+                        : mc.periodicity === "D"
+                          ? translate("care_plan_summary.freq_day")
+                          : mc.periodicity}
                     </TableCell>
                     <TableCell align="right">{mc.weekly_package || "—"}</TableCell>
                   </TableRow>

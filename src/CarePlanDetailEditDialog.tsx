@@ -12,6 +12,7 @@ import {
   NumberInput,
   useDataProvider,
   useNotify,
+  useTranslate,
   Identifier,
 } from "react-admin";
 import {
@@ -45,6 +46,12 @@ interface FormLongTermCareItem {
   quantity: number;
 }
 
+interface FormAction {
+  action_text?: string;
+  duration_minutes?: number | string | null;
+  order?: number;
+}
+
 interface CarePlanDetailEditDialogProps {
   open: boolean;
   onClose: () => void;
@@ -58,6 +65,7 @@ export const CarePlanDetailEditDialog: React.FC<
 > = ({ open, onClose, carePlanId, detailToEdit, cnsCarePlanId }) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
+  const translate = useTranslate();
   const [isSaving, setIsSaving] = React.useState(false);
   const [cnsItemIds, setCnsItemIds] = useState<number[]>([]);
   const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<Record<string, string>>({});
@@ -118,6 +126,11 @@ export const CarePlanDetailEditDialog: React.FC<
         quantity: itemQty.quantity,
       }),
     ),
+    actions: (detailToEdit.actions ?? []).map((a, idx) => ({
+      action_text: a.action_text,
+      duration_minutes: a.duration_minutes,
+      order: a.order ?? idx,
+    })),
     // Convert time strings to Date objects for React Admin TimeInput
     time_start: detailToEdit.time_start
       ? (() => {
@@ -155,12 +168,17 @@ export const CarePlanDetailEditDialog: React.FC<
     if (missingFields.length > 0) {
       const errors: Record<string, string> = {};
       missingFields.forEach((field) => {
-        errors[field] = `${field.replace("_", " ")} is required`;
+        errors[field] = translate("care_plan_detail.validation.required", {
+          field: field.replace("_", " "),
+        });
       });
       setValidationErrors(errors);
-      notify(`Please fill in required fields: ${missingFields.join(", ")}`, {
-        type: "error",
-      });
+      notify(
+        translate("care_plan_detail.validation.fill_required", {
+          fields: missingFields.join(", "),
+        }),
+        { type: "error" },
+      );
       setIsSaving(false);
       return;
     }
@@ -210,6 +228,17 @@ export const CarePlanDetailEditDialog: React.FC<
           quantity: item.quantity || 1,
         })),
       care_actions: formattedValues.care_actions,
+      actions: (formattedValues.actions ?? [])
+        .filter((a: FormAction) => a && a.action_text && a.action_text.trim())
+        .map((a: FormAction, idx: number) => {
+          const raw = a.duration_minutes;
+          const n = typeof raw === "number" ? raw : Number(raw);
+          return {
+            action_text: (a.action_text ?? "").trim(),
+            duration_minutes: Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0,
+            order: a.order ?? idx,
+          };
+        }),
     };
 
     try {
@@ -218,7 +247,9 @@ export const CarePlanDetailEditDialog: React.FC<
         detailToEdit.id,
         payload,
       );
-      notify("Care plan detail updated successfully", { type: "success" });
+      notify(translate("care_plan_detail.validation.update_success"), {
+        type: "success",
+      });
       onClose(); // Parent component will handle refresh
     } catch (error: unknown) {
       console.error("Error updating care plan detail:", error);
@@ -238,12 +269,16 @@ export const CarePlanDetailEditDialog: React.FC<
           });
 
           setValidationErrors(parsedErrors);
-          notify("Please fix validation errors", { type: "error" });
+          notify(translate("care_plan_detail.validation.fix_errors"), {
+            type: "error",
+          });
         } catch {
           notify(`Error: ${error.message}`, { type: "error" });
         }
       } else {
-        let errorMessage = "Could not update care plan detail";
+        let errorMessage = translate(
+          "care_plan_detail.validation.update_error",
+        );
         if (error instanceof Error) {
           errorMessage = error.message;
         }
@@ -256,7 +291,7 @@ export const CarePlanDetailEditDialog: React.FC<
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>Edit Care Plan Detail</DialogTitle>
+      <DialogTitle>{translate("care_plan_detail.title_edit")}</DialogTitle>
       <DialogContent>
         <SimpleForm
           onSubmit={handleSubmit}
@@ -275,7 +310,7 @@ export const CarePlanDetailEditDialog: React.FC<
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isSaving}>
-          Cancel
+          {translate("care_plan_detail.cancel")}
         </Button>
         <Button
           type="submit"
@@ -283,7 +318,11 @@ export const CarePlanDetailEditDialog: React.FC<
           variant="contained"
           disabled={isSaving}
         >
-          {isSaving ? <CircularProgress size={24} /> : "Save Changes"}
+          {isSaving ? (
+            <CircularProgress size={24} />
+          ) : (
+            translate("care_plan_detail.save")
+          )}
         </Button>
       </DialogActions>
     </Dialog>

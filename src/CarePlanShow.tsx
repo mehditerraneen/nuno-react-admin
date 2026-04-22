@@ -10,7 +10,16 @@ import {
   TextField,
   useDataProvider,
   useRecordContext,
+  useTranslate,
 } from "react-admin";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import {
   Box,
   Typography,
@@ -41,6 +50,7 @@ import { CarePlanPrintButton } from "./components/CarePlanPrintView";
 // Custom field to display package duration with daily calculation
 const PackageDurationField = () => {
   const record = useRecordContext();
+  const translate = useTranslate();
   const weeklyPackage = record?.long_term_care_item?.weekly_package || 0;
   if (weeklyPackage === 0) {
     return <span>—</span>;
@@ -49,10 +59,12 @@ const PackageDurationField = () => {
   const dailyDuration = weeklyPackage / 7;
   return (
     <span>
-      {formatDurationDisplay(weeklyPackage)}/week
+      {formatDurationDisplay(weeklyPackage)}
+      {translate("care_plan_show.per_week")}
       <br />
       <small style={{ color: "#666" }}>
-        ({formatDurationDisplay(dailyDuration)}/day)
+        ({formatDurationDisplay(dailyDuration)}
+        {translate("care_plan_show.per_day")})
       </small>
     </span>
   );
@@ -88,6 +100,7 @@ const CarePlanDetails = () => {
     null,
   );
   const record = useRecordContext();
+  const translate = useTranslate();
   const dataProvider = useDataProvider<MyDataProvider>();
   const [details, setDetails] = useState<CarePlanDetail[]>([]);
   const [patient, setPatient] = useState<any>(null);
@@ -129,7 +142,11 @@ const CarePlanDetails = () => {
 
   if (loading) return <CircularProgress />;
   if (error) {
-    return <Alert severity="error">Error fetching care plan details.</Alert>;
+    return (
+      <Alert severity="error">
+        {translate("care_plan_show.loading_error")}
+      </Alert>
+    );
   }
 
   const handleOpenCreateDialog = () => {
@@ -165,7 +182,9 @@ const CarePlanDetails = () => {
         alignItems="center"
         mb={2}
       >
-        <Typography variant="h6">Care Plan Details</Typography>
+        <Typography variant="h6">
+          {translate("care_plan_show.details_title")}
+        </Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
           {details.length > 0 && (
             <CarePlanPrintButton record={record} patient={patient} details={details} />
@@ -176,7 +195,7 @@ const CarePlanDetails = () => {
             startIcon={<AddIcon />}
             data-testid="add-new-detail-button"
           >
-            Add New Detail
+            {translate("care_plan_show.add_new_detail")}
           </Button>
         </Box>
       </Box>
@@ -184,15 +203,14 @@ const CarePlanDetails = () => {
       {!details || details.length === 0 ? (
         <Box sx={{ py: 4, textAlign: "center" }}>
           <Typography variant="body1" color="text.secondary" gutterBottom>
-            No details found for this care plan.
+            {translate("care_plan_show.no_details")}
           </Typography>
           <Typography
             variant="body2"
             color="primary"
             sx={{ fontWeight: "medium" }}
           >
-            👆 Click "Add New Detail" above to start adding care plan details,
-            occurrences, and long-term care items.
+            {translate("care_plan_show.no_details_hint")}
           </Typography>
         </Box>
       ) : (
@@ -222,19 +240,23 @@ const CarePlanDetails = () => {
                 <TextField
                   record={detail}
                   source="time_start"
-                  label="Start Time"
+                  label={translate("care_plan_show.start_time")}
                 />
-                <TextField record={detail} source="time_end" label="End Time" />
+                <TextField
+                  record={detail}
+                  source="time_end"
+                  label={translate("care_plan_show.end_time")}
+                />
               </Box>
               <TextField
                 record={detail}
                 source="care_actions"
-                label="Care Actions"
+                label={translate("care_plan_show.care_actions")}
                 fullWidth
               />
 
               <Typography variant="subtitle2" sx={{ mt: 2 }}>
-                Occurrences:
+                {translate("care_plan_show.occurrences")}:
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
                 {detail.params_occurrence.map((occ: CareOccurrence) => (
@@ -242,18 +264,69 @@ const CarePlanDetails = () => {
                 ))}
               </Box>
 
-              <Typography variant="subtitle2">Care Items:</Typography>
+              <Typography variant="subtitle2">
+                {translate("care_plan_show.care_items")}:
+              </Typography>
               <ArrayField record={detail} source="longtermcareitemquantity_set">
                 <Datagrid bulkActionButtons={false} optimized rowClick={false}>
                   <TextField
                     source="long_term_care_item.code"
-                    label="Item Code"
+                    label={translate("care_plan_show.item_code")}
                   />
-                  <ItemDescriptionField label="Item Description" />
-                  <NumberField source="quantity" label="Quantity" />
-                  <PackageDurationField label="Package Duration" />
+                  <ItemDescriptionField
+                    label={translate("care_plan_show.item_description")}
+                  />
+                  <NumberField
+                    source="quantity"
+                    label={translate("care_plan_show.quantity")}
+                  />
+                  <PackageDurationField
+                    label={translate("care_plan_show.package_duration")}
+                  />
                 </Datagrid>
               </ArrayField>
+
+              {/* Free-text actions */}
+              {detail.actions && detail.actions.length > 0 && (
+                <>
+                  <Typography variant="subtitle2" sx={{ mt: 2 }}>
+                    {translate("care_plan_show.actions")}:
+                  </Typography>
+                  <TableContainer
+                    component={Paper}
+                    variant="outlined"
+                    sx={{ mb: 2 }}
+                  >
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: "#fff8e1" }}>
+                          <TableCell sx={{ fontWeight: 600 }}>
+                            {translate("care_plan_show.action")}
+                          </TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{ fontWeight: 600, width: 140 }}
+                          >
+                            {translate("care_plan_show.duration_min")}
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {detail.actions.map((a) => (
+                          <TableRow key={a.id}>
+                            <TableCell sx={{ whiteSpace: "pre-wrap" }}>
+                              {a.action_text}
+                            </TableCell>
+                            <TableCell align="right">
+                              {a.duration_minutes}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </>
+              )}
 
               {/* Duration Summary for this detail */}
               <DurationSummary detail={detail} />
@@ -289,33 +362,60 @@ const CarePlanDetails = () => {
   );
 };
 
-export const CarePlanShow = () => (
-  <Show>
+const CarePlanShowLayout = () => {
+  const translate = useTranslate();
+  return (
     <SimpleShowLayout>
       <Typography variant="h5" gutterBottom>
-        Care Plan Summary
+        {translate("care_plan_show.summary_title")}
       </Typography>
       <ReferenceField source="patient_id" reference="patients" />
-      <TextField source="plan_number" />
-      <DateField source="plan_start_date" />
-      <DateField source="plan_end_date" />
-      <DateField source="plan_decision_date" />
+      <TextField
+        source="plan_number"
+        label={translate("care_plan_show.plan_number")}
+      />
+      <DateField
+        source="plan_start_date"
+        label={translate("care_plan_show.plan_start_date")}
+      />
+      <DateField
+        source="plan_end_date"
+        label={translate("care_plan_show.plan_end_date")}
+      />
+      <DateField
+        source="plan_decision_date"
+        label={translate("care_plan_show.plan_decision_date")}
+      />
       <ReferenceField
         source="medical_care_summary_per_patient_id"
         reference="cnscareplans"
-        label="Linked CNS Care Plan"
-        emptyText="No CNS care plan linked"
+        label={translate("care_plan_show.linked_cns")}
+        emptyText={translate("care_plan_show.no_cns_linked")}
       />
-      <Box sx={{ display: "flex", gap: 4, mt: 1, mb: 1, p: 1.5, bgcolor: "grey.50", borderRadius: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 4,
+          mt: 1,
+          mb: 1,
+          p: 1.5,
+          bgcolor: "grey.50",
+          borderRadius: 1,
+        }}
+      >
         <Box>
-          <Typography variant="caption" color="text.secondary">Created</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {translate("care_plan_show.created")}
+          </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <DateField source="created_on" showTime />
             <TextField source="created_by" />
           </Box>
         </Box>
         <Box>
-          <Typography variant="caption" color="text.secondary">Last Updated</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {translate("care_plan_show.last_updated")}
+          </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <DateField source="updated_on" showTime />
             <TextField source="updated_by" emptyText="—" />
@@ -324,5 +424,11 @@ export const CarePlanShow = () => (
       </Box>
       <CarePlanDetails />
     </SimpleShowLayout>
+  );
+};
+
+export const CarePlanShow = () => (
+  <Show>
+    <CarePlanShowLayout />
   </Show>
 );

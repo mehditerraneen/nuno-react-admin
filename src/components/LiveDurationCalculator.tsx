@@ -9,6 +9,7 @@ import {
   calculateCareItemsDailyDuration,
   calculateCareItemsActualWeeklyDuration,
   calculateActualDaysPerWeek,
+  calculateActionsDuration,
 } from "../utils/timeUtils";
 import { LongTermCareItem, CareOccurrence } from "../dataProvider";
 import { AutoCalculationNotification } from "./AutoCalculationNotification";
@@ -27,6 +28,8 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
   const timeEnd = useWatch({ name: "time_end" });
   const occurrenceIds = useWatch({ name: "params_occurrence_ids" }) || [];
   const careItems = useWatch({ name: "long_term_care_items" }) || [];
+  const actions = useWatch({ name: "actions" }) || [];
+  const actionsDailyDuration = calculateActionsDuration(actions);
 
   // Fetch occurrence data to get names
   const { data: occurrences } = useGetList<CareOccurrence>("careoccurrences");
@@ -260,6 +263,27 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
             size="small"
           />
         </Box>
+
+        {/* Actions Daily Duration */}
+        {actionsDailyDuration > 0 && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Actions Daily
+            </Typography>
+            <Chip
+              label={formatDurationDisplay(actionsDailyDuration)}
+              color="warning"
+              variant="outlined"
+              size="small"
+            />
+          </Box>
+        )}
 
         {/* Care Items Daily Duration */}
         {careItemsDailyDuration > 0 && (

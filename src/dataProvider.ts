@@ -74,6 +74,19 @@ export interface LongTermCareItemQuantity {
   custom_description?: string; // From linked CNS Care Plan
 }
 
+export interface CarePlanDetailAction {
+  id: number;
+  action_text: string;
+  duration_minutes: number;
+  order: number;
+}
+
+export interface CarePlanDetailActionCreate {
+  action_text: string;
+  duration_minutes: number;
+  order?: number;
+}
+
 export interface CarePlanDetail {
   id: number;
   name: string;
@@ -82,6 +95,7 @@ export interface CarePlanDetail {
   time_end: string; // Assuming time is serialized as string
   longtermcareitemquantity_set: LongTermCareItemQuantity[];
   care_actions: string;
+  actions?: CarePlanDetailAction[];
   care_plan_to_master_id: number;
 }
 
@@ -100,6 +114,7 @@ export interface CarePlanDetailCreate {
   time_end: string; // Assuming time is string e.g., HH:MM
   long_term_care_items: LongTermCareItemQuantityCreate[];
   care_actions: string;
+  actions?: CarePlanDetailActionCreate[];
 }
 
 export interface MedicalCareSummaryPerPatientDetail {

@@ -59,6 +59,7 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
   const timeStart = useWatch({ name: "time_start" });
   const timeEnd = useWatch({ name: "time_end" });
   const careItems = useWatch({ name: "long_term_care_items" }) || [];
+  const actions = useWatch({ name: "actions" }) || [];
 
   const [suggestedTime, setSuggestedTime] = useState<string | null>(null);
   const [showSuggestion, setShowSuggestion] = useState(false);
@@ -72,6 +73,13 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
       id: item.long_term_care_item_id,
       quantity: item.quantity,
     })) || [],
+  );
+  const actionsKey = JSON.stringify(
+    (actions || []).map((a: any) => Number(a?.duration_minutes) || 0),
+  );
+  const actionsDurationTotal = (actions || []).reduce(
+    (sum: number, a: any) => sum + (Number(a?.duration_minutes) || 0),
+    0,
   );
 
   console.log("🔍 SmartTimeInput render:", {
@@ -93,7 +101,11 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
       setShowSuggestion(false);
       setMatchStatus(null);
 
-      if (timeStart && careItems.length > 0 && allCareItems) {
+      if (
+        timeStart &&
+        (careItems.length > 0 || actionsDurationTotal > 0) &&
+        allCareItems
+      ) {
         console.log("🔄 Processing suggestion calculation...", {
           timeStart,
           careItemsCount: careItems.length,
@@ -129,13 +141,15 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
         const hasValidCareItems = transformedItems.some(
           (item) => (item.long_term_care_item.weekly_package || 0) > 0,
         );
-        console.log("🔄 Has valid care items:", hasValidCareItems);
+        const hasValidActions = actionsDurationTotal > 0;
+        console.log("🔄 Has valid care items:", hasValidCareItems, "actions:", hasValidActions);
 
-        if (startTimeStr && hasValidCareItems) {
+        if (startTimeStr && (hasValidCareItems || hasValidActions)) {
           const suggested = calculateSuggestedEndTime(
             startTimeStr,
             transformedItems,
             1,
+            actions,
           );
           console.log("🔄 Suggested time calculated:", suggested);
 
@@ -157,6 +171,7 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
                 startTimeStr,
                 endTimeStr,
                 transformedItems,
+                actions,
               );
               setMatchStatus(match);
               console.log("🔄 Match status:", match);
@@ -182,7 +197,7 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
       setShowSuggestion(false);
       setMatchStatus(null);
     }
-  }, [timeStart, careItemsKey, allCareItems, autoSuggest, source, timeEnd]);
+  }, [timeStart, careItemsKey, actionsKey, allCareItems, autoSuggest, source, timeEnd]);
 
   const handleApplySuggestion = () => {
     if (suggestedTime) {
