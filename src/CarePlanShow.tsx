@@ -21,6 +21,9 @@ import {
   TableRow,
 } from "@mui/material";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Typography,
   Paper,
@@ -32,6 +35,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useEffect, useState } from "react";
 import {
   type CareOccurrence,
@@ -215,27 +219,60 @@ const CarePlanDetails = () => {
         </Box>
       ) : (
         <>
-          {details.map((detail) => (
-            <Paper key={detail.id} sx={{ p: 2, mb: 2, maxWidth: 800 }}>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
+          {details.map((detail) => {
+            const timeRange = `${(detail.time_start || "").substring(0, 5)} – ${(detail.time_end || "").substring(0, 5)}`;
+            const itemCount = detail.longtermcareitemquantity_set.length;
+            const actionCount = detail.actions?.length ?? 0;
+            return (
+            <Accordion
+              key={detail.id}
+              sx={{ mb: 2, maxWidth: 800 }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{
+                  "& .MuiAccordionSummary-content": {
+                    alignItems: "center",
+                    gap: 2,
+                    flexWrap: "wrap",
+                  },
+                }}
               >
-                <Typography
-                  variant="subtitle1"
-                  gutterBottom
-                  sx={{ flexGrow: 1 }}
-                >
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                   {detail.name}
                 </Typography>
+                <Chip
+                  label={timeRange}
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                />
+                <Chip
+                  label={`${itemCount} ${translate("care_plan_show.care_items").toLowerCase()}`}
+                  size="small"
+                  variant="outlined"
+                />
+                {actionCount > 0 && (
+                  <Chip
+                    label={`${actionCount} ${translate("care_plan_show.actions").toLowerCase()}`}
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                  />
+                )}
+                <Box sx={{ flexGrow: 1 }} />
                 <IconButton
-                  onClick={() => handleOpenEditDialog(detail)}
+                  component="span"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEditDialog(detail);
+                  }}
                   size="small"
                 >
                   <EditIcon />
                 </IconButton>
-              </Box>
+              </AccordionSummary>
+              <AccordionDetails>
               <Box sx={{ display: "flex", gap: 4, mb: 2 }}>
                 <TextField
                   record={detail}
@@ -330,8 +367,10 @@ const CarePlanDetails = () => {
 
               {/* Duration Summary for this detail */}
               <DurationSummary detail={detail} />
-            </Paper>
-          ))}
+              </AccordionDetails>
+            </Accordion>
+            );
+          })}
 
           {/* Overall Care Plan Duration Summary */}
           <CarePlanDetailsSummary
