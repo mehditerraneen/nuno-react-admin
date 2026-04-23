@@ -9,6 +9,8 @@ import {
   SimpleShowLayout,
   TextField,
   useDataProvider,
+  useGetIdentity,
+  useNotify,
   useRecordContext,
   useRefresh,
   useTranslate,
@@ -39,6 +41,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import HistoryIcon from "@mui/icons-material/History";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";
 import {
   type CareOccurrence,
@@ -49,6 +53,7 @@ import {
 import { CarePlanDetailCreateDialog } from "./CarePlanDetailCreateDialog";
 import { CarePlanDetailEditDialog } from "./CarePlanDetailEditDialog";
 import { CarePlanRevisionDialog } from "./CarePlanRevisionDialog";
+import { CarePlanDiffPanel } from "./CarePlanDiffPanel";
 import {
   DurationSummary,
   CarePlanDetailsSummary,
@@ -69,13 +74,50 @@ const CarePlanRevisionsPanel: React.FC = () => {
   const record = useRecordContext();
   const translate = useTranslate();
   const refresh = useRefresh();
+  const notify = useNotify();
+  const dataProvider = useDataProvider<MyDataProvider>();
+  const { identity } = useGetIdentity();
+  const isStaff = !!(identity as { isStaff?: boolean } | undefined)?.isStaff;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   if (!record) return null;
 
   const revisions = (record.revisions ?? []) as CarePlanRevision[];
   const [latest, ...older] = revisions;
+
+  const handleDelete = async (revisionId: number) => {
+    if (!window.confirm(translate("care_plan_revision.delete_confirm"))) return;
+    setDeletingId(revisionId);
+    try {
+      await dataProvider.deleteCarePlanRevision(record.id, revisionId);
+      notify(translate("care_plan_revision.delete_success"), { type: "info" });
+      refresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      notify(`${translate("care_plan_revision.delete_error")}: ${msg}`, {
+        type: "error",
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const DeleteRevisionButton: React.FC<{ id: number }> = ({ id }) => (
+    <Tooltip title={translate("care_plan_revision.delete_tooltip")}>
+      <span>
+        <IconButton
+          size="small"
+          color="error"
+          onClick={() => handleDelete(id)}
+          disabled={deletingId === id}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
 
   return (
     <Paper
@@ -103,12 +145,15 @@ const CarePlanRevisionsPanel: React.FC = () => {
           </Typography>
           {latest ? (
             <>
-              <Typography variant="body2">
-                {formatRevisionDate(latest.revised_on)}
-                {latest.revised_by
-                  ? ` — ${translate("care_plan_revision.revised_by", { name: latest.revised_by })}`
-                  : ""}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="body2">
+                  {formatRevisionDate(latest.revised_on)}
+                  {latest.revised_by
+                    ? ` — ${translate("care_plan_revision.revised_by", { name: latest.revised_by })}`
+                    : ""}
+                </Typography>
+                {isStaff && <DeleteRevisionButton id={latest.id} />}
+              </Box>
               {latest.comment && (
                 <Typography
                   variant="body2"
@@ -164,12 +209,15 @@ const CarePlanRevisionsPanel: React.FC = () => {
                 borderTopColor: "divider",
               }}
             >
-              <Typography variant="body2">
-                {formatRevisionDate(r.revised_on)}
-                {r.revised_by
-                  ? ` — ${translate("care_plan_revision.revised_by", { name: r.revised_by })}`
-                  : ""}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                  {formatRevisionDate(r.revised_on)}
+                  {r.revised_by
+                    ? ` — ${translate("care_plan_revision.revised_by", { name: r.revised_by })}`
+                    : ""}
+                </Typography>
+                {isStaff && <DeleteRevisionButton id={r.id} />}
+              </Box>
               {r.comment && (
                 <Typography
                   variant="body2"
@@ -605,8 +653,22 @@ const CarePlanShowLayout = () => {
         </Box>
       </Box>
       <CarePlanRevisionsPanel />
+      <CarePlanDiffMount />
       <CarePlanDetails />
     </SimpleShowLayout>
+  );
+};
+
+const CarePlanDiffMount: React.FC = () => {
+  const record = useRecordContext();
+  if (!record?.id || record.patient_id == null || record.plan_number == null)
+    return null;
+  return (
+    <CarePlanDiffPanel
+      carePlanId={record.id}
+      patientId={record.patient_id}
+      currentPlanNumber={record.plan_number}
+    />
   );
 };
 

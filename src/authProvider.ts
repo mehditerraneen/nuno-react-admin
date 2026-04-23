@@ -61,8 +61,10 @@ export const authProvider: AuthProvider = {
     if (user) {
       return Promise.resolve({
         id: user.id,
-        fullName: user.username,
+        fullName: user.fullName || user.username,
         avatar: undefined,
+        isStaff: !!user.isStaff,
+        roles: user.roles ?? [],
       });
     }
     return Promise.reject();

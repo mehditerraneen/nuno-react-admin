@@ -89,6 +89,47 @@ export interface CarePlanRevision {
   comment: string;
 }
 
+export interface CarePlanDetailSummary {
+  id?: number;
+  name: string;
+  time_start: string | null;
+  time_end: string | null;
+  care_actions: string;
+  occurrences: string[];
+  care_items: Record<string, number>;
+  actions: { action_text: string; duration_minutes: number }[];
+}
+
+export interface CarePlanDiffChanges {
+  time_start?: { before: string | null; after: string | null };
+  time_end?: { before: string | null; after: string | null };
+  care_actions?: { before: string; after: string };
+  occurrences?: { added: string[]; removed: string[] };
+  care_items?: {
+    added: { code: string; quantity: number }[];
+    removed: { code: string; quantity: number }[];
+    quantity_changed: { code: string; before: number; after: number }[];
+  };
+  actions?: {
+    added: { action_text: string; duration_minutes: number }[];
+    removed: { action_text: string; duration_minutes: number }[];
+  };
+}
+
+export interface CarePlanDiff {
+  against:
+    | {
+        id: number;
+        plan_number: number;
+        plan_start_date: string | null;
+        plan_end_date: string | null;
+      }
+    | null;
+  added: CarePlanDetailSummary[];
+  removed: CarePlanDetailSummary[];
+  changed: { name: string; changes: CarePlanDiffChanges }[];
+}
+
 export interface CarePlanDetailActionCreate {
   action_text: string;
   duration_minutes: number;
@@ -349,6 +390,14 @@ export interface MyDataProvider extends DataProvider {
   getCarePlanRevisions: (
     carePlanId: Identifier,
   ) => Promise<CarePlanRevision[]>;
+  deleteCarePlanRevision: (
+    carePlanId: Identifier,
+    revisionId: Identifier,
+  ) => Promise<void>;
+  getCarePlanDiff: (
+    carePlanId: Identifier,
+    againstId?: Identifier,
+  ) => Promise<CarePlanDiff>;
 
   // Tours-specific methods
   getDailyEvents: (
@@ -2180,6 +2229,26 @@ export const dataProvider: MyDataProvider = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.detail || "Failed to fetch revisions");
+    }
+    return response.json();
+  },
+
+  deleteCarePlanRevision: async (carePlanId, revisionId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions/${revisionId}`;
+    const response = await authenticatedFetch(url, { method: "DELETE" });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to delete revision");
+    }
+  },
+
+  getCarePlanDiff: async (carePlanId, againstId) => {
+    const qs = againstId != null ? `?against=${againstId}` : "";
+    const url = `${apiUrl}/careplans/${carePlanId}/diff${qs}`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to compute diff");
     }
     return response.json();
   },

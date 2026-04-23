@@ -14,6 +14,9 @@ export interface User {
   id: string;
   username: string;
   role: string;
+  isStaff?: boolean;
+  roles?: string[];
+  fullName?: string;
 }
 
 // Backend API response interfaces
@@ -101,6 +104,24 @@ class AuthService {
         username: credentials.username,
         role: "admin", // Default role, could be extracted from JWT
       };
+
+      // Enrich with is_staff / fullName by calling /me
+      try {
+        const meResponse = await fetch(
+          `${apiUrl}/mobile/api/v1/react-admin/auth/me`,
+          { headers: { Authorization: accessToken } },
+        );
+        if (meResponse.ok) {
+          const me = await meResponse.json();
+          const roles: string[] = Array.isArray(me.roles) ? me.roles : [];
+          user.roles = roles;
+          user.isStaff = roles.includes("admin");
+          user.fullName = me.fullName || undefined;
+          if (me.id != null) user.id = String(me.id);
+        }
+      } catch (meError) {
+        console.warn("Could not fetch /me info", meError);
+      }
 
       localStorage.setItem(AuthService.USER_KEY, JSON.stringify(user));
 
