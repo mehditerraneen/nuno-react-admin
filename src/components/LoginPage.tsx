@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLogin, useNotify } from "react-admin";
 import {
   Box,
@@ -19,15 +19,34 @@ import {
   MedicalServices,
 } from "@mui/icons-material";
 
+interface Branding {
+  company_name?: string;
+  company_tagline?: string;
+  logo_url?: string;
+}
+
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [branding, setBranding] = useState<Branding | null>(null);
 
   const login = useLogin();
   const notify = useNotify();
+
+  useEffect(() => {
+    const apiUrl = (import.meta.env.VITE_SIMPLE_REST_URL || "").replace(
+      /\/fast\/?$/,
+      "",
+    );
+    if (!apiUrl) return;
+    fetch(`${apiUrl}/branding`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => data && setBranding(data))
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,26 +91,41 @@ export const LoginPage: React.FC = () => {
         <CardContent sx={{ p: 4 }}>
           {/* Header */}
           <Box sx={{ textAlign: "center", mb: 4 }}>
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                backgroundColor: "primary.main",
-                color: "white",
-                mb: 2,
-              }}
-            >
-              <MedicalServices fontSize="large" />
-            </Box>
+            {branding?.logo_url ? (
+              <Box
+                component="img"
+                src={branding.logo_url}
+                alt={branding.company_name || "Logo"}
+                sx={{
+                  maxHeight: 80,
+                  maxWidth: 220,
+                  objectFit: "contain",
+                  mb: 2,
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  mb: 2,
+                }}
+              >
+                <MedicalServices fontSize="large" />
+              </Box>
+            )}
             <Typography variant="h4" component="h1" gutterBottom>
-              Care Plan Admin
+              {branding?.company_name || "Care Plan Admin"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Sign in to manage care plans and patient data
+              {branding?.company_tagline ||
+                "Sign in to manage care plans and patient data"}
             </Typography>
           </Box>
 
@@ -174,6 +208,13 @@ export const LoginPage: React.FC = () => {
           <Box sx={{ textAlign: "center", mt: 3 }}>
             <Typography variant="body2" color="text.secondary">
               Secure authentication with JWT token management
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.disabled"
+              sx={{ display: "block", mt: 1, fontFamily: "monospace" }}
+            >
+              v{__APP_VERSION__} · {__APP_COMMIT__}
             </Typography>
           </Box>
         </CardContent>
