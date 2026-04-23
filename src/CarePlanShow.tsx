@@ -10,6 +10,7 @@ import {
   TextField,
   useDataProvider,
   useRecordContext,
+  useRefresh,
   useTranslate,
 } from "react-admin";
 import {
@@ -36,20 +37,162 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import HistoryIcon from "@mui/icons-material/History";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useEffect, useState } from "react";
 import {
   type CareOccurrence,
   type CarePlanDetail,
+  type CarePlanRevision,
   type MyDataProvider,
 } from "./dataProvider";
 import { CarePlanDetailCreateDialog } from "./CarePlanDetailCreateDialog";
 import { CarePlanDetailEditDialog } from "./CarePlanDetailEditDialog";
+import { CarePlanRevisionDialog } from "./CarePlanRevisionDialog";
 import {
   DurationSummary,
   CarePlanDetailsSummary,
 } from "./components/DurationSummary";
 import { formatDurationDisplay } from "./utils/timeUtils";
 import { CarePlanPrintButton } from "./components/CarePlanPrintView";
+
+const formatRevisionDate = (iso: string | null | undefined) => {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
+};
+
+const CarePlanRevisionsPanel: React.FC = () => {
+  const record = useRecordContext();
+  const translate = useTranslate();
+  const refresh = useRefresh();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  if (!record) return null;
+
+  const revisions = (record.revisions ?? []) as CarePlanRevision[];
+  const [latest, ...older] = revisions;
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        my: 2,
+        borderLeft: "4px solid",
+        borderLeftColor: latest ? "success.main" : "warning.main",
+        backgroundColor: latest ? "#f1f8e9" : "#fffde7",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          flexWrap: "wrap",
+        }}
+      >
+        <CheckCircleIcon color={latest ? "success" : "disabled"} />
+        <Box sx={{ flexGrow: 1, minWidth: 200 }}>
+          <Typography variant="subtitle2">
+            {translate("care_plan_revision.last_revision")}
+          </Typography>
+          {latest ? (
+            <>
+              <Typography variant="body2">
+                {formatRevisionDate(latest.revised_on)}
+                {latest.revised_by
+                  ? ` — ${translate("care_plan_revision.revised_by", { name: latest.revised_by })}`
+                  : ""}
+              </Typography>
+              {latest.comment && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}
+                >
+                  “{latest.comment}”
+                </Typography>
+              )}
+            </>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              {translate("care_plan_revision.never_revised")}
+            </Typography>
+          )}
+        </Box>
+        {older.length > 0 && (
+          <Button
+            size="small"
+            startIcon={<HistoryIcon />}
+            onClick={() => setHistoryOpen((v) => !v)}
+          >
+            {translate(
+              historyOpen
+                ? "care_plan_revision.history_hide"
+                : "care_plan_revision.history_show",
+            )}{" "}
+            ({older.length})
+          </Button>
+        )}
+        <Button
+          size="small"
+          variant="contained"
+          color="success"
+          startIcon={<CheckCircleIcon />}
+          onClick={() => setDialogOpen(true)}
+        >
+          {translate("care_plan_revision.mark_button")}
+        </Button>
+      </Box>
+
+      {historyOpen && older.length > 0 && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            {translate("care_plan_revision.history_title")}
+          </Typography>
+          {older.map((r) => (
+            <Box
+              key={r.id}
+              sx={{
+                py: 1,
+                borderTop: "1px solid",
+                borderTopColor: "divider",
+              }}
+            >
+              <Typography variant="body2">
+                {formatRevisionDate(r.revised_on)}
+                {r.revised_by
+                  ? ` — ${translate("care_plan_revision.revised_by", { name: r.revised_by })}`
+                  : ""}
+              </Typography>
+              {r.comment && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ whiteSpace: "pre-wrap" }}
+                >
+                  “{r.comment}”
+                </Typography>
+              )}
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      <CarePlanRevisionDialog
+        open={dialogOpen}
+        carePlanId={record.id}
+        onClose={() => setDialogOpen(false)}
+        onRevised={() => refresh()}
+      />
+    </Paper>
+  );
+};
 
 // Custom field to display package duration with daily calculation
 const PackageDurationField = () => {
@@ -461,6 +604,7 @@ const CarePlanShowLayout = () => {
           </Box>
         </Box>
       </Box>
+      <CarePlanRevisionsPanel />
       <CarePlanDetails />
     </SimpleShowLayout>
   );

@@ -119,6 +119,26 @@ export const pt = {
     last_updated: "Última atualização",
     loading_error: "Erro ao carregar os detalhes.",
   },
+  care_plan_revision: {
+    mark_button: "Marcar como revisto",
+    dialog_title: "Marcar este plano de cuidados como revisto",
+    dialog_hint:
+      "Registe uma validação deste plano (sem necessidade de alterações). Comentário opcional recomendado para auditoria.",
+    comment: "Comentário",
+    comment_placeholder:
+      "Ex.: Plano revisto durante a visita domiciliária — sem alterações necessárias.",
+    cancel: "Cancelar",
+    confirm: "Confirmar revisão",
+    success: "Plano de cuidados marcado como revisto",
+    error: "Não foi possível marcar como revisto",
+    last_revision: "Última revisão",
+    revised_by: "por %{name}",
+    never_revised: "Nunca revisto",
+    history_show: "Ver histórico",
+    history_hide: "Ocultar histórico",
+    history_title: "Histórico de revisões",
+    history_empty: "Sem revisões anteriores.",
+  },
   care_plan_summary: {
     duration_summary: "Resumo de durações",
     session_duration: "Duração da sessão",

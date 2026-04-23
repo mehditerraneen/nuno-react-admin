@@ -119,6 +119,26 @@ export const fr = {
     last_updated: "Dernière mise à jour",
     loading_error: "Erreur lors du chargement des détails.",
   },
+  care_plan_revision: {
+    mark_button: "Marquer comme révisé",
+    dialog_title: "Marquer ce plan de soins comme révisé",
+    dialog_hint:
+      "Enregistrez une validation de ce plan (aucune modification requise). Un commentaire est recommandé pour la traçabilité.",
+    comment: "Commentaire",
+    comment_placeholder:
+      "Ex. Plan revu lors du passage à domicile — aucune modification nécessaire.",
+    cancel: "Annuler",
+    confirm: "Confirmer la révision",
+    success: "Plan de soins marqué comme révisé",
+    error: "Impossible de marquer comme révisé",
+    last_revision: "Dernière révision",
+    revised_by: "par %{name}",
+    never_revised: "Jamais révisé",
+    history_show: "Voir l'historique",
+    history_hide: "Masquer l'historique",
+    history_title: "Historique des révisions",
+    history_empty: "Aucune révision antérieure.",
+  },
   care_plan_summary: {
     duration_summary: "Résumé des durées",
     session_duration: "Durée de séance",

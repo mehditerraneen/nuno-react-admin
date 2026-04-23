@@ -119,6 +119,26 @@ export const de = {
     last_updated: "Zuletzt aktualisiert",
     loading_error: "Fehler beim Laden der Details.",
   },
+  care_plan_revision: {
+    mark_button: "Als revidiert markieren",
+    dialog_title: "Diesen Pflegeplan als revidiert markieren",
+    dialog_hint:
+      "Geben Sie eine Freigabe für diesen Plan ab (keine Änderungen nötig). Ein Kommentar ist für die Nachvollziehbarkeit empfohlen.",
+    comment: "Kommentar",
+    comment_placeholder:
+      "Z. B. Plan beim Hausbesuch überprüft — keine Änderungen erforderlich.",
+    cancel: "Abbrechen",
+    confirm: "Revision bestätigen",
+    success: "Pflegeplan als revidiert markiert",
+    error: "Konnte nicht als revidiert markiert werden",
+    last_revision: "Letzte Revision",
+    revised_by: "von %{name}",
+    never_revised: "Noch nie revidiert",
+    history_show: "Verlauf anzeigen",
+    history_hide: "Verlauf ausblenden",
+    history_title: "Revisionsverlauf",
+    history_empty: "Keine früheren Revisionen.",
+  },
   care_plan_summary: {
     duration_summary: "Dauer-Zusammenfassung",
     session_duration: "Sitzungsdauer",

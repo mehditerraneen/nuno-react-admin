@@ -81,6 +81,14 @@ export interface CarePlanDetailAction {
   order: number;
 }
 
+export interface CarePlanRevision {
+  id: number;
+  revised_on: string;
+  revised_by_id: number | null;
+  revised_by: string | null;
+  comment: string;
+}
+
 export interface CarePlanDetailActionCreate {
   action_text: string;
   duration_minutes: number;
@@ -332,6 +340,15 @@ export interface MyDataProvider extends DataProvider {
     detailId: Identifier,
     data: CarePlanDetailUpdatePayload,
   ) => Promise<CarePlanDetail>; // Returns the updated detail
+
+  // Care plan revisions (nurse sign-off)
+  markCarePlanAsRevised: (
+    carePlanId: Identifier,
+    comment: string,
+  ) => Promise<CarePlanRevision>;
+  getCarePlanRevisions: (
+    carePlanId: Identifier,
+  ) => Promise<CarePlanRevision[]>;
 
   // Tours-specific methods
   getDailyEvents: (
@@ -2140,6 +2157,29 @@ export const dataProvider: MyDataProvider = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || "Failed to update care plan detail");
+    }
+    return response.json();
+  },
+
+  markCarePlanAsRevised: async (carePlanId, comment) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions`;
+    const response = await authenticatedFetch(url, {
+      method: "POST",
+      body: JSON.stringify({ comment }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to mark care plan as revised");
+    }
+    return response.json();
+  },
+
+  getCarePlanRevisions: async (carePlanId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to fetch revisions");
     }
     return response.json();
   },
