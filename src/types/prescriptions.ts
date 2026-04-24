@@ -21,11 +21,17 @@ export interface Prescription {
   prescriptor_specialty?: string;
   date: string;
   end_date: string | null;
-  note: string | null;
-  file: string | null;
-  file_name: string | null;
-  file_thumbnail: string | null;
-  md5hash: string | null;
+  // Frontend-convenient aliases
+  note?: string | null;
+  file?: string | null;
+  file_name?: string | null;
+  file_thumbnail?: string | null;
+  md5hash?: string | null;
+  // Backend raw fields (FastAPI response shape)
+  notes?: string | null;
+  file_upload?: string | null;
+  thumbnail_img?: string | null;
+  file_hash?: string | null;
   created_at?: string;
   updated_at?: string;
 }

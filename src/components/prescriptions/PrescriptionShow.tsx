@@ -10,7 +10,7 @@ import {
   useDataProvider,
   useNotify,
   useRefresh,
-  useGetOne,
+  useTranslate,
 } from "react-admin";
 import {
   Box,
@@ -33,7 +33,15 @@ const FileSection = () => {
   const dataProvider = useDataProvider();
   const notify = useNotify();
   const refresh = useRefresh();
+  const translate = useTranslate();
   const [uploading, setUploading] = useState(false);
+
+  const fileUrl = record?.file ?? record?.file_upload ?? null;
+  const fileThumb = record?.file_thumbnail ?? record?.thumbnail_img ?? null;
+  const fileHash = record?.md5hash ?? record?.file_hash ?? null;
+  const fileName =
+    record?.file_name ??
+    (fileUrl ? fileUrl.split("/").pop() ?? null : null);
 
   const handleFileUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,40 +51,49 @@ const FileSection = () => {
       setUploading(true);
       try {
         await dataProvider.uploadPrescriptionFile(record.id, file);
-        notify("File uploaded successfully", { type: "success" });
+        notify(translate("prescription_show.file.upload_success"), {
+          type: "success",
+        });
         refresh();
       } catch (error) {
-        notify("Failed to upload file", { type: "error" });
+        notify(translate("prescription_show.file.upload_failed"), {
+          type: "error",
+        });
       } finally {
         setUploading(false);
       }
     },
-    [record?.id, dataProvider, notify, refresh],
+    [record?.id, dataProvider, notify, refresh, translate],
   );
 
   const handleFileDelete = useCallback(async () => {
     if (!record?.id) return;
 
-    if (!window.confirm("Are you sure you want to delete this file?")) return;
+    if (!window.confirm(translate("prescription_show.file.delete_confirm")))
+      return;
 
     try {
       await dataProvider.deletePrescriptionFile(record.id);
-      notify("File deleted successfully", { type: "success" });
+      notify(translate("prescription_show.file.delete_success"), {
+        type: "success",
+      });
       refresh();
     } catch (error) {
-      notify("Failed to delete file", { type: "error" });
+      notify(translate("prescription_show.file.delete_failed"), {
+        type: "error",
+      });
     }
-  }, [record?.id, dataProvider, notify, refresh]);
+  }, [record?.id, dataProvider, notify, refresh, translate]);
 
   if (!record) return null;
 
   return (
     <Box sx={{ mt: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Prescription File
+        {translate("prescription_show.file.title")}
       </Typography>
 
-      {record.file ? (
+      {fileUrl ? (
         <Card variant="outlined">
           <CardContent>
             <Box
@@ -90,15 +107,15 @@ const FileSection = () => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
                   <AttachFileIcon color="primary" />
                   <Typography variant="body1" fontWeight="bold">
-                    {record.file_name}
+                    {fileName || translate("prescription_show.file.filename_fallback")}
                   </Typography>
                 </Box>
 
-                {record.file_thumbnail && (
+                {fileThumb && (
                   <Box sx={{ mb: 2 }}>
                     <img
-                      src={record.file_thumbnail}
-                      alt="Prescription thumbnail"
+                      src={fileThumb}
+                      alt={translate("prescription_show.file.title")}
                       style={{
                         maxWidth: "100%",
                         maxHeight: 300,
@@ -111,27 +128,29 @@ const FileSection = () => {
 
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Button
-                    label="View File"
-                    onClick={() => window.open(record.file, "_blank")}
+                    label={translate("prescription_show.file.view")}
+                    onClick={() => window.open(fileUrl, "_blank")}
                   />
                   <Button
-                    label="Download"
+                    label={translate("prescription_show.file.download")}
                     onClick={() => {
                       const link = document.createElement("a");
-                      link.href = record.file!;
-                      link.download = record.file_name || "prescription";
+                      link.href = fileUrl;
+                      link.download =
+                        fileName ||
+                        translate("prescription_show.file.filename_fallback");
                       link.click();
                     }}
                   />
                 </Box>
 
-                {record.md5hash && (
+                {fileHash && (
                   <Typography
                     variant="caption"
                     color="text.secondary"
                     sx={{ display: "block", mt: 1 }}
                   >
-                    MD5: {record.md5hash}
+                    {translate("prescription_show.file.md5")}: {fileHash}
                   </Typography>
                 )}
               </Box>
@@ -139,7 +158,7 @@ const FileSection = () => {
               <IconButton
                 onClick={handleFileDelete}
                 color="error"
-                title="Delete file"
+                title={translate("prescription_show.file.delete_title")}
               >
                 <DeleteIcon />
               </IconButton>
@@ -149,11 +168,15 @@ const FileSection = () => {
       ) : (
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            No file uploaded yet
+            {translate("prescription_show.file.no_file")}
           </Typography>
           <Button
             component="label"
-            label={uploading ? "Uploading..." : "Upload File"}
+            label={
+              uploading
+                ? translate("prescription_show.file.uploading")
+                : translate("prescription_show.file.upload")
+            }
             startIcon={<CloudUploadIcon />}
             disabled={uploading}
             sx={{ mt: 2 }}
@@ -166,7 +189,7 @@ const FileSection = () => {
             />
           </Button>
           <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-            Supported formats: PDF, JPG, JPEG, PNG
+            {translate("prescription_show.file.supported")}
           </Typography>
         </Paper>
       )}
@@ -176,6 +199,7 @@ const FileSection = () => {
 
 const PrescriptorInfo = () => {
   const record = useRecordContext<Prescription>();
+  const translate = useTranslate();
 
   if (!record) return null;
 
@@ -183,10 +207,11 @@ const PrescriptorInfo = () => {
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          Prescriptor
+          {translate("prescription_show.prescriptor")}
         </Typography>
         <Typography variant="h6" gutterBottom>
-          Dr. {record.prescriptor_name} {record.prescriptor_first_name}
+          {translate("prescription_show.dr_prefix")} {record.prescriptor_name}{" "}
+          {record.prescriptor_first_name}
         </Typography>
         {record.prescriptor_specialty && (
           <Chip
@@ -204,6 +229,7 @@ const PrescriptorInfo = () => {
 const LinkedMedicationsSection = () => {
   const record = useRecordContext<Prescription>();
   const dataProvider = useDataProvider();
+  const translate = useTranslate();
   const [medications, setMedications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -228,10 +254,10 @@ const LinkedMedicationsSection = () => {
     return (
       <Box sx={{ mt: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Linked Medications
+          {translate("prescription_show.linked.title")}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Loading...
+          {translate("prescription_show.linked.loading")}
         </Typography>
       </Box>
     );
@@ -241,11 +267,11 @@ const LinkedMedicationsSection = () => {
     return (
       <Box sx={{ mt: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Linked Medications
+          {translate("prescription_show.linked.title")}
         </Typography>
         <Paper sx={{ p: 2, backgroundColor: "#f5f5f5" }}>
           <Typography variant="body2" color="text.secondary">
-            No medications are currently linked to this prescription.
+            {translate("prescription_show.linked.none")}
           </Typography>
         </Paper>
       </Box>
@@ -255,10 +281,10 @@ const LinkedMedicationsSection = () => {
   return (
     <Box sx={{ mt: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Linked Medications ({medications.length})
+        {translate("prescription_show.linked.title")} ({medications.length})
       </Typography>
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        These medications are authorized by this prescription
+        {translate("prescription_show.linked.subtitle")}
       </Typography>
 
       {medications.map((medication: any) => (
@@ -267,7 +293,7 @@ const LinkedMedicationsSection = () => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Patient
+                  {translate("prescription_show.linked.patient")}
                 </Typography>
                 <Typography variant="body1" gutterBottom>
                   {medication.patient_name}
@@ -276,7 +302,7 @@ const LinkedMedicationsSection = () => {
 
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Medication Plan
+                  {translate("prescription_show.linked.medication_plan")}
                 </Typography>
                 <ReferenceField
                   source="medication_plan_id"
@@ -285,7 +311,7 @@ const LinkedMedicationsSection = () => {
                   link="show"
                 >
                   <Chip
-                    label="View Plan"
+                    label={translate("prescription_show.linked.view_plan")}
                     size="small"
                     color="primary"
                     clickable
@@ -295,19 +321,20 @@ const LinkedMedicationsSection = () => {
 
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Medicine
+                  {translate("prescription_show.linked.medicine")}
                 </Typography>
                 <Typography variant="body1" fontWeight="bold">
                   {medication.medicine_name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Dosage: {medication.dosage}
+                  {translate("prescription_show.linked.dosage_prefix")}:{" "}
+                  {medication.dosage}
                 </Typography>
               </Grid>
 
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Started
+                  {translate("prescription_show.linked.started")}
                 </Typography>
                 <Typography variant="body2">
                   {new Date(medication.date_started).toLocaleDateString()}
@@ -317,7 +344,7 @@ const LinkedMedicationsSection = () => {
               {medication.date_ended && (
                 <Grid item xs={12} md={6}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Ended
+                    {translate("prescription_show.linked.ended")}
                   </Typography>
                   <Typography variant="body2">
                     {new Date(medication.date_ended).toLocaleDateString()}
@@ -327,12 +354,12 @@ const LinkedMedicationsSection = () => {
 
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Schedule
+                  {translate("prescription_show.linked.schedule")}
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   {medication.morning && (
                     <Chip
-                      label={`Morning: ${medication.morning_dose || "✓"}`}
+                      label={`${translate("prescription_show.linked.morning")}: ${medication.morning_dose || "✓"}`}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -340,7 +367,7 @@ const LinkedMedicationsSection = () => {
                   )}
                   {medication.noon && (
                     <Chip
-                      label={`Noon: ${medication.noon_dose || "✓"}`}
+                      label={`${translate("prescription_show.linked.noon")}: ${medication.noon_dose || "✓"}`}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -348,7 +375,7 @@ const LinkedMedicationsSection = () => {
                   )}
                   {medication.evening && (
                     <Chip
-                      label={`Evening: ${medication.evening_dose || "✓"}`}
+                      label={`${translate("prescription_show.linked.evening")}: ${medication.evening_dose || "✓"}`}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -356,7 +383,7 @@ const LinkedMedicationsSection = () => {
                   )}
                   {medication.night && (
                     <Chip
-                      label={`Night: ${medication.night_dose || "✓"}`}
+                      label={`${translate("prescription_show.linked.night")}: ${medication.night_dose || "✓"}`}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -372,19 +399,39 @@ const LinkedMedicationsSection = () => {
   );
 };
 
-export const PrescriptionShow = () => (
-  <Show>
+const NotesBlock = () => {
+  const record = useRecordContext<Prescription>();
+  const translate = useTranslate();
+  const noteText = record?.note ?? record?.notes;
+  if (!noteText) return null;
+  return (
+    <Grid item xs={12}>
+      <Typography variant="subtitle2" color="text.secondary">
+        {translate("prescription_show.notes")}
+      </Typography>
+      <Paper sx={{ p: 2, backgroundColor: "#f5f5f5" }}>
+        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+          {noteText}
+        </Typography>
+      </Paper>
+    </Grid>
+  );
+};
+
+const PrescriptionShowLayout = () => {
+  const translate = useTranslate();
+  return (
     <SimpleShowLayout>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" gutterBottom>
-          Prescription Details
+          {translate("prescription_show.title")}
         </Typography>
       </Box>
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle2" color="text.secondary">
-            Patient
+            {translate("prescription_show.patient")}
           </Typography>
           <ReferenceField source="patient_id" reference="patients" link="show">
             <FunctionField
@@ -403,21 +450,23 @@ export const PrescriptionShow = () => (
 
         <Grid item xs={12} md={4}>
           <Typography variant="subtitle2" color="text.secondary">
-            Prescription Date
+            {translate("prescription_show.prescription_date")}
           </Typography>
           <DateField source="date" />
         </Grid>
 
         <Grid item xs={12} md={4}>
           <Typography variant="subtitle2" color="text.secondary">
-            End Date
+            {translate("prescription_show.end_date")}
           </Typography>
           <FunctionField
             render={(record: Prescription) =>
               record.end_date ? (
                 <DateField source="end_date" record={record} />
               ) : (
-                <Typography variant="body2">No end date</Typography>
+                <Typography variant="body2">
+                  {translate("prescription_show.no_end_date")}
+                </Typography>
               )
             }
           />
@@ -425,7 +474,7 @@ export const PrescriptionShow = () => (
 
         <Grid item xs={12} md={4}>
           <Typography variant="subtitle2" color="text.secondary">
-            Status
+            {translate("prescription_show.status")}
           </Typography>
           <FunctionField
             render={(record: Prescription) => {
@@ -433,7 +482,11 @@ export const PrescriptionShow = () => (
               const isActive = !record.end_date || record.end_date >= today;
               return (
                 <Chip
-                  label={isActive ? "Active" : "Expired"}
+                  label={translate(
+                    isActive
+                      ? "prescription_show.active"
+                      : "prescription_show.expired",
+                  )}
                   color={isActive ? "success" : "default"}
                   size="small"
                 />
@@ -442,27 +495,18 @@ export const PrescriptionShow = () => (
           />
         </Grid>
 
-        {useRecordContext<Prescription>()?.note && (
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Notes
-            </Typography>
-            <Paper sx={{ p: 2, backgroundColor: "#f5f5f5" }}>
-              <TextField source="note" />
-            </Paper>
-          </Grid>
-        )}
+        <NotesBlock />
 
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle2" color="text.secondary">
-            Created At
+            {translate("prescription_show.created_at")}
           </Typography>
           <DateField source="created_at" showTime />
         </Grid>
 
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle2" color="text.secondary">
-            Updated At
+            {translate("prescription_show.updated_at")}
           </Typography>
           <DateField source="updated_at" showTime />
         </Grid>
@@ -472,5 +516,11 @@ export const PrescriptionShow = () => (
 
       <LinkedMedicationsSection />
     </SimpleShowLayout>
+  );
+};
+
+export const PrescriptionShow = () => (
+  <Show>
+    <PrescriptionShowLayout />
   </Show>
 );
