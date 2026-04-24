@@ -13,6 +13,9 @@ import {
   useTranslate,
 } from "react-admin";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Typography,
   Card,
@@ -21,13 +24,8 @@ import {
   Grid,
   Divider,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -39,14 +37,20 @@ import { AddMedicationDialog } from "./AddMedicationDialog";
 import { useEffect, useState } from "react";
 import { prescriptionStyle } from "./medBoardPalette";
 import { groupByPrescription } from "./medBoardUtils";
+import { ScheduleRuleRecap } from "./ScheduleRuleRecap";
 
 const StatusChip = () => {
   const record = useRecordContext<MedicationPlan>();
+  const translate = useTranslate();
   if (!record) return null;
 
   return (
     <Chip
-      label={record.status === "in_progress" ? "Active" : "Archived"}
+      label={translate(
+        record.status === "in_progress"
+          ? "medication_plan_show.status_active"
+          : "medication_plan_show.status_archived",
+      )}
       color={record.status === "in_progress" ? "success" : "default"}
       sx={{ fontWeight: "bold" }}
     />
@@ -55,12 +59,14 @@ const StatusChip = () => {
 
 const MedicationCard = ({
   medication,
-  planId
+  planId,
 }: {
   medication: Medication;
   planId: number;
 }) => {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const translate = useTranslate();
+  const rules = medication.schedule_rules ?? [];
 
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
@@ -70,9 +76,17 @@ const MedicationCard = ({
             {medication.medicine_abbreviated_name}
           </Typography>
           {medication.date_ended ? (
-            <Chip label="Ended" size="small" color="default" />
+            <Chip
+              label={translate("medication_plan_show.med.ended")}
+              size="small"
+              color="default"
+            />
           ) : (
-            <Chip label="Active" size="small" color="success" />
+            <Chip
+              label={translate("medication_plan_show.med.active")}
+              size="small"
+              color="success"
+            />
           )}
         </Box>
 
@@ -83,19 +97,22 @@ const MedicationCard = ({
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12} sm={6}>
             <Typography variant="body2">
-              <strong>Dosage:</strong> {medication.dosage}
+              <strong>{translate("medication_plan_show.med.dosage")}:</strong>{" "}
+              {medication.dosage}
             </Typography>
           </Grid>
           <Grid item xs={12} sm={6}>
             <Typography variant="body2">
-              <strong>Started:</strong>{" "}
+              <strong>{translate("medication_plan_show.med.started")}:</strong>{" "}
               {new Date(medication.date_started).toLocaleDateString()}
             </Typography>
           </Grid>
           {medication.date_ended && (
             <Grid item xs={12} sm={6}>
               <Typography variant="body2">
-                <strong>Ended:</strong>{" "}
+                <strong>
+                  {translate("medication_plan_show.med.ended_label")}:
+                </strong>{" "}
                 {new Date(medication.date_ended).toLocaleDateString()}
               </Typography>
             </Grid>
@@ -107,7 +124,7 @@ const MedicationCard = ({
         {medication.prescription_id && (
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Prescription Authorization
+              {translate("medication_plan_show.med.prescription_auth")}
             </Typography>
             <ReferenceField
               source="prescription_id"
@@ -117,7 +134,7 @@ const MedicationCard = ({
             >
               <Chip
                 icon={<DescriptionIcon />}
-                label="View Prescription"
+                label={translate("medication_plan_show.med.view_prescription")}
                 size="small"
                 color="primary"
                 clickable
@@ -127,116 +144,79 @@ const MedicationCard = ({
           </Box>
         )}
 
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 1,
+          }}
+        >
           <Typography variant="subtitle2">
-            Administration Schedule
+            {rules.length > 0
+              ? translate("medication_plan_show.med.rules_count", {
+                  count: rules.length,
+                })
+              : translate("medication_plan_show.med.admin_schedule")}
           </Typography>
           <Button
             size="small"
             startIcon={<CalendarMonthIcon />}
             onClick={() => setScheduleDialogOpen(true)}
             variant="outlined"
-          >
-            Manage Schedule Rules
-          </Button>
+            label={translate("medication_plan_show.med.manage_schedule")}
+          />
         </Box>
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
-          {medication.morning && (
-            <Chip
-              label={`Morning: ${medication.morning_dose || "✓"}`}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-          )}
-          {medication.noon && (
-            <Chip
-              label={`Noon: ${medication.noon_dose || "✓"}`}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-          )}
-          {medication.evening && (
-            <Chip
-              label={`Evening: ${medication.evening_dose || "✓"}`}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-          )}
-          {medication.night && (
-            <Chip
-              label={`Night: ${medication.night_dose || "✓"}`}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-          )}
-        </Box>
+
+        {rules.length > 0 ? (
+          <Box sx={{ mb: 2 }}>
+            {rules.map((rule, index) => (
+              <ScheduleRuleRecap key={rule.id ?? index} rule={rule} />
+            ))}
+          </Box>
+        ) : (
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
+            {medication.morning && (
+              <Chip
+                label={`${translate("med_schedule_rules.part.morning")}: ${medication.morning_dose || "✓"}`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {medication.noon && (
+              <Chip
+                label={`${translate("med_schedule_rules.part.noon")}: ${medication.noon_dose || "✓"}`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {medication.evening && (
+              <Chip
+                label={`${translate("med_schedule_rules.part.evening")}: ${medication.evening_dose || "✓"}`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {medication.night && (
+              <Chip
+                label={`${translate("med_schedule_rules.part.night")}: ${medication.night_dose || "✓"}`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            )}
+          </Box>
+        )}
 
         {medication.remarks && (
           <Box sx={{ mt: 2, p: 1, backgroundColor: "#f5f5f5", borderRadius: 1 }}>
             <Typography variant="body2">
-              <strong>Remarks:</strong> {medication.remarks}
+              <strong>{translate("medication_plan_show.med.remarks")}:</strong>{" "}
+              {medication.remarks}
             </Typography>
-          </Box>
-        )}
-
-        {medication.schedule_rules && medication.schedule_rules.length > 0 && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Schedule Rules ({medication.schedule_rules.length})
-            </Typography>
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Valid From</TableCell>
-                    <TableCell>Valid Until</TableCell>
-                    <TableCell>Schedule</TableCell>
-                    <TableCell>Notes</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {medication.schedule_rules.map((rule, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        {new Date(rule.valid_from).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {rule.valid_until
-                          ? new Date(rule.valid_until).toLocaleDateString()
-                          : "Ongoing"}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                          {rule.morning && (
-                            <Chip
-                              label={`M: ${rule.morning_dose}`}
-                              size="small"
-                            />
-                          )}
-                          {rule.noon && (
-                            <Chip label={`N: ${rule.noon_dose}`} size="small" />
-                          )}
-                          {rule.evening && (
-                            <Chip
-                              label={`E: ${rule.evening_dose}`}
-                              size="small"
-                            />
-                          )}
-                          {rule.night && (
-                            <Chip label={`Nt: ${rule.night_dose}`} size="small" />
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>{rule.notes || "-"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
           </Box>
         )}
       </CardContent>
@@ -259,7 +239,7 @@ interface RawPrescription {
   prescriptor?: { name?: string };
 }
 
-const PrescriptionGroupHeader: React.FC<{
+const PrescriptionGroupHeaderInner: React.FC<{
   prescriptionId: number | null;
   date?: string;
   doctor?: string;
@@ -274,17 +254,12 @@ const PrescriptionGroupHeader: React.FC<{
         ? `${translate("prescription_show.title")} · ${date ?? "—"} · ${doctor}`
         : `${translate("prescription_show.title")} · ${date ?? "—"}`;
   return (
-    <Paper
-      variant="outlined"
+    <Box
       sx={{
-        mt: 3,
-        mb: 1,
-        p: 1.25,
+        width: "100%",
         display: "flex",
         alignItems: "center",
         gap: 1,
-        borderLeft: `5px solid ${s.main}`,
-        backgroundColor: s.soft,
         color: s.text,
       }}
     >
@@ -321,12 +296,13 @@ const PrescriptionGroupHeader: React.FC<{
           fontWeight: 600,
         }}
       />
-    </Paper>
+    </Box>
   );
 };
 
 const MedicationsSection = () => {
   const record = useRecordContext<MedicationPlan>();
+  const translate = useTranslate();
   const dataProvider = useDataProvider();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [prescriptions, setPrescriptions] = useState<RawPrescription[]>([]);
@@ -357,14 +333,14 @@ const MedicationsSection = () => {
     return (
       <Box sx={{ mt: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Medications
+          {translate("medication_plan_show.medications_header", { count: 0 })}
         </Typography>
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            No medications in this plan yet.
+            {translate("medication_plan_show.no_meds")}
           </Typography>
           <Button
-            label="Add Medication"
+            label={translate("medication_plan_show.add_medication")}
             startIcon={<AddIcon />}
             onClick={() => setAddDialogOpen(true)}
             sx={{ mt: 2 }}
@@ -384,7 +360,9 @@ const MedicationsSection = () => {
     <Box sx={{ mt: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Typography variant="h6">
-          Medications ({record.medications.length})
+          {translate("medication_plan_show.medications_header", {
+            count: record.medications.length,
+          })}
         </Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
@@ -392,11 +370,10 @@ const MedicationsSection = () => {
             href={`#/medication-plans/${record.id}/board`}
             variant="contained"
             color="primary"
-          >
-            Open Med Board
-          </Button>
+            label={translate("medication_plan_show.open_board")}
+          />
           <Button
-            label="Add Medication"
+            label={translate("medication_plan_show.add_medication")}
             startIcon={<AddIcon />}
             onClick={() => setAddDialogOpen(true)}
           />
@@ -415,22 +392,40 @@ const MedicationsSection = () => {
             ? new Date(rx.date).toLocaleDateString()
             : undefined;
           const doctor = rx?.prescriptor_name || rx?.prescriptor?.name;
+          const s = prescriptionStyle(group.prescriptionId);
           return (
-            <Box key={group.prescriptionId ?? "none"}>
-              <PrescriptionGroupHeader
-                prescriptionId={group.prescriptionId}
-                date={date}
-                doctor={doctor}
-                count={group.medications.length}
-              />
-              {group.medications.map((medication) => (
-                <MedicationCard
-                  key={medication.id}
-                  medication={medication}
-                  planId={record.id}
+            <Accordion
+              key={group.prescriptionId ?? "none"}
+              defaultExpanded
+              sx={{
+                mt: 2,
+                mb: 1,
+                "&::before": { display: "none" },
+                borderLeft: `5px solid ${s.main}`,
+                backgroundColor: s.soft,
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon sx={{ color: s.text }} />}
+                sx={{ backgroundColor: s.soft }}
+              >
+                <PrescriptionGroupHeaderInner
+                  prescriptionId={group.prescriptionId}
+                  date={date}
+                  doctor={doctor}
+                  count={group.medications.length}
                 />
-              ))}
-            </Box>
+              </AccordionSummary>
+              <AccordionDetails sx={{ backgroundColor: "white" }}>
+                {group.medications.map((medication) => (
+                  <MedicationCard
+                    key={medication.id}
+                    medication={medication}
+                    planId={record.id}
+                  />
+                ))}
+              </AccordionDetails>
+            </Accordion>
           );
         });
       })()}
@@ -444,19 +439,20 @@ const MedicationsSection = () => {
   );
 };
 
-export const MedicationPlanShow = () => (
-  <Show>
+const MedicationPlanShowLayout = () => {
+  const translate = useTranslate();
+  return (
     <SimpleShowLayout>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" gutterBottom>
-          Medication Plan Details
+          {translate("medication_plan_show.title")}
         </Typography>
       </Box>
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle2" color="text.secondary">
-            Patient
+            {translate("medication_plan_show.patient")}
           </Typography>
           <ReferenceField source="patient_id" reference="patients" link="show">
             <TextField source="name" />
@@ -465,35 +461,37 @@ export const MedicationPlanShow = () => (
 
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle2" color="text.secondary">
-            Status
+            {translate("medication_plan_show.status")}
           </Typography>
           <StatusChip />
         </Grid>
 
         <Grid item xs={12}>
           <Typography variant="subtitle2" color="text.secondary">
-            Description
+            {translate("medication_plan_show.description")}
           </Typography>
           <TextField source="description" />
         </Grid>
 
         <Grid item xs={12} md={4}>
           <Typography variant="subtitle2" color="text.secondary">
-            Start Date
+            {translate("medication_plan_show.plan_start")}
           </Typography>
           <DateField source="plan_start_date" />
         </Grid>
 
         <Grid item xs={12} md={4}>
           <Typography variant="subtitle2" color="text.secondary">
-            End Date
+            {translate("medication_plan_show.plan_end")}
           </Typography>
           <FunctionField
             render={(record: MedicationPlan) =>
               record.plan_end_date ? (
                 <DateField source="plan_end_date" record={record} />
               ) : (
-                <Typography variant="body2">Ongoing</Typography>
+                <Typography variant="body2">
+                  {translate("medication_plan_show.ongoing")}
+                </Typography>
               )
             }
           />
@@ -501,7 +499,7 @@ export const MedicationPlanShow = () => (
 
         <Grid item xs={12} md={4}>
           <Typography variant="subtitle2" color="text.secondary">
-            Last Updated
+            {translate("medication_plan_show.last_updated")}
           </Typography>
           <DateField source="updated_at" showTime />
         </Grid>
@@ -509,5 +507,11 @@ export const MedicationPlanShow = () => (
 
       <MedicationsSection />
     </SimpleShowLayout>
+  );
+};
+
+export const MedicationPlanShow = () => (
+  <Show>
+    <MedicationPlanShowLayout />
   </Show>
 );
