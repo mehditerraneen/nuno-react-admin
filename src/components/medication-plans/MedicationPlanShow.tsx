@@ -306,6 +306,9 @@ const MedicationsSection = () => {
   const dataProvider = useDataProvider();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [prescriptions, setPrescriptions] = useState<RawPrescription[]>([]);
+  const [scheduleDialogFor, setScheduleDialogFor] = useState<Medication | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -351,6 +354,7 @@ const MedicationsSection = () => {
           open={addDialogOpen}
           onClose={() => setAddDialogOpen(false)}
           planId={record.id}
+          onCreated={(m) => setScheduleDialogFor(m)}
         />
       </Box>
     );
@@ -434,7 +438,17 @@ const MedicationsSection = () => {
         open={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
         planId={record.id}
+        onCreated={(m) => setScheduleDialogFor(m)}
       />
+
+      {scheduleDialogFor && (
+        <ScheduleRulesDialog
+          open
+          onClose={() => setScheduleDialogFor(null)}
+          medication={scheduleDialogFor}
+          planId={record.id}
+        />
+      )}
     </Box>
   );
 };

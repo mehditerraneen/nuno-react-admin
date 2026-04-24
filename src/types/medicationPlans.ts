@@ -176,11 +176,11 @@ export interface MedicationCreate {
 
 export interface Medicine {
   id: number;
-  name: string;
   abbreviated_name: string;
-  active_substance: string;
-  dosage_form: string;
-  strength: string;
+  cns_code: string;
+  national_number: string;
+  public_price?: number;
+  rate?: string;
 }
 
 export interface MedicationDistribution {

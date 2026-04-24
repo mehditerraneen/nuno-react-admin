@@ -17,13 +17,21 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { useDataProvider, useNotify, useRefresh } from "react-admin";
-import type { Medicine } from "../../types/medicationPlans";
+import {
+  useDataProvider,
+  useNotify,
+  useRefresh,
+  useTranslate,
+} from "react-admin";
+import type { Medicine, Medication } from "../../types/medicationPlans";
 
 interface AddMedicationDialogProps {
   open: boolean;
   onClose: () => void;
   planId: number;
+  /** Called after a medication is successfully created. Parent can use this
+   *  to open the Schedule Rules dialog for the new medication. */
+  onCreated?: (medication: Medication) => void;
 }
 
 interface MedicationFormData {
@@ -46,10 +54,12 @@ export const AddMedicationDialog = ({
   open,
   onClose,
   planId,
+  onCreated,
 }: AddMedicationDialogProps) => {
   const dataProvider = useDataProvider();
   const notify = useNotify();
   const refresh = useRefresh();
+  const translate = useTranslate();
 
   const [formData, setFormData] = useState<MedicationFormData>({
     medicine_id: null,
@@ -85,7 +95,9 @@ export const AddMedicationDialog = ({
       setMedicineOptions(results || []);
     } catch (error) {
       console.error("Failed to search medicines:", error);
-      notify("Failed to search medicines", { type: "error" });
+      notify(translate("medication_plan_show.add.medicine_search_failed"), {
+        type: "error",
+      });
     } finally {
       setMedicineLoading(false);
     }
@@ -94,23 +106,29 @@ export const AddMedicationDialog = ({
   const handleSubmit = async () => {
     // Validation
     if (!formData.medicine_id) {
-      notify("Please select a medicine", { type: "warning" });
+      notify(translate("medication_plan_show.add.validation_medicine"), {
+        type: "warning",
+      });
       return;
     }
 
     if (!formData.dosage) {
-      notify("Please enter dosage", { type: "warning" });
+      notify(translate("medication_plan_show.add.validation_dosage"), {
+        type: "warning",
+      });
       return;
     }
 
     if (!formData.date_started) {
-      notify("Please enter start date", { type: "warning" });
+      notify(translate("medication_plan_show.add.validation_start"), {
+        type: "warning",
+      });
       return;
     }
 
     setSubmitting(true);
     try {
-      await dataProvider.addMedicationToPlan(planId, {
+      const created = (await dataProvider.addMedicationToPlan(planId, {
         medicine_id: formData.medicine_id,
         dosage: formData.dosage,
         date_started: formData.date_started,
@@ -124,13 +142,19 @@ export const AddMedicationDialog = ({
         evening_dose: formData.evening_dose || null,
         night: formData.night,
         night_dose: formData.night_dose || null,
-      });
+      })) as Medication;
 
-      notify("Medication added successfully", { type: "success" });
+      notify(translate("medication_plan_show.add.success"), { type: "success" });
       refresh();
       handleClose();
+      if (onCreated && created?.id) {
+        onCreated(created);
+      }
     } catch (error: any) {
-      notify(error.message || "Failed to add medication", { type: "error" });
+      notify(
+        error.message || translate("medication_plan_show.add.failure"),
+        { type: "error" },
+      );
     } finally {
       setSubmitting(false);
     }
@@ -163,7 +187,9 @@ export const AddMedicationDialog = ({
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h6">Add Medication</Typography>
+          <Typography variant="h6">
+            {translate("medication_plan_show.add.title")}
+          </Typography>
           <IconButton onClick={handleClose}>
             <CloseIcon />
           </IconButton>
@@ -172,8 +198,7 @@ export const AddMedicationDialog = ({
 
       <DialogContent>
         <Alert severity="info" sx={{ mb: 3 }}>
-          Add a medication to this plan. You can define the default schedule here, and later add
-          complex schedule rules for more precise timing.
+          {translate("medication_plan_show.add.info")}
         </Alert>
 
         <Grid container spacing={2}>
@@ -181,9 +206,10 @@ export const AddMedicationDialog = ({
           <Grid item xs={12}>
             <Autocomplete
               options={medicineOptions}
-              getOptionLabel={(option) =>
-                `${option.abbreviated_name} - ${option.name} (${option.strength})`
-              }
+              getOptionLabel={(option) => {
+                const code = option.cns_code ? ` — ${option.cns_code}` : "";
+                return `${option.abbreviated_name}${code}`;
+              }}
               loading={medicineLoading}
               value={selectedMedicine}
               onChange={(_, newValue) => {
@@ -195,11 +221,18 @@ export const AddMedicationDialog = ({
                 setMedicineSearch(newInputValue);
                 searchMedicines(newInputValue);
               }}
+              noOptionsText={
+                medicineSearch.length < 2
+                  ? translate("medication_plan_show.add.medicine_search_hint")
+                  : translate("medication_plan_show.add.medicine_no_results")
+              }
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Medicine *"
-                  placeholder="Type to search..."
+                  label={`${translate("medication_plan_show.add.medicine")} *`}
+                  placeholder={translate(
+                    "medication_plan_show.add.medicine_search_hint",
+                  )}
                   InputProps={{
                     ...params.InputProps,
                     endAdornment: (
@@ -217,10 +250,12 @@ export const AddMedicationDialog = ({
           {/* Dosage */}
           <Grid item xs={12}>
             <TextField
-              label="Dosage *"
+              label={`${translate("medication_plan_show.add.dosage")} *`}
               value={formData.dosage}
               onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-              placeholder="e.g., 500mg, 2 tablets, 5ml"
+              placeholder={translate(
+                "medication_plan_show.add.dosage_placeholder",
+              )}
               fullWidth
             />
           </Grid>
@@ -228,7 +263,7 @@ export const AddMedicationDialog = ({
           {/* Dates */}
           <Grid item xs={6}>
             <TextField
-              label="Start Date *"
+              label={`${translate("medication_plan_show.add.start_date")} *`}
               type="date"
               value={formData.date_started}
               onChange={(e) => setFormData({ ...formData, date_started: e.target.value })}
@@ -238,7 +273,7 @@ export const AddMedicationDialog = ({
           </Grid>
           <Grid item xs={6}>
             <TextField
-              label="End Date"
+              label={translate("medication_plan_show.add.end_date")}
               type="date"
               value={formData.date_ended}
               onChange={(e) => setFormData({ ...formData, date_ended: e.target.value })}
@@ -250,7 +285,7 @@ export const AddMedicationDialog = ({
           {/* Remarks */}
           <Grid item xs={12}>
             <TextField
-              label="Remarks"
+              label={translate("medication_plan_show.add.remarks")}
               value={formData.remarks}
               onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
               multiline
@@ -262,10 +297,10 @@ export const AddMedicationDialog = ({
           {/* Schedule */}
           <Grid item xs={12}>
             <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-              Default Schedule
+              {translate("medication_plan_show.add.default_schedule")}
             </Typography>
             <Typography variant="caption" color="text.secondary" gutterBottom>
-              Define basic schedule here. You can add complex schedule rules after creating the medication.
+              {translate("medication_plan_show.add.default_schedule_hint")}
             </Typography>
           </Grid>
 
@@ -278,11 +313,11 @@ export const AddMedicationDialog = ({
                   onChange={(e) => setFormData({ ...formData, morning: e.target.checked })}
                 />
               }
-              label="Morning"
+              label={translate("medication_plan_show.add.morning")}
             />
             {formData.morning && (
               <TextField
-                label="Dose"
+                label={translate("medication_plan_show.add.dose")}
                 value={formData.morning_dose}
                 onChange={(e) => setFormData({ ...formData, morning_dose: e.target.value })}
                 size="small"
@@ -301,11 +336,11 @@ export const AddMedicationDialog = ({
                   onChange={(e) => setFormData({ ...formData, noon: e.target.checked })}
                 />
               }
-              label="Noon"
+              label={translate("medication_plan_show.add.noon")}
             />
             {formData.noon && (
               <TextField
-                label="Dose"
+                label={translate("medication_plan_show.add.dose")}
                 value={formData.noon_dose}
                 onChange={(e) => setFormData({ ...formData, noon_dose: e.target.value })}
                 size="small"
@@ -324,11 +359,11 @@ export const AddMedicationDialog = ({
                   onChange={(e) => setFormData({ ...formData, evening: e.target.checked })}
                 />
               }
-              label="Evening"
+              label={translate("medication_plan_show.add.evening")}
             />
             {formData.evening && (
               <TextField
-                label="Dose"
+                label={translate("medication_plan_show.add.dose")}
                 value={formData.evening_dose}
                 onChange={(e) => setFormData({ ...formData, evening_dose: e.target.value })}
                 size="small"
@@ -347,11 +382,11 @@ export const AddMedicationDialog = ({
                   onChange={(e) => setFormData({ ...formData, night: e.target.checked })}
                 />
               }
-              label="Night"
+              label={translate("medication_plan_show.add.night")}
             />
             {formData.night && (
               <TextField
-                label="Dose"
+                label={translate("medication_plan_show.add.dose")}
                 value={formData.night_dose}
                 onChange={(e) => setFormData({ ...formData, night_dose: e.target.value })}
                 size="small"
@@ -364,13 +399,17 @@ export const AddMedicationDialog = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleClose}>
+          {translate("medication_plan_show.add.cancel")}
+        </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={submitting || !formData.medicine_id || !formData.dosage}
         >
-          {submitting ? "Adding..." : "Add Medication"}
+          {submitting
+            ? translate("medication_plan_show.add.submitting")
+            : translate("medication_plan_show.add.submit")}
         </Button>
       </DialogActions>
     </Dialog>
