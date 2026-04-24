@@ -18,7 +18,6 @@ import OpacityIcon from "@mui/icons-material/Opacity";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import {
   useDataProvider,
-  useGetList,
   useGetOne,
   useNotify,
   useTranslate,
@@ -136,6 +135,13 @@ const LaneColumn: React.FC<{
   );
 };
 
+interface RawPrescription {
+  id: number;
+  date?: string | null;
+  prescriptor_name?: string;
+  prescriptor?: { name?: string };
+}
+
 export const MedicationBoard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const translate = useTranslate();
@@ -144,6 +150,9 @@ export const MedicationBoard: React.FC = () => {
   const staged = useStagedChanges();
   const [selectedMedId, setSelectedMedId] = React.useState<number | null>(null);
   const [isApplying, setIsApplying] = React.useState(false);
+  const [prescriptionsList, setPrescriptionsList] = React.useState<
+    RawPrescription[]
+  >([]);
 
   const {
     data: plan,
@@ -155,6 +164,36 @@ export const MedicationBoard: React.FC = () => {
     { id: id ?? "" },
     { enabled: !!id },
   );
+
+  // Fetch the patient's prescriptions once we know the patient id — always
+  // declared before any early return to keep the hook order stable.
+  const patientId = plan?.patient_id;
+  React.useEffect(() => {
+    let cancelled = false;
+    if (patientId == null) {
+      setPrescriptionsList([]);
+      return;
+    }
+    dataProvider
+      .getPatientPrescriptions(patientId)
+      .then((result: unknown) => {
+        if (cancelled) return;
+        // Backend returns { data: [...], total } — but be defensive if it ever
+        // returns a bare array.
+        const list: RawPrescription[] = Array.isArray(result)
+          ? (result as RawPrescription[])
+          : Array.isArray((result as { data?: unknown })?.data)
+            ? ((result as { data: RawPrescription[] }).data)
+            : [];
+        setPrescriptionsList(list);
+      })
+      .catch(() => {
+        if (!cancelled) setPrescriptionsList([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [patientId, dataProvider]);
 
   if (!id) {
     return <Alert severity="error">Missing plan id</Alert>;
@@ -180,17 +219,7 @@ export const MedicationBoard: React.FC = () => {
   const rawMedications: Medication[] = plan.medications ?? [];
   const medications = projectMedications(rawMedications, staged.changes);
 
-  // Fetch this patient's prescriptions so we can label Rx chips + build a legend
-  const { data: prescriptionsList } = useGetList(
-    "prescriptions",
-    {
-      filter: { patient_id: plan.patient_id },
-      pagination: { page: 1, perPage: 100 },
-      sort: { field: "date", order: "DESC" },
-    },
-    { enabled: plan.patient_id != null },
-  );
-
+  // Build Rx label map + legend from the prescriptions we already fetched
   const prescriptionLabels = new Map<number, string>();
   const prescriptionLegend: {
     id: number;
@@ -202,20 +231,14 @@ export const MedicationBoard: React.FC = () => {
       .map((m) => m.prescription_id)
       .filter((v): v is number => v != null),
   );
-  for (const p of prescriptionsList ?? []) {
-    if (!usedRxIds.has(p.id as number)) continue;
+  for (const p of prescriptionsList) {
+    if (!usedRxIds.has(p.id)) continue;
     const date = p.date
-      ? new Date(p.date as string).toLocaleDateString()
+      ? new Date(p.date).toLocaleDateString()
       : `#${p.id}`;
-    const doctorName: string | undefined =
-      (p as { prescriptor_name?: string }).prescriptor_name ||
-      (p as { prescriptor?: { name?: string } }).prescriptor?.name;
-    prescriptionLabels.set(p.id as number, date);
-    prescriptionLegend.push({
-      id: p.id as number,
-      label: date,
-      doctor: doctorName,
-    });
+    const doctorName = p.prescriptor_name || p.prescriptor?.name;
+    prescriptionLabels.set(p.id, date);
+    prescriptionLegend.push({ id: p.id, label: date, doctor: doctorName });
   }
   const pendingIds = new Set(
     medications
