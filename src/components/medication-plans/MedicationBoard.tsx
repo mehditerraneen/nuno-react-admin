@@ -28,7 +28,11 @@ import type {
   Medication,
   MedicationPlan,
 } from "../../types/medicationPlans";
-import { bucketize, type LaneKey } from "./medBoardUtils";
+import {
+  bucketize,
+  groupByPrescription,
+  type LaneKey,
+} from "./medBoardUtils";
 import { MedicationBoardCard } from "./MedicationBoardCard";
 import {
   projectMedications,
@@ -58,6 +62,8 @@ const LaneColumn: React.FC<{
   medications: Medication[];
   pendingIds: Set<number>;
   prescriptionLabels: Map<number, string>;
+  prescriptionDoctors: Map<number, string | undefined>;
+  prescriptionOrder: number[];
   onCardClick?: (med: Medication) => void;
   onArchive?: (med: Medication) => void;
 }> = ({
@@ -65,10 +71,13 @@ const LaneColumn: React.FC<{
   medications,
   pendingIds,
   prescriptionLabels,
+  prescriptionDoctors,
+  prescriptionOrder,
   onCardClick,
   onArchive,
 }) => {
   const translate = useTranslate();
+  const groups = groupByPrescription(medications, prescriptionOrder);
   return (
     <Paper
       variant="outlined"
@@ -113,22 +122,64 @@ const LaneColumn: React.FC<{
             —
           </Typography>
         ) : (
-          medications.map((med) => (
-            <MedicationBoardCard
-              key={med.id}
-              medication={med}
-              accent={lane.accent}
-              onClick={onCardClick ? () => onCardClick(med) : undefined}
-              isPending={pendingIds.has(med.id)}
-              canArchive={lane.key !== "archived"}
-              onArchive={onArchive ? () => onArchive(med) : undefined}
-              prescriptionLabel={
-                med.prescription_id != null
-                  ? prescriptionLabels.get(med.prescription_id)
-                  : undefined
-              }
-            />
-          ))
+          groups.map((group) => {
+            const s = prescriptionStyle(group.prescriptionId);
+            const date =
+              group.prescriptionId != null
+                ? prescriptionLabels.get(group.prescriptionId)
+                : undefined;
+            const doctor =
+              group.prescriptionId != null
+                ? prescriptionDoctors.get(group.prescriptionId)
+                : undefined;
+            const label =
+              group.prescriptionId == null
+                ? translate("med_board.no_prescription")
+                : doctor
+                  ? `Rx ${date ?? "#" + group.prescriptionId} — ${doctor}`
+                  : `Rx ${date ?? "#" + group.prescriptionId}`;
+            return (
+              <Box
+                key={group.prescriptionId ?? "none"}
+                sx={{ mb: 1.5 }}
+              >
+                <Box
+                  sx={{
+                    px: 1,
+                    py: 0.5,
+                    mb: 0.75,
+                    borderRadius: 0.75,
+                    backgroundColor: s.soft,
+                    color: s.text,
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    borderLeft: `3px solid ${s.main}`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                  title={label}
+                >
+                  {label}
+                </Box>
+                {group.medications.map((med) => (
+                  <MedicationBoardCard
+                    key={med.id}
+                    medication={med}
+                    accent={lane.accent}
+                    onClick={onCardClick ? () => onCardClick(med) : undefined}
+                    isPending={pendingIds.has(med.id)}
+                    canArchive={lane.key !== "archived"}
+                    onArchive={onArchive ? () => onArchive(med) : undefined}
+                    hideRxChip
+                  />
+                ))}
+              </Box>
+            );
+          })
         )}
       </Box>
     </Paper>
@@ -221,11 +272,13 @@ export const MedicationBoard: React.FC = () => {
 
   // Build Rx label map + legend from the prescriptions we already fetched
   const prescriptionLabels = new Map<number, string>();
+  const prescriptionDoctors = new Map<number, string | undefined>();
   const prescriptionLegend: {
     id: number;
     label: string;
     doctor?: string;
   }[] = [];
+  const prescriptionOrder: number[] = [];
   const usedRxIds = new Set<number>(
     medications
       .map((m) => m.prescription_id)
@@ -238,7 +291,9 @@ export const MedicationBoard: React.FC = () => {
       : `#${p.id}`;
     const doctorName = p.prescriptor_name || p.prescriptor?.name;
     prescriptionLabels.set(p.id, date);
+    prescriptionDoctors.set(p.id, doctorName);
     prescriptionLegend.push({ id: p.id, label: date, doctor: doctorName });
+    prescriptionOrder.push(p.id);
   }
   const pendingIds = new Set(
     medications
@@ -456,6 +511,8 @@ export const MedicationBoard: React.FC = () => {
             medications={medicationsByLane[lane.key]}
             pendingIds={pendingIds}
             prescriptionLabels={prescriptionLabels}
+            prescriptionDoctors={prescriptionDoctors}
+            prescriptionOrder={prescriptionOrder}
             onArchive={handleArchive}
             onCardClick={handleCardClick}
           />

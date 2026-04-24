@@ -170,6 +170,7 @@ export const de = {
     apply_success: "Änderungen angewendet.",
     apply_error: "Einige Änderungen konnten nicht angewendet werden",
     rx_legend: "Rezepte",
+    no_prescription: "Ohne Rezept",
   },
   prescription_show: {
     title: "Rezept-Details",

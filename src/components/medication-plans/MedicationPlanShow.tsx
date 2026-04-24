@@ -10,6 +10,7 @@ import {
   useRefresh,
   useNotify,
   useDataProvider,
+  useTranslate,
 } from "react-admin";
 import {
   Box,
@@ -31,10 +32,13 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 import type { MedicationPlan, Medication } from "../../types/medicationPlans";
 import { ScheduleRulesDialog } from "./ScheduleRulesDialog";
 import { AddMedicationDialog } from "./AddMedicationDialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { prescriptionStyle } from "./medBoardPalette";
+import { groupByPrescription } from "./medBoardUtils";
 
 const StatusChip = () => {
   const record = useRecordContext<MedicationPlan>();
@@ -247,9 +251,107 @@ const MedicationCard = ({
   );
 };
 
+interface RawPrescription {
+  id: number;
+  date?: string | null;
+  prescriptor_name?: string;
+  prescriptor_first_name?: string;
+  prescriptor?: { name?: string };
+}
+
+const PrescriptionGroupHeader: React.FC<{
+  prescriptionId: number | null;
+  date?: string;
+  doctor?: string;
+  count: number;
+}> = ({ prescriptionId, date, doctor, count }) => {
+  const translate = useTranslate();
+  const s = prescriptionStyle(prescriptionId);
+  const label =
+    prescriptionId == null
+      ? translate("med_board.no_prescription")
+      : doctor
+        ? `${translate("prescription_show.title")} · ${date ?? "—"} · ${doctor}`
+        : `${translate("prescription_show.title")} · ${date ?? "—"}`;
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        mt: 3,
+        mb: 1,
+        p: 1.25,
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        borderLeft: `5px solid ${s.main}`,
+        backgroundColor: s.soft,
+        color: s.text,
+      }}
+    >
+      <AssignmentIcon fontSize="small" />
+      <Typography
+        variant="subtitle2"
+        sx={{ fontWeight: 700, flexGrow: 1 }}
+        title={label}
+      >
+        {label}
+      </Typography>
+      {prescriptionId != null && (
+        <Chip
+          component="a"
+          clickable
+          href={`#/prescriptions/${prescriptionId}/show`}
+          label={`#${prescriptionId}`}
+          size="small"
+          sx={{
+            backgroundColor: "white",
+            color: s.text,
+            border: `1px solid ${s.main}`,
+            fontWeight: 600,
+          }}
+        />
+      )}
+      <Chip
+        size="small"
+        label={count}
+        sx={{
+          backgroundColor: "white",
+          color: s.text,
+          border: `1px solid ${s.main}`,
+          fontWeight: 600,
+        }}
+      />
+    </Paper>
+  );
+};
+
 const MedicationsSection = () => {
   const record = useRecordContext<MedicationPlan>();
+  const dataProvider = useDataProvider();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [prescriptions, setPrescriptions] = useState<RawPrescription[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!record?.patient_id) return;
+    (dataProvider as any)
+      .getPatientPrescriptions(record.patient_id)
+      .then((result: unknown) => {
+        if (cancelled) return;
+        const list: RawPrescription[] = Array.isArray(result)
+          ? (result as RawPrescription[])
+          : Array.isArray((result as { data?: unknown })?.data)
+            ? ((result as { data: RawPrescription[] }).data)
+            : [];
+        setPrescriptions(list);
+      })
+      .catch(() => {
+        if (!cancelled) setPrescriptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [record?.patient_id, dataProvider]);
 
   if (!record?.medications || record.medications.length === 0) {
     return (
@@ -300,13 +402,38 @@ const MedicationsSection = () => {
           />
         </Box>
       </Box>
-      {record.medications.map((medication) => (
-        <MedicationCard
-          key={medication.id}
-          medication={medication}
-          planId={record.id}
-        />
-      ))}
+      {(() => {
+        const rxOrder = prescriptions.map((p) => p.id);
+        const prescriptionById = new Map(prescriptions.map((p) => [p.id, p]));
+        const groups = groupByPrescription(record.medications, rxOrder);
+        return groups.map((group) => {
+          const rx =
+            group.prescriptionId != null
+              ? prescriptionById.get(group.prescriptionId)
+              : undefined;
+          const date = rx?.date
+            ? new Date(rx.date).toLocaleDateString()
+            : undefined;
+          const doctor = rx?.prescriptor_name || rx?.prescriptor?.name;
+          return (
+            <Box key={group.prescriptionId ?? "none"}>
+              <PrescriptionGroupHeader
+                prescriptionId={group.prescriptionId}
+                date={date}
+                doctor={doctor}
+                count={group.medications.length}
+              />
+              {group.medications.map((medication) => (
+                <MedicationCard
+                  key={medication.id}
+                  medication={medication}
+                  planId={record.id}
+                />
+              ))}
+            </Box>
+          );
+        });
+      })()}
 
       <AddMedicationDialog
         open={addDialogOpen}

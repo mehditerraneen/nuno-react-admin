@@ -168,6 +168,7 @@ export const en = {
     apply_success: "Changes applied successfully.",
     apply_error: "Some changes could not be applied",
     rx_legend: "Prescriptions",
+    no_prescription: "No prescription",
   },
   prescription_show: {
     title: "Prescription Details",

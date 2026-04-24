@@ -28,6 +28,8 @@ interface MedicationBoardCardProps {
   onArchive?: () => void;
   /** Short prescription label shown in the Rx chip — e.g. "16/04/2026". */
   prescriptionLabel?: string;
+  /** Hide the Rx chip (useful when the group header already identifies it). */
+  hideRxChip?: boolean;
 }
 
 const formatDate = (iso: string | null | undefined): string => {
@@ -47,6 +49,7 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
   canArchive,
   onArchive,
   prescriptionLabel,
+  hideRxChip,
 }) => {
   const schedule = summarizeSchedule(medication);
   const legacy = isLegacyOnly(medication);
@@ -135,7 +138,7 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
       </Typography>
 
       <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
-        {hasRx && (
+        {hasRx && !hideRxChip && (
           <Tooltip title={`Prescription #${medication.prescription_id}`}>
             <Chip
               size="small"

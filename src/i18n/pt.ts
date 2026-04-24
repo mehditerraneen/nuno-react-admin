@@ -170,6 +170,7 @@ export const pt = {
     apply_success: "Alterações aplicadas.",
     apply_error: "Algumas alterações não puderam ser aplicadas",
     rx_legend: "Prescrições",
+    no_prescription: "Sem prescrição",
   },
   prescription_show: {
     title: "Detalhes da prescrição",

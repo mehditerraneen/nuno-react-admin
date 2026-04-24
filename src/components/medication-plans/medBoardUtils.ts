@@ -154,3 +154,44 @@ export const endsSoonLabel = (med: Medication): string | null => {
   if (d === 1) return "demain";
   return `J+${d}`;
 };
+
+export interface PrescriptionGroup {
+  prescriptionId: number | null;
+  medications: Medication[];
+}
+
+/**
+ * Group medications by prescription_id. Ordering follows `rxOrder`
+ * (typically prescription-by-date-desc). Medications without a prescription
+ * land in a trailing group with prescriptionId = null.
+ */
+export const groupByPrescription = (
+  medications: Medication[],
+  rxOrder: number[],
+): PrescriptionGroup[] => {
+  const byId = new Map<number | null, Medication[]>();
+  for (const m of medications) {
+    const key = m.prescription_id ?? null;
+    const list = byId.get(key) ?? [];
+    list.push(m);
+    byId.set(key, list);
+  }
+  const groups: PrescriptionGroup[] = [];
+  for (const rxId of rxOrder) {
+    const meds = byId.get(rxId);
+    if (meds && meds.length > 0) {
+      groups.push({ prescriptionId: rxId, medications: meds });
+      byId.delete(rxId);
+    }
+  }
+  // Any remaining keyed groups (prescriptions not in rxOrder — rare)
+  for (const [rxId, meds] of byId) {
+    if (rxId == null) continue;
+    if (meds.length > 0) groups.push({ prescriptionId: rxId, medications: meds });
+  }
+  const orphans = byId.get(null);
+  if (orphans && orphans.length > 0) {
+    groups.push({ prescriptionId: null, medications: orphans });
+  }
+  return groups;
+};
