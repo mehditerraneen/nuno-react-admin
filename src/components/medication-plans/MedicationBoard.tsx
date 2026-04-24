@@ -23,8 +23,8 @@ import type {
   Medication,
   MedicationPlan,
 } from "../../types/medicationPlans";
-
-type LaneKey = "active" | "prn" | "insulin" | "ending" | "archived";
+import { bucketize, type LaneKey } from "./medBoardUtils";
+import { MedicationBoardCard } from "./MedicationBoardCard";
 
 interface LaneDescriptor {
   key: LaneKey;
@@ -41,10 +41,11 @@ const LANES: LaneDescriptor[] = [
   { key: "archived", labelKey: "med_board.lane_archived", icon: <Inventory2OutlinedIcon />, accent: "#546e7a" },
 ];
 
-const LaneColumn: React.FC<{ lane: LaneDescriptor; count: number }> = ({
-  lane,
-  count,
-}) => {
+const LaneColumn: React.FC<{
+  lane: LaneDescriptor;
+  medications: Medication[];
+  onCardClick?: (med: Medication) => void;
+}> = ({ lane, medications, onCardClick }) => {
   const translate = useTranslate();
   return (
     <Paper
@@ -76,10 +77,10 @@ const LaneColumn: React.FC<{ lane: LaneDescriptor; count: number }> = ({
         >
           {translate(lane.labelKey)}
         </Typography>
-        <Chip label={count} size="small" variant="outlined" />
+        <Chip label={medications.length} size="small" variant="outlined" />
       </Box>
       <Box sx={{ p: 1, flex: 1, minHeight: 240 }}>
-        {count === 0 && (
+        {medications.length === 0 ? (
           <Typography
             variant="caption"
             color="text.disabled"
@@ -87,8 +88,16 @@ const LaneColumn: React.FC<{ lane: LaneDescriptor; count: number }> = ({
           >
             —
           </Typography>
+        ) : (
+          medications.map((med) => (
+            <MedicationBoardCard
+              key={med.id}
+              medication={med}
+              accent={lane.accent}
+              onClick={onCardClick ? () => onCardClick(med) : undefined}
+            />
+          ))
         )}
-        {/* Phase 2 will render cards here */}
       </Box>
     </Paper>
   );
@@ -149,14 +158,16 @@ export const MedicationBoard: React.FC = () => {
 
   const medications: Medication[] = plan.medications ?? [];
 
-  // Phase 2 will use this bucketization — for Phase 1 we just show zero counts.
-  const countsByLane: Record<LaneKey, number> = {
-    active: 0,
-    prn: 0,
-    insulin: 0,
-    ending: 0,
-    archived: 0,
+  const medicationsByLane: Record<LaneKey, Medication[]> = {
+    active: [],
+    prn: [],
+    insulin: [],
+    ending: [],
+    archived: [],
   };
+  for (const med of medications) {
+    medicationsByLane[bucketize(med)].push(med);
+  }
 
   return (
     <Box sx={{ p: 2 }}>
@@ -212,16 +223,13 @@ export const MedicationBoard: React.FC = () => {
         sx={{ alignItems: "stretch" }}
       >
         {LANES.map((lane) => (
-          <LaneColumn key={lane.key} lane={lane} count={countsByLane[lane.key]} />
+          <LaneColumn
+            key={lane.key}
+            lane={lane}
+            medications={medicationsByLane[lane.key]}
+          />
         ))}
       </Stack>
-
-      {/* Phase-2 hint */}
-      {medications.length > 0 && (
-        <Alert severity="info" sx={{ mt: 2 }} icon={false}>
-          {translate("med_board.phase1_hint")}
-        </Alert>
-      )}
     </Box>
   );
 };
