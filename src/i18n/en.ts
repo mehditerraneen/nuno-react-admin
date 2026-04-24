@@ -165,6 +165,8 @@ export const en = {
       "Archive a card, or edit one from the drawer, and the change will appear here — staged until you apply.",
     apply_not_wired:
       "Apply is not wired yet (coming in the next iteration).",
+    apply_success: "Changes applied successfully.",
+    apply_error: "Some changes could not be applied",
   },
   care_plan_diff: {
     title: "Compare with previous plan",

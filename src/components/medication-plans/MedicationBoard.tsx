@@ -16,7 +16,13 @@ import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
 import BoltIcon from "@mui/icons-material/Bolt";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import { useGetOne, useNotify, useTranslate } from "react-admin";
+import {
+  useDataProvider,
+  useGetOne,
+  useNotify,
+  useTranslate,
+} from "react-admin";
+import type { MyDataProvider } from "../../dataProvider";
 import type {
   Medication,
   MedicationPlan,
@@ -117,13 +123,16 @@ export const MedicationBoard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const translate = useTranslate();
   const notify = useNotify();
+  const dataProvider = useDataProvider<MyDataProvider>();
   const staged = useStagedChanges();
   const [selectedMedId, setSelectedMedId] = React.useState<number | null>(null);
+  const [isApplying, setIsApplying] = React.useState(false);
 
   const {
     data: plan,
     isPending,
     error,
+    refetch,
   } = useGetOne<MedicationPlan>(
     "medication-plans",
     { id: id ?? "" },
@@ -178,8 +187,82 @@ export const MedicationBoard: React.FC = () => {
     setSelectedMedId(med.id);
   };
 
-  const handleApplyAll = () => {
-    notify(translate("med_board.apply_not_wired"), { type: "info" });
+  const handleApplyAll = async () => {
+    if (!plan) return;
+    const planId = plan.id;
+    setIsApplying(true);
+
+    const affectedMedIds = Array.from(
+      new Set(staged.changes.map((c) => c.medicationId)),
+    );
+    const removalIds = new Set(
+      staged.changes
+        .filter((c) => c.kind === "remove_medication")
+        .map((c) => c.medicationId),
+    );
+
+    try {
+      for (const medId of affectedMedIds) {
+        // 1) Removal wins
+        if (removalIds.has(medId)) {
+          await dataProvider.deleteMedication(planId, medId);
+          continue;
+        }
+
+        const server = rawMedications.find((m) => m.id === medId);
+        const projected = medications.find((m) => m.id === medId);
+        if (!server || !projected) continue;
+
+        // 2) Medicine-level patch
+        const medPatch: Record<string, unknown> = {};
+        (["dosage", "date_started", "date_ended", "remarks"] as const).forEach(
+          (k) => {
+            if ((server[k] ?? null) !== (projected[k] ?? null)) {
+              medPatch[k] = projected[k];
+            }
+          },
+        );
+        if (Object.keys(medPatch).length > 0) {
+          await dataProvider.updateMedication(planId, medId, medPatch);
+        }
+
+        // 3) Rules: reconcile by id
+        const serverRules = server.schedule_rules ?? [];
+        const projectedRules = projected.schedule_rules ?? [];
+        const projectedIds = new Set(
+          projectedRules.map((r) => r.id).filter((x): x is number => x != null),
+        );
+
+        // 3a) Create new rules (no id)
+        for (const r of projectedRules.filter((r) => r.id == null)) {
+          await dataProvider.createScheduleRule(planId, medId, r);
+        }
+        // 3b) Delete removed rules
+        for (const r of serverRules.filter((r) => r.id != null && !projectedIds.has(r.id!))) {
+          if (r.id != null) {
+            await dataProvider.deleteScheduleRule(planId, medId, r.id);
+          }
+        }
+        // 3c) Update changed rules
+        for (const r of projectedRules.filter((r) => r.id != null)) {
+          const srv = serverRules.find((s) => s.id === r.id);
+          if (srv && JSON.stringify(srv) !== JSON.stringify(r) && r.id != null) {
+            await dataProvider.updateScheduleRule(planId, medId, r.id, r);
+          }
+        }
+      }
+
+      staged.discardAll();
+      notify(translate("med_board.apply_success"), { type: "success" });
+      await refetch();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      notify(`${translate("med_board.apply_error")}: ${msg}`, {
+        type: "error",
+      });
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   const selectedMed =
@@ -235,8 +318,7 @@ export const MedicationBoard: React.FC = () => {
               onDiscard={staged.discard}
               onDiscardAll={staged.discardAll}
               onApplyAll={handleApplyAll}
-              disableApply
-              applyDisabledReason={translate("med_board.apply_not_wired")}
+              isApplying={isApplying}
             />
           </Stack>
         </Stack>

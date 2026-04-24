@@ -167,6 +167,8 @@ export const pt = {
       "Arquive um cartão ou edite-o no painel lateral — a alteração aparecerá aqui, pendente de aplicação.",
     apply_not_wired:
       "A aplicação ainda não está ligada (virá na próxima iteração).",
+    apply_success: "Alterações aplicadas.",
+    apply_error: "Algumas alterações não puderam ser aplicadas",
   },
   care_plan_diff: {
     title: "Comparar com plano anterior",

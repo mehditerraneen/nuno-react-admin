@@ -167,6 +167,8 @@ export const fr = {
       "Archivez une carte ou modifiez-la depuis le volet latéral — la modification apparaîtra ici en attente d'application.",
     apply_not_wired:
       "L'application n'est pas encore branchée (à venir à la prochaine itération).",
+    apply_success: "Modifications appliquées.",
+    apply_error: "Certaines modifications n'ont pas pu être appliquées",
   },
   care_plan_diff: {
     title: "Comparer avec le plan précédent",

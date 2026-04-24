@@ -167,6 +167,8 @@ export const de = {
       "Archivieren Sie eine Karte oder bearbeiten Sie sie im Seitenpanel — die Änderung erscheint hier, bis Sie sie anwenden.",
     apply_not_wired:
       "Anwenden ist noch nicht angeschlossen (kommt im nächsten Schritt).",
+    apply_success: "Änderungen angewendet.",
+    apply_error: "Einige Änderungen konnten nicht angewendet werden",
   },
   care_plan_diff: {
     title: "Mit vorherigem Plan vergleichen",
