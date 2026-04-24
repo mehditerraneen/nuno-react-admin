@@ -163,6 +163,10 @@ export const fr = {
     discard_all: "Tout annuler",
     phase1_hint:
       "Les pistes afficheront les cartes à la prochaine itération. La base est en place : route, chargement, panneau de modifications.",
+    pending_hint:
+      "Archivez une carte ou modifiez-la depuis le volet latéral — la modification apparaîtra ici en attente d'application.",
+    apply_not_wired:
+      "L'application n'est pas encore branchée (à venir à la prochaine itération).",
   },
   care_plan_diff: {
     title: "Comparer avec le plan précédent",

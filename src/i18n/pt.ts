@@ -163,6 +163,10 @@ export const pt = {
     discard_all: "Descartar tudo",
     phase1_hint:
       "As colunas serão preenchidas com cartões na próxima iteração. A base está pronta: rota, carregamento e painel de alterações.",
+    pending_hint:
+      "Arquive um cartão ou edite-o no painel lateral — a alteração aparecerá aqui, pendente de aplicação.",
+    apply_not_wired:
+      "A aplicação ainda não está ligada (virá na próxima iteração).",
   },
   care_plan_diff: {
     title: "Comparar com plano anterior",

@@ -161,6 +161,10 @@ export const en = {
     discard_all: "Discard all",
     phase1_hint:
       "Lanes will populate with cards in the next iteration. Foundation is live: route, data loading, and pending-changes pill.",
+    pending_hint:
+      "Archive a card, or edit one from the drawer, and the change will appear here — staged until you apply.",
+    apply_not_wired:
+      "Apply is not wired yet (coming in the next iteration).",
   },
   care_plan_diff: {
     title: "Compare with previous plan",

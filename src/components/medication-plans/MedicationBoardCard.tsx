@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import DescriptionIcon from "@mui/icons-material/Description";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import type { Medication } from "../../types/medicationPlans";
 import {
   endsSoonLabel,
@@ -22,6 +23,8 @@ interface MedicationBoardCardProps {
   accent: string;
   onClick?: () => void;
   isPending?: boolean;
+  canArchive?: boolean;
+  onArchive?: () => void;
 }
 
 const formatDate = (iso: string | null | undefined): string => {
@@ -38,6 +41,8 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
   accent,
   onClick,
   isPending,
+  canArchive,
+  onArchive,
 }) => {
   const schedule = summarizeSchedule(medication);
   const legacy = isLegacyOnly(medication);
@@ -83,6 +88,20 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
               href={`#/prescriptions/${medication.prescription_id}/show`}
             >
               <DescriptionIcon fontSize="inherit" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {canArchive && onArchive && (
+          <Tooltip title="Archiver">
+            <IconButton
+              size="small"
+              sx={{ p: 0.25 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive();
+              }}
+            >
+              <Inventory2OutlinedIcon fontSize="inherit" />
             </IconButton>
           </Tooltip>
         )}

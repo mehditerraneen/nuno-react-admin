@@ -1,8 +1,7 @@
 import React from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   Alert,
-  Badge,
   Box,
   Button,
   Chip,
@@ -17,14 +16,19 @@ import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
 import BoltIcon from "@mui/icons-material/Bolt";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import PlaylistAddCheckIcon from "@mui/icons-material/PlaylistAddCheck";
-import { useGetOne, useTranslate } from "react-admin";
+import { useGetOne, useNotify, useTranslate } from "react-admin";
 import type {
   Medication,
   MedicationPlan,
 } from "../../types/medicationPlans";
 import { bucketize, type LaneKey } from "./medBoardUtils";
 import { MedicationBoardCard } from "./MedicationBoardCard";
+import {
+  projectMedications,
+  useStagedChanges,
+  changesForMedication,
+} from "./medBoardStagedChanges";
+import { MedBoardPendingTray } from "./MedBoardPendingTray";
 
 interface LaneDescriptor {
   key: LaneKey;
@@ -44,8 +48,10 @@ const LANES: LaneDescriptor[] = [
 const LaneColumn: React.FC<{
   lane: LaneDescriptor;
   medications: Medication[];
+  pendingIds: Set<number>;
   onCardClick?: (med: Medication) => void;
-}> = ({ lane, medications, onCardClick }) => {
+  onArchive?: (med: Medication) => void;
+}> = ({ lane, medications, pendingIds, onCardClick, onArchive }) => {
   const translate = useTranslate();
   return (
     <Paper
@@ -95,6 +101,9 @@ const LaneColumn: React.FC<{
               medication={med}
               accent={lane.accent}
               onClick={onCardClick ? () => onCardClick(med) : undefined}
+              isPending={pendingIds.has(med.id)}
+              canArchive={lane.key !== "archived"}
+              onArchive={onArchive ? () => onArchive(med) : undefined}
             />
           ))
         )}
@@ -103,27 +112,11 @@ const LaneColumn: React.FC<{
   );
 };
 
-const PendingChangesPill: React.FC = () => {
-  const translate = useTranslate();
-  // Phase 3 will wire actual count + expandable tray
-  return (
-    <Badge badgeContent={0} color="warning">
-      <Button
-        variant="outlined"
-        size="small"
-        startIcon={<PlaylistAddCheckIcon />}
-        disabled
-      >
-        {translate("med_board.pending_empty")}
-      </Button>
-    </Badge>
-  );
-};
-
 export const MedicationBoard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const translate = useTranslate();
+  const notify = useNotify();
+  const staged = useStagedChanges();
 
   const {
     data: plan,
@@ -156,7 +149,13 @@ export const MedicationBoard: React.FC = () => {
     );
   }
 
-  const medications: Medication[] = plan.medications ?? [];
+  const rawMedications: Medication[] = plan.medications ?? [];
+  const medications = projectMedications(rawMedications, staged.changes);
+  const pendingIds = new Set(
+    medications
+      .filter((m) => changesForMedication(staged.changes, m.id).length > 0)
+      .map((m) => m.id),
+  );
 
   const medicationsByLane: Record<LaneKey, Medication[]> = {
     active: [],
@@ -168,6 +167,14 @@ export const MedicationBoard: React.FC = () => {
   for (const med of medications) {
     medicationsByLane[bucketize(med)].push(med);
   }
+
+  const handleArchive = (med: Medication) => {
+    staged.archiveMedication(med.id);
+  };
+
+  const handleApplyAll = () => {
+    notify(translate("med_board.apply_not_wired"), { type: "info" });
+  };
 
   return (
     <Box sx={{ p: 2 }}>
@@ -211,7 +218,15 @@ export const MedicationBoard: React.FC = () => {
             <Typography variant="caption" color="text.secondary">
               {medications.length} {translate("med_board.meds_short")}
             </Typography>
-            <PendingChangesPill />
+            <MedBoardPendingTray
+              changes={staged.changes}
+              medications={rawMedications}
+              onDiscard={staged.discard}
+              onDiscardAll={staged.discardAll}
+              onApplyAll={handleApplyAll}
+              disableApply
+              applyDisabledReason={translate("med_board.apply_not_wired")}
+            />
           </Stack>
         </Stack>
       </Paper>
@@ -227,6 +242,8 @@ export const MedicationBoard: React.FC = () => {
             key={lane.key}
             lane={lane}
             medications={medicationsByLane[lane.key]}
+            pendingIds={pendingIds}
+            onArchive={handleArchive}
           />
         ))}
       </Stack>

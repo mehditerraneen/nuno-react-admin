@@ -163,6 +163,10 @@ export const de = {
     discard_all: "Alle verwerfen",
     phase1_hint:
       "Die Spalten erhalten Karten im nächsten Schritt. Das Fundament steht: Route, Laden und Änderungs-Panel.",
+    pending_hint:
+      "Archivieren Sie eine Karte oder bearbeiten Sie sie im Seitenpanel — die Änderung erscheint hier, bis Sie sie anwenden.",
+    apply_not_wired:
+      "Anwenden ist noch nicht angeschlossen (kommt im nächsten Schritt).",
   },
   care_plan_diff: {
     title: "Mit vorherigem Plan vergleichen",
