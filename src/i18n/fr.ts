@@ -183,6 +183,8 @@ export const fr = {
     last_updated: "Dernière mise à jour",
     status_active: "Actif",
     status_archived: "Archivé",
+    created: "Créé",
+    updated_by_label: "Dernière modification",
     medications_header: "Médicaments (%{count})",
     open_board: "Ouvrir le tableau",
     add_medication: "Ajouter un médicament",

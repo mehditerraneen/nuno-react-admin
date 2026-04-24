@@ -181,6 +181,8 @@ export const en = {
     last_updated: "Last Updated",
     status_active: "Active",
     status_archived: "Archived",
+    created: "Created",
+    updated_by_label: "Last updated",
     medications_header: "Medications (%{count})",
     open_board: "Open Med Board",
     add_medication: "Add Medication",

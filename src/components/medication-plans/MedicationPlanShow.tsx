@@ -521,6 +521,37 @@ const MedicationPlanShowLayout = () => {
         </Grid>
       </Grid>
 
+      <Box
+        sx={{
+          display: "flex",
+          gap: 4,
+          mt: 1,
+          mb: 1,
+          p: 1.5,
+          bgcolor: "grey.50",
+          borderRadius: 1,
+        }}
+      >
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            {translate("medication_plan_show.created")}
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <DateField source="created_at" showTime />
+            <TextField source="created_by" emptyText="—" />
+          </Box>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            {translate("medication_plan_show.updated_by_label")}
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <DateField source="updated_at" showTime />
+            <TextField source="updated_by" emptyText="—" />
+          </Box>
+        </Box>
+      </Box>
+
       <MedicationsSection />
     </SimpleShowLayout>
   );

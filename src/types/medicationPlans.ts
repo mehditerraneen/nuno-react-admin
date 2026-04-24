@@ -134,6 +134,8 @@ export interface MedicationPlan {
   last_updated?: string;
   created_at?: string;
   updated_at?: string;
+  created_by?: string | null;
+  updated_by?: string | null;
   medications?: Medication[];
 }
 
