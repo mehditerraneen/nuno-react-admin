@@ -3,12 +3,38 @@
 /**
  * Schedule kinds enum matching Django model choices
  */
-export type ScheduleKind = "parts" | "times" | "weekly" | "monthly" | "specific" | "prn";
+export type ScheduleKind =
+  | "parts"
+  | "times"
+  | "weekly"
+  | "monthly"
+  | "specific"
+  | "prn"
+  | "glycemia_scale";
 
 /**
  * Part of day choices
  */
 export type PartOfDay = "morning" | "noon" | "evening" | "night";
+
+/**
+ * Glycemia measurement context (for glycemia_scale rules)
+ */
+export type GlycemiaContext =
+  | "before_meal"
+  | "after_meal"
+  | "fasting"
+  | "bedtime"
+  | "any";
+
+/**
+ * Dosing schema entry — map a glycemia range (mg/dL) to an insulin dose (units).
+ */
+export interface GlycemiaDosingEntry {
+  min: number | null;
+  max: number | null;
+  dose: number;
+}
 
 /**
  * Medication Schedule Rule - Complex scheduling system supporting multiple patterns:
@@ -56,6 +82,11 @@ export interface ScheduleRule {
   prn_max_doses_per_day?: number | null;
   prn_min_interval_hours?: number | null;
   prn_condition?: string | null; // e.g., "en cas de douleur"
+
+  // GLYCEMIA_SCALE specific fields (insulin dosing from blood glucose)
+  glycemia_context?: GlycemiaContext | null;
+  glycemia_dosing_schema?: GlycemiaDosingEntry[] | null;
+  max_daily_units?: number | null;
 
   // Additional notes
   notes?: string | null;

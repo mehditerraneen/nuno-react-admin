@@ -284,11 +284,21 @@ const MedicationsSection = () => {
         <Typography variant="h6">
           Medications ({record.medications.length})
         </Typography>
-        <Button
-          label="Add Medication"
-          startIcon={<AddIcon />}
-          onClick={() => setAddDialogOpen(true)}
-        />
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            component="a"
+            href={`#/medication-plans/${record.id}/board`}
+            variant="contained"
+            color="primary"
+          >
+            Open Med Board
+          </Button>
+          <Button
+            label="Add Medication"
+            startIcon={<AddIcon />}
+            onClick={() => setAddDialogOpen(true)}
+          />
+        </Box>
       </Box>
       {record.medications.map((medication) => (
         <MedicationCard
