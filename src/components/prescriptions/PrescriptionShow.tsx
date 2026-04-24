@@ -291,7 +291,7 @@ const LinkedMedicationsSection = () => {
         <Card key={medication.id} variant="outlined" sx={{ mb: 2, mt: 2 }}>
           <CardContent>
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="subtitle2" color="text.secondary">
                   {translate("prescription_show.linked.patient")}
                 </Typography>
@@ -300,7 +300,7 @@ const LinkedMedicationsSection = () => {
                 </Typography>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="subtitle2" color="text.secondary">
                   {translate("prescription_show.linked.medication_plan")}
                 </Typography>
@@ -319,7 +319,7 @@ const LinkedMedicationsSection = () => {
                 </ReferenceField>
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Typography variant="subtitle2" color="text.secondary">
                   {translate("prescription_show.linked.medicine")}
                 </Typography>
@@ -332,7 +332,7 @@ const LinkedMedicationsSection = () => {
                 </Typography>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="subtitle2" color="text.secondary">
                   {translate("prescription_show.linked.started")}
                 </Typography>
@@ -342,7 +342,7 @@ const LinkedMedicationsSection = () => {
               </Grid>
 
               {medication.date_ended && (
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     {translate("prescription_show.linked.ended")}
                   </Typography>
@@ -352,7 +352,7 @@ const LinkedMedicationsSection = () => {
                 </Grid>
               )}
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   {translate("prescription_show.linked.schedule")}
                 </Typography>
@@ -405,7 +405,7 @@ const NotesBlock = () => {
   const noteText = record?.note ?? record?.notes;
   if (!noteText) return null;
   return (
-    <Grid item xs={12}>
+    <Grid size={12}>
       <Typography variant="subtitle2" color="text.secondary">
         {translate("prescription_show.notes")}
       </Typography>
@@ -429,7 +429,7 @@ const PrescriptionShowLayout = () => {
       </Box>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("prescription_show.patient")}
           </Typography>
@@ -444,18 +444,18 @@ const PrescriptionShowLayout = () => {
           </ReferenceField>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <PrescriptorInfo />
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("prescription_show.prescription_date")}
           </Typography>
           <DateField source="date" />
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("prescription_show.end_date")}
           </Typography>
@@ -472,7 +472,7 @@ const PrescriptionShowLayout = () => {
           />
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("prescription_show.status")}
           </Typography>
@@ -497,14 +497,14 @@ const PrescriptionShowLayout = () => {
 
         <NotesBlock />
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("prescription_show.created_at")}
           </Typography>
           <DateField source="created_at" showTime />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("prescription_show.updated_at")}
           </Typography>

@@ -453,7 +453,7 @@ export const ScheduleRulesDialog = ({
 
             {/* Common Fields */}
             <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <FormControl fullWidth size="small">
                   <InputLabel>{translate("med_schedule_rules.form.type")}</InputLabel>
                   <Select
@@ -470,7 +470,7 @@ export const ScheduleRulesDialog = ({
                 </FormControl>
               </Grid>
 
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <TextField
                   label={translate("med_schedule_rules.form.dose")}
                   type="number"
@@ -481,7 +481,7 @@ export const ScheduleRulesDialog = ({
                   inputProps={{ min: 0, step: 0.5 }}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <TextField
                   label={translate("med_schedule_rules.form.unit")}
                   value={formData.dose_unit}
@@ -491,7 +491,7 @@ export const ScheduleRulesDialog = ({
                 />
               </Grid>
 
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <TextField
                   label={translate("med_schedule_rules.form.valid_from")}
                   type="date"
@@ -502,7 +502,7 @@ export const ScheduleRulesDialog = ({
                   size="small"
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <TextField
                   label={translate("med_schedule_rules.form.valid_until")}
                   type="date"
@@ -514,7 +514,7 @@ export const ScheduleRulesDialog = ({
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -665,7 +665,7 @@ export const ScheduleRulesDialog = ({
 
             {formData.schedule_kind === "prn" && (
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextField
                     label={translate("med_schedule_rules.form.condition")}
                     value={formData.prn_condition}
@@ -675,7 +675,7 @@ export const ScheduleRulesDialog = ({
                     size="small"
                   />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={6}>
                   <TextField
                     label={translate("med_schedule_rules.form.max_per_day")}
                     type="number"
@@ -686,7 +686,7 @@ export const ScheduleRulesDialog = ({
                     inputProps={{ min: 1 }}
                   />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={6}>
                   <TextField
                     label={translate("med_schedule_rules.form.min_interval")}
                     type="number"

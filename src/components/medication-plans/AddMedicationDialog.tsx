@@ -274,7 +274,7 @@ export const AddMedicationDialog = ({
 
         <Grid container spacing={2}>
           {/* Prescription link (optional) */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Autocomplete
               fullWidth
               options={prescriptionOptions}
@@ -309,7 +309,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Medicine Selection */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Autocomplete
               fullWidth
               options={medicineOptions}
@@ -356,7 +356,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Dosage */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               label={`${translate("medication_plan_show.add.dosage")} *`}
               value={formData.dosage}
@@ -369,7 +369,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Dates */}
-          <Grid item xs={6}>
+          <Grid size={6}>
             <TextField
               label={`${translate("medication_plan_show.add.start_date")} *`}
               type="date"
@@ -379,7 +379,7 @@ export const AddMedicationDialog = ({
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
+          <Grid size={6}>
             <TextField
               label={translate("medication_plan_show.add.end_date")}
               type="date"
@@ -391,7 +391,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Remarks */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               label={translate("medication_plan_show.add.remarks")}
               value={formData.remarks}
@@ -403,7 +403,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Schedule */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
               {translate("medication_plan_show.add.default_schedule")}
             </Typography>
@@ -413,7 +413,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Morning */}
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControlLabel
               control={
                 <Switch
@@ -436,7 +436,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Noon */}
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControlLabel
               control={
                 <Switch
@@ -459,7 +459,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Evening */}
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControlLabel
               control={
                 <Switch
@@ -482,7 +482,7 @@ export const AddMedicationDialog = ({
           </Grid>
 
           {/* Night */}
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControlLabel
               control={
                 <Switch

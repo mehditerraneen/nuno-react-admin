@@ -95,20 +95,20 @@ const MedicationCard = ({
         </Typography>
 
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <Typography variant="body2">
               <strong>{translate("medication_plan_show.med.dosage")}:</strong>{" "}
               {medication.dosage}
             </Typography>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <Typography variant="body2">
               <strong>{translate("medication_plan_show.med.started")}:</strong>{" "}
               {new Date(medication.date_started).toLocaleDateString()}
             </Typography>
           </Grid>
           {medication.date_ended && (
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2">
                 <strong>
                   {translate("medication_plan_show.med.ended_label")}:
@@ -466,7 +466,7 @@ const MedicationPlanShowLayout = () => {
       </Box>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("medication_plan_show.patient")}
           </Typography>
@@ -475,28 +475,28 @@ const MedicationPlanShowLayout = () => {
           </ReferenceField>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("medication_plan_show.status")}
           </Typography>
           <StatusChip />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("medication_plan_show.description")}
           </Typography>
           <TextField source="description" />
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("medication_plan_show.plan_start")}
           </Typography>
           <DateField source="plan_start_date" />
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("medication_plan_show.plan_end")}
           </Typography>
@@ -513,7 +513,7 @@ const MedicationPlanShowLayout = () => {
           />
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {translate("medication_plan_show.last_updated")}
           </Typography>

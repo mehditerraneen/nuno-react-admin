@@ -362,7 +362,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
               </Typography>
 
               <Grid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextInput
                     source="name"
                     label={translate("care_plan_detail.basic_info.name")}
@@ -377,7 +377,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextInput
                     source="care_actions"
                     label={translate(
@@ -477,7 +477,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                 </Typography>
 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <SmartTimeInput
                       source="time_start"
                       label={translate("care_plan_detail.schedule.time_start")}
@@ -491,7 +491,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                       error={!!validationErrors.time_start}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <SmartTimeInput
                       source="time_end"
                       label={translate("care_plan_detail.schedule.time_end")}
@@ -636,7 +636,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                           alignItems="center"
                           sx={{ mb: 2 }}
                         >
-                          <Grid item xs={12} md={7}>
+                          <Grid size={{ xs: 12, md: 7 }}>
                             <ReferenceInput
                               source="long_term_care_item_id"
                               reference="longtermcareitems"
@@ -688,7 +688,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                               />
                             </ReferenceInput>
                           </Grid>
-                          <Grid item xs={12} md={3}>
+                          <Grid size={{ xs: 12, md: 3 }}>
                             <NumberInput
                               source="quantity"
                               label={translate(
@@ -727,7 +727,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   {translate("care_plan_detail.care_items.guidelines")}
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Box
                       component="ul"
                       sx={{ fontSize: "0.875rem", pl: 2, m: 0 }}
@@ -744,7 +744,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                       </li>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <Box
                       component="ul"
                       sx={{ fontSize: "0.875rem", pl: 2, m: 0 }}
@@ -799,7 +799,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                     alignItems="flex-start"
                     sx={{ mb: 2 }}
                   >
-                    <Grid item xs={12} md={8}>
+                    <Grid size={{ xs: 12, md: 8 }}>
                       <TextInput
                         source="action_text"
                         label={translate(
@@ -814,7 +814,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                         )}
                       />
                     </Grid>
-                    <Grid item xs={12} md={3}>
+                    <Grid size={{ xs: 12, md: 3 }}>
                       <NumberInput
                         source="duration_minutes"
                         label={translate(
