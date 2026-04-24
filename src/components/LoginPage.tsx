@@ -37,10 +37,7 @@ export const LoginPage: React.FC = () => {
   const notify = useNotify();
 
   useEffect(() => {
-    const apiUrl = (import.meta.env.VITE_SIMPLE_REST_URL || "").replace(
-      /\/fast\/?$/,
-      "",
-    );
+    const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL || "";
     if (!apiUrl) return;
     fetch(`${apiUrl}/branding`)
       .then((r) => (r.ok ? r.json() : null))

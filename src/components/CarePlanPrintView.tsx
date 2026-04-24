@@ -63,10 +63,10 @@ const PrintContent = React.forwardRef<HTMLDivElement, CarePlanPrintViewProps>(
     const [branding, setBranding] = useState<Branding | null>(null);
 
     useEffect(() => {
-      const apiUrl = (import.meta.env.VITE_SIMPLE_REST_URL || "").replace(/\/fast\/?$/, "");
+      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL || "";
       fetch(`${apiUrl}/branding`)
-        .then((r) => r.json())
-        .then((data) => setBranding(data))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => data && setBranding(data))
         .catch(() => {});
     }, []);
 
