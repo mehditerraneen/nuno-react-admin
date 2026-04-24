@@ -228,6 +228,13 @@ export const de = {
       validation_start: "Bitte geben Sie ein Startdatum ein",
       success: "Medikament hinzugefügt — jetzt Zeitplan definieren",
       failure: "Medikament konnte nicht hinzugefügt werden",
+      prescription: "Rezept (optional)",
+      prescription_none: "Ohne Rezept",
+      prescription_hint:
+        "Ein Rezept zu verknüpfen füllt Start- und Enddatum automatisch.",
+      prescription_manage: "Rezepte verwalten",
+      prescription_option: "Rx %{date} — %{doctor}",
+      prescription_option_short: "Rx %{date}",
     },
   },
   prescription_show: {

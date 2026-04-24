@@ -228,6 +228,13 @@ export const pt = {
       validation_start: "Introduza a data de início",
       success: "Medicamento adicionado — agora defina as regras",
       failure: "Não foi possível adicionar o medicamento",
+      prescription: "Prescrição (opcional)",
+      prescription_none: "Sem prescrição",
+      prescription_hint:
+        "Associar uma prescrição preenche as datas de início e fim.",
+      prescription_manage: "Gerir prescrições",
+      prescription_option: "Rx %{date} — %{doctor}",
+      prescription_option_short: "Rx %{date}",
     },
   },
   prescription_show: {

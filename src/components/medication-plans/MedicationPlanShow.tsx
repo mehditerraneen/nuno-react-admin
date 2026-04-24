@@ -354,6 +354,7 @@ const MedicationsSection = () => {
           open={addDialogOpen}
           onClose={() => setAddDialogOpen(false)}
           planId={record.id}
+          patientId={record.patient_id}
           onCreated={(m) => setScheduleDialogFor(m)}
         />
       </Box>
@@ -438,6 +439,7 @@ const MedicationsSection = () => {
         open={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
         planId={record.id}
+        patientId={record.patient_id}
         onCreated={(m) => setScheduleDialogFor(m)}
       />
 

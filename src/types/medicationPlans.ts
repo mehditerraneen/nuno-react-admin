@@ -159,6 +159,7 @@ export interface MedicationPlanCreate {
 
 export interface MedicationCreate {
   medicine_id: number;
+  prescription_id?: number | null;
   dosage: string;
   date_started: string;
   date_ended: string | null;

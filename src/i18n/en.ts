@@ -226,6 +226,13 @@ export const en = {
       validation_start: "Please enter a start date",
       success: "Medication added — now define schedule rules",
       failure: "Could not add medication",
+      prescription: "Prescription (optional)",
+      prescription_none: "No prescription",
+      prescription_hint:
+        "Linking a prescription auto-fills the start and end dates.",
+      prescription_manage: "Manage prescriptions",
+      prescription_option: "Rx %{date} — %{doctor}",
+      prescription_option_short: "Rx %{date}",
     },
   },
   prescription_show: {

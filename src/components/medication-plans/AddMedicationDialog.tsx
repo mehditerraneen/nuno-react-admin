@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -15,6 +15,7 @@ import {
   Alert,
   Autocomplete,
   CircularProgress,
+  Link as MuiLink,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import {
@@ -29,13 +30,25 @@ interface AddMedicationDialogProps {
   open: boolean;
   onClose: () => void;
   planId: number;
+  /** Patient this plan belongs to — used to load prescriptions for linking. */
+  patientId?: number;
   /** Called after a medication is successfully created. Parent can use this
    *  to open the Schedule Rules dialog for the new medication. */
   onCreated?: (medication: Medication) => void;
 }
 
+interface RxOption {
+  id: number;
+  date?: string | null;
+  end_date?: string | null;
+  prescriptor_name?: string;
+  prescriptor_first_name?: string;
+  prescriptor?: { name?: string };
+}
+
 interface MedicationFormData {
   medicine_id: number | null;
+  prescription_id: number | null;
   dosage: string;
   date_started: string;
   date_ended: string;
@@ -54,6 +67,7 @@ export const AddMedicationDialog = ({
   open,
   onClose,
   planId,
+  patientId,
   onCreated,
 }: AddMedicationDialogProps) => {
   const dataProvider = useDataProvider();
@@ -63,6 +77,7 @@ export const AddMedicationDialog = ({
 
   const [formData, setFormData] = useState<MedicationFormData>({
     medicine_id: null,
+    prescription_id: null,
     dosage: "",
     date_started: new Date().toISOString().split("T")[0],
     date_ended: "",
@@ -82,6 +97,59 @@ export const AddMedicationDialog = ({
   const [medicineSearch, setMedicineSearch] = useState("");
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Prescriptions (patient-scoped)
+  const [prescriptionOptions, setPrescriptionOptions] = useState<RxOption[]>([]);
+  const [selectedRx, setSelectedRx] = useState<RxOption | null>(null);
+
+  useEffect(() => {
+    if (!open || !patientId) {
+      setPrescriptionOptions([]);
+      return;
+    }
+    let cancelled = false;
+    (dataProvider as any)
+      .getPatientPrescriptions(patientId)
+      .then((result: unknown) => {
+        if (cancelled) return;
+        const list: RxOption[] = Array.isArray(result)
+          ? (result as RxOption[])
+          : Array.isArray((result as { data?: unknown })?.data)
+            ? ((result as { data: RxOption[] }).data)
+            : [];
+        setPrescriptionOptions(list);
+      })
+      .catch(() => {
+        if (!cancelled) setPrescriptionOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, patientId, dataProvider]);
+
+  const formatRxOption = (rx: RxOption): string => {
+    const date = rx.date ? new Date(rx.date).toLocaleDateString() : `#${rx.id}`;
+    const doctor = rx.prescriptor_name || rx.prescriptor?.name;
+    return doctor
+      ? translate("medication_plan_show.add.prescription_option", { date, doctor })
+      : translate("medication_plan_show.add.prescription_option_short", { date });
+  };
+
+  const handleRxSelection = (rx: RxOption | null) => {
+    setSelectedRx(rx);
+    setFormData((prev) => ({
+      ...prev,
+      prescription_id: rx ? rx.id : null,
+      // Default dates to prescription's date range when linking; don't
+      // clobber user edits when unlinking.
+      date_started: rx?.date
+        ? rx.date.slice(0, 10)
+        : prev.date_started,
+      date_ended: rx?.end_date
+        ? rx.end_date.slice(0, 10)
+        : prev.date_ended,
+    }));
+  };
 
   const searchMedicines = async (query: string) => {
     if (query.length < 2) {
@@ -130,6 +198,7 @@ export const AddMedicationDialog = ({
     try {
       const created = (await dataProvider.addMedicationToPlan(planId, {
         medicine_id: formData.medicine_id,
+        prescription_id: formData.prescription_id,
         dosage: formData.dosage,
         date_started: formData.date_started,
         date_ended: formData.date_ended || null,
@@ -164,6 +233,7 @@ export const AddMedicationDialog = ({
     // Reset form
     setFormData({
       medicine_id: null,
+      prescription_id: null,
       dosage: "",
       date_started: new Date().toISOString().split("T")[0],
       date_ended: "",
@@ -178,6 +248,7 @@ export const AddMedicationDialog = ({
       night_dose: "",
     });
     setSelectedMedicine(null);
+    setSelectedRx(null);
     setMedicineSearch("");
     setMedicineOptions([]);
     onClose();
@@ -202,9 +273,45 @@ export const AddMedicationDialog = ({
         </Alert>
 
         <Grid container spacing={2}>
+          {/* Prescription link (optional) */}
+          <Grid item xs={12}>
+            <Autocomplete
+              fullWidth
+              options={prescriptionOptions}
+              getOptionLabel={formatRxOption}
+              isOptionEqualToValue={(a, b) => a.id === b.id}
+              value={selectedRx}
+              onChange={(_, newValue) => handleRxSelection(newValue)}
+              noOptionsText={translate(
+                "medication_plan_show.add.prescription_none",
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
+                  label={translate("medication_plan_show.add.prescription")}
+                  helperText={
+                    <span>
+                      {translate("medication_plan_show.add.prescription_hint")}{" "}
+                      <MuiLink
+                        href="#/prescriptions"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {translate(
+                          "medication_plan_show.add.prescription_manage",
+                        )}
+                      </MuiLink>
+                    </span>
+                  }
+                />
+              )}
+            />
+          </Grid>
+
           {/* Medicine Selection */}
           <Grid item xs={12}>
             <Autocomplete
+              fullWidth
               options={medicineOptions}
               getOptionLabel={(option) => {
                 const code = option.cns_code ? ` — ${option.cns_code}` : "";
@@ -229,6 +336,7 @@ export const AddMedicationDialog = ({
               renderInput={(params) => (
                 <TextField
                   {...params}
+                  fullWidth
                   label={`${translate("medication_plan_show.add.medicine")} *`}
                   placeholder={translate(
                     "medication_plan_show.add.medicine_search_hint",
