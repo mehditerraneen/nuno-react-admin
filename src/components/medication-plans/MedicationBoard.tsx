@@ -29,6 +29,7 @@ import {
   changesForMedication,
 } from "./medBoardStagedChanges";
 import { MedBoardPendingTray } from "./MedBoardPendingTray";
+import { MedBoardDrawer } from "./MedBoardDrawer";
 
 interface LaneDescriptor {
   key: LaneKey;
@@ -117,6 +118,7 @@ export const MedicationBoard: React.FC = () => {
   const translate = useTranslate();
   const notify = useNotify();
   const staged = useStagedChanges();
+  const [selectedMedId, setSelectedMedId] = React.useState<number | null>(null);
 
   const {
     data: plan,
@@ -172,9 +174,18 @@ export const MedicationBoard: React.FC = () => {
     staged.archiveMedication(med.id);
   };
 
+  const handleCardClick = (med: Medication) => {
+    setSelectedMedId(med.id);
+  };
+
   const handleApplyAll = () => {
     notify(translate("med_board.apply_not_wired"), { type: "info" });
   };
+
+  const selectedMed =
+    selectedMedId != null
+      ? medications.find((m) => m.id === selectedMedId) ?? null
+      : null;
 
   return (
     <Box sx={{ p: 2 }}>
@@ -244,9 +255,16 @@ export const MedicationBoard: React.FC = () => {
             medications={medicationsByLane[lane.key]}
             pendingIds={pendingIds}
             onArchive={handleArchive}
+            onCardClick={handleCardClick}
           />
         ))}
       </Stack>
+
+      <MedBoardDrawer
+        medication={selectedMed}
+        onClose={() => setSelectedMedId(null)}
+        staged={staged}
+      />
     </Box>
   );
 };
