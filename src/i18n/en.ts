@@ -167,6 +167,7 @@ export const en = {
       "Apply is not wired yet (coming in the next iteration).",
     apply_success: "Changes applied successfully.",
     apply_error: "Some changes could not be applied",
+    rx_legend: "Prescriptions",
   },
   med_schedule_rules: {
     title: "Schedule Rules for %{name}",

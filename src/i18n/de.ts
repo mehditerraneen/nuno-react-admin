@@ -169,6 +169,7 @@ export const de = {
       "Anwenden ist noch nicht angeschlossen (kommt im nächsten Schritt).",
     apply_success: "Änderungen angewendet.",
     apply_error: "Einige Änderungen konnten nicht angewendet werden",
+    rx_legend: "Rezepte",
   },
   med_schedule_rules: {
     title: "Zeitplan-Regeln für %{name}",

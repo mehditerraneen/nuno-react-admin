@@ -8,7 +8,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import DescriptionIcon from "@mui/icons-material/Description";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import type { Medication } from "../../types/medicationPlans";
@@ -17,6 +17,7 @@ import {
   isLegacyOnly,
   summarizeSchedule,
 } from "./medBoardUtils";
+import { prescriptionStyle } from "./medBoardPalette";
 
 interface MedicationBoardCardProps {
   medication: Medication;
@@ -25,6 +26,8 @@ interface MedicationBoardCardProps {
   isPending?: boolean;
   canArchive?: boolean;
   onArchive?: () => void;
+  /** Short prescription label shown in the Rx chip — e.g. "16/04/2026". */
+  prescriptionLabel?: string;
 }
 
 const formatDate = (iso: string | null | undefined): string => {
@@ -43,10 +46,14 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
   isPending,
   canArchive,
   onArchive,
+  prescriptionLabel,
 }) => {
   const schedule = summarizeSchedule(medication);
   const legacy = isLegacyOnly(medication);
   const endingLabel = endsSoonLabel(medication);
+  const rx = prescriptionStyle(medication.prescription_id);
+  const hasRx = medication.prescription_id != null;
+  const leftStripe = hasRx ? rx.main : accent;
 
   return (
     <Paper
@@ -56,7 +63,7 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
         p: 1,
         mb: 1,
         cursor: onClick ? "pointer" : "default",
-        borderLeft: `3px solid ${accent}`,
+        borderLeft: `4px solid ${leftStripe}`,
         backgroundColor: isPending ? "#fff9c4" : "white",
         transition: "box-shadow .15s ease, transform .15s ease",
         "&:hover": onClick
@@ -68,29 +75,17 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
         <Typography
           variant="subtitle2"
           sx={{
-            fontWeight: 600,
+            fontWeight: 700,
             flexGrow: 1,
             lineHeight: 1.2,
             overflow: "hidden",
             textOverflow: "ellipsis",
+            color: "text.primary",
           }}
           title={medication.medicine_name}
         >
           {medication.medicine_abbreviated_name || medication.medicine_name}
         </Typography>
-        {medication.prescription_id && (
-          <Tooltip title={`Prescription #${medication.prescription_id}`}>
-            <IconButton
-              size="small"
-              sx={{ p: 0.25 }}
-              onClick={(e) => e.stopPropagation()}
-              component="a"
-              href={`#/prescriptions/${medication.prescription_id}/show`}
-            >
-              <DescriptionIcon fontSize="inherit" />
-            </IconButton>
-          </Tooltip>
-        )}
         {canArchive && onArchive && (
           <Tooltip title="Archiver">
             <IconButton
@@ -107,27 +102,64 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
         )}
       </Stack>
 
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ display: "block", mb: 0.5 }}
-      >
-        {medication.dosage}
-      </Typography>
+      {/* Dosage pill */}
+      {medication.dosage && (
+        <Box
+          sx={{
+            display: "inline-block",
+            px: 1,
+            py: 0.25,
+            mb: 0.75,
+            borderRadius: 1,
+            backgroundColor: hasRx ? rx.soft : "#eef2f7",
+            color: hasRx ? rx.text : "#37474f",
+            fontSize: "0.78rem",
+            fontWeight: 600,
+          }}
+        >
+          {medication.dosage}
+        </Box>
+      )}
 
+      {/* Schedule summary */}
       <Typography
         variant="body2"
         sx={{
           color: "text.primary",
           lineHeight: 1.3,
           fontSize: "0.8rem",
-          mb: 0.5,
+          mb: 0.75,
         }}
       >
         {schedule}
       </Typography>
 
       <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+        {hasRx && (
+          <Tooltip title={`Prescription #${medication.prescription_id}`}>
+            <Chip
+              size="small"
+              icon={<AssignmentOutlinedIcon sx={{ fontSize: "0.9rem" }} />}
+              label={
+                prescriptionLabel
+                  ? `Rx ${prescriptionLabel}`
+                  : `Rx #${medication.prescription_id}`
+              }
+              component="a"
+              clickable
+              href={`#/prescriptions/${medication.prescription_id}/show`}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              sx={{
+                fontSize: "0.7rem",
+                height: 22,
+                backgroundColor: rx.soft,
+                color: rx.text,
+                border: `1px solid ${rx.main}`,
+                "& .MuiChip-icon": { color: rx.text },
+              }}
+            />
+          </Tooltip>
+        )}
         {medication.date_started && (
           <Chip
             size="small"
@@ -137,17 +169,17 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
                 ? `${formatDate(medication.date_started)} → ${formatDate(medication.date_ended)}`
                 : `depuis ${formatDate(medication.date_started)}`
             }
-            sx={{ fontSize: "0.7rem", height: 20 }}
+            sx={{ fontSize: "0.7rem", height: 22 }}
           />
         )}
         {endingLabel && (
           <Chip
             size="small"
             color="warning"
-            variant="outlined"
+            variant="filled"
             icon={<WarningAmberIcon sx={{ fontSize: "0.9rem" }} />}
             label={endingLabel}
-            sx={{ fontSize: "0.7rem", height: 20 }}
+            sx={{ fontSize: "0.7rem", height: 22, color: "white" }}
           />
         )}
         {legacy && (
@@ -157,7 +189,7 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
             label="legacy"
             sx={{
               fontSize: "0.7rem",
-              height: 20,
+              height: 22,
               color: "warning.dark",
               borderColor: "warning.main",
             }}

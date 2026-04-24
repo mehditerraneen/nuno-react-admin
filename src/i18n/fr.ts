@@ -169,6 +169,7 @@ export const fr = {
       "L'application n'est pas encore branchée (à venir à la prochaine itération).",
     apply_success: "Modifications appliquées.",
     apply_error: "Certaines modifications n'ont pas pu être appliquées",
+    rx_legend: "Prescriptions",
   },
   med_schedule_rules: {
     title: "Règles de planification pour %{name}",

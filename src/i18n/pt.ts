@@ -169,6 +169,7 @@ export const pt = {
       "A aplicação ainda não está ligada (virá na próxima iteração).",
     apply_success: "Alterações aplicadas.",
     apply_error: "Algumas alterações não puderam ser aplicadas",
+    rx_legend: "Prescrições",
   },
   med_schedule_rules: {
     title: "Regras de horário para %{name}",

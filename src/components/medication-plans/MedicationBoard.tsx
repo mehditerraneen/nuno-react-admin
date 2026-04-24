@@ -18,11 +18,13 @@ import OpacityIcon from "@mui/icons-material/Opacity";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import {
   useDataProvider,
+  useGetList,
   useGetOne,
   useNotify,
   useTranslate,
 } from "react-admin";
 import type { MyDataProvider } from "../../dataProvider";
+import { prescriptionStyle } from "./medBoardPalette";
 import type {
   Medication,
   MedicationPlan,
@@ -56,9 +58,17 @@ const LaneColumn: React.FC<{
   lane: LaneDescriptor;
   medications: Medication[];
   pendingIds: Set<number>;
+  prescriptionLabels: Map<number, string>;
   onCardClick?: (med: Medication) => void;
   onArchive?: (med: Medication) => void;
-}> = ({ lane, medications, pendingIds, onCardClick, onArchive }) => {
+}> = ({
+  lane,
+  medications,
+  pendingIds,
+  prescriptionLabels,
+  onCardClick,
+  onArchive,
+}) => {
   const translate = useTranslate();
   return (
     <Paper
@@ -81,6 +91,8 @@ const LaneColumn: React.FC<{
           py: 1,
           borderBottom: "1px solid",
           borderBottomColor: "divider",
+          // Soft tint of the lane accent
+          backgroundColor: `${lane.accent}14`,
         }}
       >
         {React.cloneElement(lane.icon, { sx: { color: lane.accent } })}
@@ -111,6 +123,11 @@ const LaneColumn: React.FC<{
               isPending={pendingIds.has(med.id)}
               canArchive={lane.key !== "archived"}
               onArchive={onArchive ? () => onArchive(med) : undefined}
+              prescriptionLabel={
+                med.prescription_id != null
+                  ? prescriptionLabels.get(med.prescription_id)
+                  : undefined
+              }
             />
           ))
         )}
@@ -162,6 +179,44 @@ export const MedicationBoard: React.FC = () => {
 
   const rawMedications: Medication[] = plan.medications ?? [];
   const medications = projectMedications(rawMedications, staged.changes);
+
+  // Fetch this patient's prescriptions so we can label Rx chips + build a legend
+  const { data: prescriptionsList } = useGetList(
+    "prescriptions",
+    {
+      filter: { patient_id: plan.patient_id },
+      pagination: { page: 1, perPage: 100 },
+      sort: { field: "date", order: "DESC" },
+    },
+    { enabled: plan.patient_id != null },
+  );
+
+  const prescriptionLabels = new Map<number, string>();
+  const prescriptionLegend: {
+    id: number;
+    label: string;
+    doctor?: string;
+  }[] = [];
+  const usedRxIds = new Set<number>(
+    medications
+      .map((m) => m.prescription_id)
+      .filter((v): v is number => v != null),
+  );
+  for (const p of prescriptionsList ?? []) {
+    if (!usedRxIds.has(p.id as number)) continue;
+    const date = p.date
+      ? new Date(p.date as string).toLocaleDateString()
+      : `#${p.id}`;
+    const doctorName: string | undefined =
+      (p as { prescriptor_name?: string }).prescriptor_name ||
+      (p as { prescriptor?: { name?: string } }).prescriptor?.name;
+    prescriptionLabels.set(p.id as number, date);
+    prescriptionLegend.push({
+      id: p.id as number,
+      label: date,
+      doctor: doctorName,
+    });
+  }
   const pendingIds = new Set(
     medications
       .filter((m) => changesForMedication(staged.changes, m.id).length > 0)
@@ -324,6 +379,47 @@ export const MedicationBoard: React.FC = () => {
         </Stack>
       </Paper>
 
+      {/* Prescription color legend */}
+      {prescriptionLegend.length > 0 && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 1,
+            mb: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            flexWrap: "wrap",
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <Typography variant="caption" sx={{ fontWeight: 600, mr: 1 }}>
+            {translate("med_board.rx_legend")}:
+          </Typography>
+          {prescriptionLegend.map((rx) => {
+            const s = prescriptionStyle(rx.id);
+            return (
+              <Chip
+                key={rx.id}
+                size="small"
+                component="a"
+                clickable
+                href={`#/prescriptions/${rx.id}/show`}
+                label={
+                  rx.doctor ? `${rx.label} — ${rx.doctor}` : `Rx ${rx.label}`
+                }
+                sx={{
+                  backgroundColor: s.soft,
+                  color: s.text,
+                  border: `1px solid ${s.main}`,
+                  fontWeight: 600,
+                }}
+              />
+            );
+          })}
+        </Paper>
+      )}
+
       {/* Lanes */}
       <Stack
         direction={{ xs: "column", lg: "row" }}
@@ -336,6 +432,7 @@ export const MedicationBoard: React.FC = () => {
             lane={lane}
             medications={medicationsByLane[lane.key]}
             pendingIds={pendingIds}
+            prescriptionLabels={prescriptionLabels}
             onArchive={handleArchive}
             onCardClick={handleCardClick}
           />
