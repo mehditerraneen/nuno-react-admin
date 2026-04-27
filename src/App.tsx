@@ -68,6 +68,8 @@ import {
   WoundShow,
   WoundCreate,
 } from "./components/wounds";
+import { PatientAnamnesisShow } from "./components/patient-anamnesis";
+import { PatientList, PatientShow } from "./components/patients";
 import SessionManager from "./components/SessionManager";
 import { CarePlanOverlapView } from "./components/CarePlanOverlapView";
 
@@ -108,9 +110,12 @@ export const App = () => (
     />
     <Resource
       name="patients"
+      list={PatientList}
+      show={PatientShow}
       recordRepresentation={(record) =>
         `${record.name} ${record.first_name} (${record.code_sn})`
       }
+      options={{ label: "Patients" }}
     />
     <Resource name="careoccurrences" options={{ label: "Care Occurrences" }} />
     <Resource
@@ -195,6 +200,11 @@ export const App = () => (
       show={WoundShow}
       options={{ label: "Gestion des plaies" }}
     />
+    {/* Anamnèses are embedded in the patient show page. We keep the show
+        route registered so direct URLs (/patient-anamnesis/:id/show) and any
+        cross-links keep working. Omitting `list` removes the resource from
+        the auto-generated sidebar menu. */}
+    <Resource name="patient-anamnesis" show={PatientAnamnesisShow} />
     <CustomRoutes>
       <Route path="/tours-dashboard" element={<EnhancedToursDashboard />} />
       <Route path="/careplan-overlaps" element={<CarePlanOverlapView />} />

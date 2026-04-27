@@ -514,6 +514,17 @@ export const dataProvider: MyDataProvider = {
       params,
     );
 
+    // Handle patient-anamnesis resource (FastAPI endpoint)
+    if (resource === "patient-anamnesis") {
+      const url = `${apiUrl}/patient-anamnesis/${params.id}`;
+      const response = await httpClient(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return { data };
+    }
+
     // Handle planning-fc resource (mapped to planning/monthly-planning)
     if (resource === "planning-fc") {
       const url = `${apiUrl}/planning/monthly-planning/${params.id}`;
@@ -866,6 +877,35 @@ export const dataProvider: MyDataProvider = {
           );
           throw new Error("Events creation response must include an id");
         }
+      }
+
+      // medication-plans, prescriptions, wounds and similar custom-FastAPI
+      // resources expect the response body to be parsed manually — the shared
+      // `httpClient` returns a raw `Response`, which the simple-rest provider
+      // can't destructure as `{ json }`. So we handle the parse here.
+      if (
+        resource === "medication-plans" ||
+        resource === "prescriptions" ||
+        resource === "wounds"
+      ) {
+        const url = `${apiUrl}/${resource}`;
+        const response = await httpClient(url, {
+          method: "POST",
+          body: JSON.stringify(params.data),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.detail || `HTTP ${response.status}: ${response.statusText}`,
+          );
+        }
+        const data = await response.json();
+        if (data && typeof data === "object" && data.id != null) {
+          return { data };
+        }
+        throw new Error(
+          `${resource} creation response must include an id`,
+        );
       }
 
       // For other resources, use the base data provider
@@ -1263,6 +1303,34 @@ export const dataProvider: MyDataProvider = {
     }
 
     // IMPORTANT: Handle medication-plans with FastAPI endpoint
+    if (resource === "patient-anamnesis") {
+      const queryParams = new URLSearchParams();
+      const start = (page - 1) * perPage;
+      const end = page * perPage;
+      queryParams.set("_start", start.toString());
+      queryParams.set("_end", end.toString());
+      if (field) {
+        queryParams.set("_sort", field);
+        queryParams.set("_order", order.toUpperCase());
+      }
+      Object.keys(filter).forEach((key) => {
+        if (filter[key] !== undefined && filter[key] !== null && filter[key] !== "") {
+          queryParams.set(key, filter[key].toString());
+        }
+      });
+
+      const url = `${apiUrl}/patient-anamnesis?${queryParams.toString()}`;
+      const response = await httpClient(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      if (data && typeof data === "object" && Array.isArray(data.data)) {
+        return data;
+      }
+      throw new Error("Expected React Admin format for patient-anamnesis");
+    }
+
     if (resource === "medication-plans") {
       console.log("💊 Handling medication-plans with FastAPI endpoint");
 

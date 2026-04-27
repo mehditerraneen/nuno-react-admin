@@ -19,6 +19,18 @@ import AddIcon from "@mui/icons-material/Add";
 import DescriptionIcon from "@mui/icons-material/Description";
 import type { MedicationPlan, Medication } from "../../types/medicationPlans";
 
+const validatePlanDates = (values: Record<string, any>) => {
+  const errors: Record<string, string> = {};
+  if (
+    values.plan_start_date &&
+    values.plan_end_date &&
+    values.plan_end_date < values.plan_start_date
+  ) {
+    errors.plan_end_date = "End date cannot be before start date";
+  }
+  return errors;
+};
+
 const MedicationsSection = () => {
   const record = useRecordContext<MedicationPlan>();
 
@@ -120,7 +132,7 @@ const MedicationsSection = () => {
 
 export const MedicationPlanEdit = () => (
   <Edit>
-    <SimpleForm>
+    <SimpleForm mode="onChange" validate={validatePlanDates}>
       <Typography variant="h6" gutterBottom>
         Plan Details
       </Typography>
