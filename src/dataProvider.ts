@@ -2518,7 +2518,14 @@ export const dataProvider: MyDataProvider = {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to add medication to plan");
+      const body = await response.json().catch(() => ({}));
+      const detail =
+        typeof body?.detail === "string"
+          ? body.detail
+          : Array.isArray(body?.detail)
+            ? body.detail.map((d: any) => d?.msg ?? String(d)).join("; ")
+            : `HTTP ${response.status}`;
+      throw new Error(detail);
     }
 
     return response.json();
@@ -2538,7 +2545,14 @@ export const dataProvider: MyDataProvider = {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to update medication");
+      const body = await response.json().catch(() => ({}));
+      const detail =
+        typeof body?.detail === "string"
+          ? body.detail
+          : Array.isArray(body?.detail)
+            ? body.detail.map((d: any) => d?.msg ?? String(d)).join("; ")
+            : `HTTP ${response.status}`;
+      throw new Error(detail);
     }
 
     return response.json();
