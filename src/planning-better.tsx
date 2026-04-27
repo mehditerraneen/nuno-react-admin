@@ -138,6 +138,8 @@ import { OptimizerAIChat } from './components/OptimizerAIChat';
 import { authenticatedFetch } from './dataProvider';
 import { Link as RouterLink } from 'react-router-dom';
 import ShiftHistoryPopover from './components/planning/ShiftHistoryPopover';
+import { WriteOnly } from './components/auth/WriteOnly';
+import { useIsReadOnly } from './hooks/useIsReadOnly';
 
 const statusChoices = [
     { id: 'DRAFT', name: 'Brouillon' },
@@ -148,7 +150,9 @@ const statusChoices = [
 // =============== PLANNING LIST ===============
 const PlanningListActions = () => (
     <TopToolbar>
-        <CreateButton label="Créer un planning" />
+        <WriteOnly>
+            <CreateButton label="Créer un planning" />
+        </WriteOnly>
     </TopToolbar>
 );
 

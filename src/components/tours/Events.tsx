@@ -20,6 +20,7 @@ import {
 } from "react-admin";
 import { Chip } from "@mui/material";
 import { EVENT_STATES, type Event } from "../../types/tours";
+import { WriteOnly } from "../auth/WriteOnly";
 
 export const EventFilters = (props: any) => (
   <Filter {...props}>
@@ -111,8 +112,10 @@ export const EventList = (props: any) => (
           return `${diff} min (planned)`;
         }}
       />
-      <EditButton />
-      <DeleteButton />
+      <WriteOnly>
+        <EditButton />
+        <DeleteButton />
+      </WriteOnly>
     </Datagrid>
   </List>
 );

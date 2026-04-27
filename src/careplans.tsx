@@ -35,6 +35,7 @@ import {
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import { type MyDataProvider } from "./dataProvider";
+import { WriteOnly } from "./components/auth/WriteOnly";
 
 // Define Patient interface based on used fields and API response
 interface Patient extends RaRecord<number> {
@@ -81,7 +82,9 @@ const CarePlanListActions = () => (
     >
       Chevauchements
     </Button>
-    <CreateButton />
+    <WriteOnly>
+      <CreateButton />
+    </WriteOnly>
     <ExportButton />
   </TopToolbar>
 );
@@ -126,7 +129,9 @@ export const CarePlanList = () => (
       <DateField source="updated_on" label="Updated" showTime />
       <TextField source="updated_by" label="Updated By" />
       <ShowButton />
-      <EditButton />
+      <WriteOnly>
+        <EditButton />
+      </WriteOnly>
     </Datagrid>
   </List>
 );

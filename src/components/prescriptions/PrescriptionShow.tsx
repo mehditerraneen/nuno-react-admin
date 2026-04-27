@@ -11,7 +11,11 @@ import {
   useNotify,
   useRefresh,
   useTranslate,
+  TopToolbar,
+  EditButton,
+  ListButton,
 } from "react-admin";
+import { WriteOnly } from "../auth/WriteOnly";
 import {
   Box,
   Typography,
@@ -155,13 +159,15 @@ const FileSection = () => {
                 )}
               </Box>
 
-              <IconButton
-                onClick={handleFileDelete}
-                color="error"
-                title={translate("prescription_show.file.delete_title")}
-              >
-                <DeleteIcon />
-              </IconButton>
+              <WriteOnly>
+                <IconButton
+                  onClick={handleFileDelete}
+                  color="error"
+                  title={translate("prescription_show.file.delete_title")}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </WriteOnly>
             </Box>
           </CardContent>
         </Card>
@@ -170,24 +176,26 @@ const FileSection = () => {
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {translate("prescription_show.file.no_file")}
           </Typography>
-          <Button
-            component="label"
-            label={
-              uploading
-                ? translate("prescription_show.file.uploading")
-                : translate("prescription_show.file.upload")
-            }
-            startIcon={<CloudUploadIcon />}
-            disabled={uploading}
-            sx={{ mt: 2 }}
-          >
-            <input
-              type="file"
-              hidden
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={handleFileUpload}
-            />
-          </Button>
+          <WriteOnly>
+            <Button
+              component="label"
+              label={
+                uploading
+                  ? translate("prescription_show.file.uploading")
+                  : translate("prescription_show.file.upload")
+              }
+              startIcon={<CloudUploadIcon />}
+              disabled={uploading}
+              sx={{ mt: 2 }}
+            >
+              <input
+                type="file"
+                hidden
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileUpload}
+              />
+            </Button>
+          </WriteOnly>
           <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
             {translate("prescription_show.file.supported")}
           </Typography>
@@ -519,8 +527,17 @@ const PrescriptionShowLayout = () => {
   );
 };
 
+const PrescriptionShowActions = () => (
+  <TopToolbar>
+    <ListButton />
+    <WriteOnly>
+      <EditButton />
+    </WriteOnly>
+  </TopToolbar>
+);
+
 export const PrescriptionShow = () => (
-  <Show>
+  <Show actions={<PrescriptionShowActions />}>
     <PrescriptionShowLayout />
   </Show>
 );

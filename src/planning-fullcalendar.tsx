@@ -80,6 +80,8 @@ import { EventContentArg, DayCellContentArg, DateClickArg, EventClickArg } from 
 
 import { authenticatedFetch } from './dataProvider';
 import './planning-fullcalendar.css';
+import { WriteOnly } from './components/auth/WriteOnly';
+import { useIsReadOnly } from './hooks/useIsReadOnly';
 
 const statusChoices = [
     { id: 'DRAFT', name: 'Brouillon' },
@@ -90,7 +92,9 @@ const statusChoices = [
 // =============== PLANNING LIST ===============
 const PlanningListActions = () => (
     <TopToolbar>
-        <CreateButton label="Créer un planning" />
+        <WriteOnly>
+            <CreateButton label="Créer un planning" />
+        </WriteOnly>
     </TopToolbar>
 );
 

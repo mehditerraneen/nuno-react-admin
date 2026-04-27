@@ -33,6 +33,8 @@ import {
 import { useState, useEffect } from 'react';
 import { WoundEvolutionDialog } from './WoundEvolutionDialog';
 import { WoundImageGallery } from './WoundImageGallery';
+import { WriteOnly } from '../auth/WriteOnly';
+import { useIsReadOnly } from '../../hooks/useIsReadOnly';
 import {
   STATUS_LABELS,
   EVOLUTION_TYPE_LABELS,
@@ -45,8 +47,10 @@ import {
 const WoundShowActions = () => (
   <TopToolbar>
     <ListButton />
-    <EditButton />
-    <DeleteButton />
+    <WriteOnly>
+      <EditButton />
+      <DeleteButton />
+    </WriteOnly>
   </TopToolbar>
 );
 
@@ -94,6 +98,7 @@ export const WoundShow = () => {
   const [loadingEvolutions, setLoadingEvolutions] = useState(true);
   const [showEvolutionDialog, setShowEvolutionDialog] = useState(false);
   const [selectedEvolution, setSelectedEvolution] = useState<any>(null);
+  const readOnly = useIsReadOnly();
 
   const dataProvider = useDataProvider();
 
@@ -273,16 +278,18 @@ export const WoundShow = () => {
                   <Typography variant="h6">
                     Évolutions de la plaie
                   </Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => {
-                      setSelectedEvolution(null);
-                      setShowEvolutionDialog(true);
-                    }}
-                  >
-                    Ajouter une évolution
-                  </Button>
+                  <WriteOnly>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={() => {
+                        setSelectedEvolution(null);
+                        setShowEvolutionDialog(true);
+                      }}
+                    >
+                      Ajouter une évolution
+                    </Button>
+                  </WriteOnly>
                 </Box>
 
                 <Divider sx={{ mb: 3 }} />
@@ -418,9 +425,11 @@ export const WoundShow = () => {
                             <Typography variant="caption" color="text.secondary">
                               Évalué par: {evolution.recorded_by}
                             </Typography>
-                            <Button size="small" onClick={() => handleEditEvolution(evolution)}>
-                              Modifier
-                            </Button>
+                            <WriteOnly>
+                              <Button size="small" onClick={() => handleEditEvolution(evolution)}>
+                                Modifier
+                              </Button>
+                            </WriteOnly>
                           </Box>
                         </Paper>
                       );
@@ -439,7 +448,7 @@ export const WoundShow = () => {
                   Galerie d'images
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
-                <WoundImageGallery woundId={record.id} />
+                <WoundImageGallery woundId={record.id} readonly={readOnly} />
               </CardContent>
             </Card>
           </Grid>

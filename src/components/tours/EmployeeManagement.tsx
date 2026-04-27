@@ -15,6 +15,7 @@ import {
 } from "react-admin";
 import { Chip, Box } from "@mui/material";
 import { Employee } from "../../types/tours";
+import { WriteOnly } from "../auth/WriteOnly";
 
 export const EmployeeList = (props: any) => (
   <List {...props} sort={{ field: "name", order: "ASC" }}>
@@ -74,8 +75,10 @@ export const EmployeeList = (props: any) => (
           )
         }
       />
-      <EditButton />
-      <DeleteButton />
+      <WriteOnly>
+        <EditButton />
+        <DeleteButton />
+      </WriteOnly>
     </Datagrid>
   </List>
 );

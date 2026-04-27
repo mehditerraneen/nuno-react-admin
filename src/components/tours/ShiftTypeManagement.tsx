@@ -31,6 +31,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useFormContext } from "react-hook-form";
+import { WriteOnly } from "../auth/WriteOnly";
 
 const SHIFT_CATEGORIES = [
   { id: "MORNING", name: "Morning" },
@@ -255,8 +256,10 @@ export const ShiftTypeList = () => (
         }
       />
       <BooleanField source="is_active" label="Active" />
-      <EditButton />
-      <DeleteButton />
+      <WriteOnly>
+        <EditButton />
+        <DeleteButton />
+      </WriteOnly>
     </Datagrid>
   </List>
 );

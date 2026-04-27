@@ -60,6 +60,7 @@ import {
 } from "./components/DurationSummary";
 import { formatDurationDisplay } from "./utils/timeUtils";
 import { CarePlanPrintButton } from "./components/CarePlanPrintView";
+import { WriteOnly } from "./components/auth/WriteOnly";
 
 const formatRevisionDate = (iso: string | null | undefined) => {
   if (!iso) return "—";
@@ -184,15 +185,17 @@ const CarePlanRevisionsPanel: React.FC = () => {
             ({older.length})
           </Button>
         )}
-        <Button
-          size="small"
-          variant="contained"
-          color="success"
-          startIcon={<CheckCircleIcon />}
-          onClick={() => setDialogOpen(true)}
-        >
-          {translate("care_plan_revision.mark_button")}
-        </Button>
+        <WriteOnly>
+          <Button
+            size="small"
+            variant="contained"
+            color="success"
+            startIcon={<CheckCircleIcon />}
+            onClick={() => setDialogOpen(true)}
+          >
+            {translate("care_plan_revision.mark_button")}
+          </Button>
+        </WriteOnly>
       </Box>
 
       {historyOpen && older.length > 0 && (
@@ -384,14 +387,16 @@ const CarePlanDetails = () => {
           {details.length > 0 && (
             <CarePlanPrintButton record={record} patient={patient} details={details} />
           )}
-          <Button
-            variant="contained"
-            onClick={handleOpenCreateDialog}
-            startIcon={<AddIcon />}
-            data-testid="add-new-detail-button"
-          >
-            {translate("care_plan_show.add_new_detail")}
-          </Button>
+          <WriteOnly>
+            <Button
+              variant="contained"
+              onClick={handleOpenCreateDialog}
+              startIcon={<AddIcon />}
+              data-testid="add-new-detail-button"
+            >
+              {translate("care_plan_show.add_new_detail")}
+            </Button>
+          </WriteOnly>
         </Box>
       </Box>
 
@@ -452,16 +457,18 @@ const CarePlanDetails = () => {
                   />
                 )}
                 <Box sx={{ flexGrow: 1 }} />
-                <IconButton
-                  component="span"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEditDialog(detail);
-                  }}
-                  size="small"
-                >
-                  <EditIcon />
-                </IconButton>
+                <WriteOnly>
+                  <IconButton
+                    component="span"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEditDialog(detail);
+                    }}
+                    size="small"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </WriteOnly>
               </AccordionSummary>
               <AccordionDetails>
               <Box sx={{ display: "flex", gap: 4, mb: 2 }}>

@@ -9,10 +9,25 @@ import {
   BooleanField,
   FunctionField,
   ChipField,
+  TopToolbar,
+  FilterButton,
+  CreateButton,
+  ExportButton,
 } from "react-admin";
 import { Chip } from "@mui/material";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import type { PrescriptionListItem } from "../../types/prescriptions";
+import { WriteOnly } from "../auth/WriteOnly";
+
+const PrescriptionListActions = () => (
+  <TopToolbar>
+    <FilterButton />
+    <WriteOnly>
+      <CreateButton />
+    </WriteOnly>
+    <ExportButton />
+  </TopToolbar>
+);
 
 const prescriptionFilters = [
   <SearchInput key="search" source="search" alwaysOn />,
@@ -26,6 +41,7 @@ const prescriptionFilters = [
 export const PrescriptionList = () => (
   <List
     filters={prescriptionFilters}
+    actions={<PrescriptionListActions />}
     sort={{ field: "date", order: "DESC" }}
   >
     <Datagrid rowClick="show" bulkActionButtons={false}>

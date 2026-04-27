@@ -98,6 +98,8 @@ import { authenticatedFetch } from './dataProvider';
 import { Link as RouterLink } from 'react-router-dom';
 import { OptimizerAIChat } from './components/OptimizerAIChat';
 import ShiftHistoryPopover from './components/planning/ShiftHistoryPopover';
+import { WriteOnly } from './components/auth/WriteOnly';
+import { useIsReadOnly } from './hooks/useIsReadOnly';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -111,7 +113,9 @@ const statusChoices = [
 // =============== LIST ===============
 const PlanningListActions = () => (
     <TopToolbar>
-        <CreateButton label="Créer un planning" />
+        <WriteOnly>
+            <CreateButton label="Créer un planning" />
+        </WriteOnly>
     </TopToolbar>
 );
 

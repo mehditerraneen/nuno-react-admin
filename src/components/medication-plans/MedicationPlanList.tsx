@@ -9,8 +9,23 @@ import {
   SearchInput,
   FunctionField,
   ChipField,
+  TopToolbar,
+  FilterButton,
+  CreateButton,
+  ExportButton,
 } from "react-admin";
 import type { MedicationPlanListItem } from "../../types/medicationPlans";
+import { WriteOnly } from "../auth/WriteOnly";
+
+const MedicationPlanListActions = () => (
+  <TopToolbar>
+    <FilterButton />
+    <WriteOnly>
+      <CreateButton />
+    </WriteOnly>
+    <ExportButton />
+  </TopToolbar>
+);
 
 const medicationPlanFilters = [
   <SearchInput key="search" source="search" alwaysOn />,
@@ -28,7 +43,11 @@ const medicationPlanFilters = [
 ];
 
 export const MedicationPlanList = () => (
-  <List filters={medicationPlanFilters} sort={{ field: "last_updated", order: "DESC" }}>
+  <List
+    filters={medicationPlanFilters}
+    actions={<MedicationPlanListActions />}
+    sort={{ field: "last_updated", order: "DESC" }}
+  >
     <Datagrid rowClick="show">
       <TextField source="id" />
       <TextField source="patient_name" label="Patient" />

@@ -23,6 +23,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { TourType, LongTermPackageRef } from "../../types/tours";
+import { WriteOnly } from "../auth/WriteOnly";
 
 export const TourTypeList = (props: any) => (
   <List {...props} sort={{ field: "name", order: "ASC" }}>
@@ -48,8 +49,10 @@ export const TourTypeList = (props: any) => (
           )
         }
       />
-      <EditButton />
-      <DeleteButton />
+      <WriteOnly>
+        <EditButton />
+        <DeleteButton />
+      </WriteOnly>
     </Datagrid>
   </List>
 );

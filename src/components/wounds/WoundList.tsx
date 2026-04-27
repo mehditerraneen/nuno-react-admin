@@ -19,6 +19,7 @@ import {
 } from 'react-admin';
 import { Chip, Box } from '@mui/material';
 import { STATUS_LABELS, type WoundStatus, BODY_AREAS } from '../../types/wounds';
+import { WriteOnly } from '../auth/WriteOnly';
 
 // Color mapping for status badges
 const statusColors: Record<WoundStatus, 'warning' | 'success' | 'error' | 'default'> = {
@@ -32,7 +33,9 @@ const statusColors: Record<WoundStatus, 'warning' | 'success' | 'error' | 'defau
 const WoundListActions = () => (
   <TopToolbar>
     <FilterButton />
-    <CreateButton />
+    <WriteOnly>
+      <CreateButton />
+    </WriteOnly>
   </TopToolbar>
 );
 
@@ -142,8 +145,10 @@ export const WoundList = () => (
 
       <Box>
         <ShowButton />
-        <EditButton />
-        <DeleteButton />
+        <WriteOnly>
+          <EditButton />
+          <DeleteButton />
+        </WriteOnly>
       </Box>
     </Datagrid>
   </List>

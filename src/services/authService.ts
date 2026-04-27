@@ -10,10 +10,12 @@ export interface AuthTokens {
   expiresIn: number; // seconds
 }
 
+export type UserRole = "admin" | "readonly";
+
 export interface User {
   id: string;
   username: string;
-  role: string;
+  role: UserRole;
   isStaff?: boolean;
   roles?: string[];
   fullName?: string;
@@ -98,14 +100,14 @@ class AuthService {
       localStorage.setItem(AuthService.REFRESH_TOKEN_KEY, refreshToken);
       localStorage.setItem(AuthService.TOKEN_EXPIRY_KEY, expiryTime.toString());
 
-      // Create user object (you might want to get this from the token or a separate API call)
+      // Create user object — role gets resolved from /me below.
       const user: User = {
         id: credentials.username, // Use username as ID for now
         username: credentials.username,
-        role: "admin", // Default role, could be extracted from JWT
+        role: "readonly", // Safe default; overwritten by /me response.
       };
 
-      // Enrich with is_staff / fullName by calling /me
+      // Enrich with role / fullName / id by calling /me
       try {
         const meResponse = await fetch(
           `${apiUrl}/mobile/api/v1/react-admin/auth/me`,
@@ -115,7 +117,8 @@ class AuthService {
           const me = await meResponse.json();
           const roles: string[] = Array.isArray(me.roles) ? me.roles : [];
           user.roles = roles;
-          user.isStaff = roles.includes("admin");
+          user.role = roles.includes("admin") ? "admin" : "readonly";
+          user.isStaff = user.role === "admin";
           user.fullName = me.fullName || undefined;
           if (me.id != null) user.id = String(me.id);
         }

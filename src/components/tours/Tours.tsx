@@ -44,6 +44,8 @@ import {
   Coffee,
 } from "@mui/icons-material";
 import { Tour } from "../../types/tours";
+import { WriteOnly } from "../auth/WriteOnly";
+import { useIsReadOnly } from "../../hooks/useIsReadOnly";
 
 // Tours List Component
 export const TourList = () => (
@@ -114,8 +116,10 @@ export const TourList = () => (
           );
         }}
       />
-      <EditButton />
-      <DeleteButton />
+      <WriteOnly>
+        <EditButton />
+        <DeleteButton />
+      </WriteOnly>
     </Datagrid>
   </List>
 );
@@ -126,6 +130,8 @@ const OptimizeTourButton = () => {
   const [update] = useUpdate();
   const notify = useNotify();
   const refresh = useRefresh();
+  const readOnly = useIsReadOnly();
+  if (readOnly) return null;
 
   const handleOptimize = async () => {
     try {
@@ -216,14 +222,16 @@ const TourEventsManagement = () => {
           }}
         >
           <Typography variant="h6">Tour Events</Typography>
-          <Button
-            startIcon={<AddIcon />}
-            variant="outlined"
-            size="small"
-            href={`#/events/create?tour_id=${record.id}&date=${record.date}&employee_id=${record.employee_id}`}
-          >
-            Add Event
-          </Button>
+          <WriteOnly>
+            <Button
+              startIcon={<AddIcon />}
+              variant="outlined"
+              size="small"
+              href={`#/events/create?tour_id=${record.id}&date=${record.date}&employee_id=${record.employee_id}`}
+            >
+              Add Event
+            </Button>
+          </WriteOnly>
         </Box>
 
         <ReferenceManyField
@@ -255,7 +263,9 @@ const TourEventsManagement = () => {
                 return `${diff} min`;
               }}
             />
-            <EditButton />
+            <WriteOnly>
+              <EditButton />
+            </WriteOnly>
           </Datagrid>
         </ReferenceManyField>
       </CardContent>

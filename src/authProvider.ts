@@ -33,11 +33,9 @@ export const authProvider: AuthProvider = {
       }
     }
 
-    if (status === 403) {
-      authService.handleSessionExpired();
-      return Promise.reject();
-    }
-
+    // 403 is expected for read-only users attempting writes, and for
+    // admins hitting record-level forbidden actions. Don't log the user
+    // out — let the error propagate to the dataProvider notifications.
     return Promise.resolve();
   },
 

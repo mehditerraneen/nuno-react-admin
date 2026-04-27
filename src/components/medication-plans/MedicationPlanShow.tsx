@@ -11,6 +11,9 @@ import {
   useNotify,
   useDataProvider,
   useTranslate,
+  TopToolbar,
+  EditButton,
+  ListButton,
 } from "react-admin";
 import {
   Accordion,
@@ -38,6 +41,7 @@ import { useEffect, useState } from "react";
 import { prescriptionStyle } from "./medBoardPalette";
 import { groupByPrescription } from "./medBoardUtils";
 import { ScheduleRuleRecap } from "./ScheduleRuleRecap";
+import { WriteOnly } from "../auth/WriteOnly";
 
 const StatusChip = () => {
   const record = useRecordContext<MedicationPlan>();
@@ -159,13 +163,15 @@ const MedicationCard = ({
                 })
               : translate("medication_plan_show.med.admin_schedule")}
           </Typography>
-          <Button
-            size="small"
-            startIcon={<CalendarMonthIcon />}
-            onClick={() => setScheduleDialogOpen(true)}
-            variant="outlined"
-            label={translate("medication_plan_show.med.manage_schedule")}
-          />
+          <WriteOnly>
+            <Button
+              size="small"
+              startIcon={<CalendarMonthIcon />}
+              onClick={() => setScheduleDialogOpen(true)}
+              variant="outlined"
+              label={translate("medication_plan_show.med.manage_schedule")}
+            />
+          </WriteOnly>
         </Box>
 
         {rules.length > 0 ? (
@@ -342,12 +348,14 @@ const MedicationsSection = () => {
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {translate("medication_plan_show.no_meds")}
           </Typography>
-          <Button
-            label={translate("medication_plan_show.add_medication")}
-            startIcon={<AddIcon />}
-            onClick={() => setAddDialogOpen(true)}
-            sx={{ mt: 2 }}
-          />
+          <WriteOnly>
+            <Button
+              label={translate("medication_plan_show.add_medication")}
+              startIcon={<AddIcon />}
+              onClick={() => setAddDialogOpen(true)}
+              sx={{ mt: 2 }}
+            />
+          </WriteOnly>
         </Paper>
 
         <AddMedicationDialog
@@ -377,11 +385,13 @@ const MedicationsSection = () => {
             color="primary"
             label={translate("medication_plan_show.open_board")}
           />
-          <Button
-            label={translate("medication_plan_show.add_medication")}
-            startIcon={<AddIcon />}
-            onClick={() => setAddDialogOpen(true)}
-          />
+          <WriteOnly>
+            <Button
+              label={translate("medication_plan_show.add_medication")}
+              startIcon={<AddIcon />}
+              onClick={() => setAddDialogOpen(true)}
+            />
+          </WriteOnly>
         </Box>
       </Box>
       {(() => {
@@ -557,8 +567,17 @@ const MedicationPlanShowLayout = () => {
   );
 };
 
+const MedicationPlanShowActions = () => (
+  <TopToolbar>
+    <ListButton />
+    <WriteOnly>
+      <EditButton />
+    </WriteOnly>
+  </TopToolbar>
+);
+
 export const MedicationPlanShow = () => (
-  <Show>
+  <Show actions={<MedicationPlanShowActions />}>
     <MedicationPlanShowLayout />
   </Show>
 );
