@@ -16,6 +16,7 @@ import {
   Identifier,
 } from "react-admin";
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -23,6 +24,7 @@ import {
   DialogTitle,
   CircularProgress,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   type MyDataProvider,
   type CarePlanDetail,
@@ -67,6 +69,28 @@ export const CarePlanDetailEditDialog: React.FC<
   const notify = useNotify();
   const translate = useTranslate();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const handleDelete = async () => {
+    if (!window.confirm(translate("care_plan_detail.validation.delete_confirm")))
+      return;
+    setIsDeleting(true);
+    try {
+      await dataProvider.deleteCarePlanDetail(carePlanId, detailToEdit.id);
+      notify(translate("care_plan_detail.validation.delete_success"), {
+        type: "success",
+      });
+      onClose();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      notify(
+        `${translate("care_plan_detail.validation.delete_error")}: ${msg}`,
+        { type: "error" },
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   const [cnsItemIds, setCnsItemIds] = useState<number[]>([]);
   const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<Record<string, string>>({});
   const [validationErrors, setValidationErrors] = useState<
@@ -308,15 +332,26 @@ export const CarePlanDetailEditDialog: React.FC<
           />
         </SimpleForm>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={isSaving}>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button
+          onClick={handleDelete}
+          color="error"
+          startIcon={
+            isDeleting ? <CircularProgress size={16} /> : <DeleteIcon />
+          }
+          disabled={isSaving || isDeleting}
+        >
+          {translate("care_plan_detail.validation.delete")}
+        </Button>
+        <Box sx={{ flexGrow: 1 }} />
+        <Button onClick={onClose} disabled={isSaving || isDeleting}>
           {translate("care_plan_detail.cancel")}
         </Button>
         <Button
           type="submit"
           form="care-plan-edit-form"
           variant="contained"
-          disabled={isSaving}
+          disabled={isSaving || isDeleting}
         >
           {isSaving ? (
             <CircularProgress size={24} />

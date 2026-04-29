@@ -83,6 +83,11 @@ export const de = {
       update_error: "Pflegeplan-Detail konnte nicht aktualisiert werden",
       create_error: "Pflegeplan-Detail konnte nicht erstellt werden",
       fix_errors: "Bitte beheben Sie die Validierungsfehler",
+      delete: "Löschen",
+      delete_confirm:
+        "Dieses Pflegeplan-Detail löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      delete_success: "Pflegeplan-Detail gelöscht",
+      delete_error: "Pflegeplan-Detail konnte nicht gelöscht werden",
     },
   },
   care_plan_show: {

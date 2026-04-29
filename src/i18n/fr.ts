@@ -83,6 +83,11 @@ export const fr = {
       update_error: "Impossible de mettre à jour le détail du plan de soins",
       create_error: "Impossible de créer le détail du plan de soins",
       fix_errors: "Veuillez corriger les erreurs de validation",
+      delete: "Supprimer",
+      delete_confirm:
+        "Supprimer ce détail du plan de soins ? Cette action est irréversible.",
+      delete_success: "Détail du plan de soins supprimé",
+      delete_error: "Impossible de supprimer le détail du plan de soins",
     },
   },
   care_plan_show: {

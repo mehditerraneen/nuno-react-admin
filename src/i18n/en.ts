@@ -82,6 +82,11 @@ export const en = {
       update_error: "Could not update care plan detail",
       create_error: "Could not create care plan detail",
       fix_errors: "Please fix validation errors",
+      delete: "Delete",
+      delete_confirm:
+        "Delete this care plan detail? This action cannot be undone.",
+      delete_success: "Care plan detail deleted",
+      delete_error: "Could not delete care plan detail",
     },
   },
   care_plan_show: {

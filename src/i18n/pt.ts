@@ -83,6 +83,11 @@ export const pt = {
       update_error: "Não foi possível atualizar o detalhe do plano",
       create_error: "Não foi possível criar o detalhe do plano",
       fix_errors: "Por favor corrija os erros de validação",
+      delete: "Apagar",
+      delete_confirm:
+        "Apagar este detalhe do plano? Esta ação é irreversível.",
+      delete_success: "Detalhe do plano apagado",
+      delete_error: "Não foi possível apagar o detalhe do plano",
     },
   },
   care_plan_show: {

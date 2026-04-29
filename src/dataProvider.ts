@@ -403,6 +403,10 @@ export interface MyDataProvider extends DataProvider {
     detailId: Identifier,
     data: CarePlanDetailUpdatePayload,
   ) => Promise<CarePlanDetail>; // Returns the updated detail
+  deleteCarePlanDetail: (
+    carePlanId: Identifier,
+    detailId: Identifier,
+  ) => Promise<void>;
 
   // Care plan revisions (nurse sign-off)
   markCarePlanAsRevised: (
@@ -2319,6 +2323,15 @@ export const dataProvider: MyDataProvider = {
       throw new Error(error.detail || "Failed to update care plan detail");
     }
     return response.json();
+  },
+
+  deleteCarePlanDetail: async (carePlanId, detailId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/details/${detailId}`;
+    const response = await authenticatedFetch(url, { method: "DELETE" });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to delete care plan detail");
+    }
   },
 
   markCarePlanAsRevised: async (carePlanId, comment) => {
