@@ -74,7 +74,7 @@ export const MedBoardRuleEditor: React.FC<MedBoardRuleEditorProps> = ({
         borderRadius: 1,
         p: 1.5,
         mb: 1.5,
-        backgroundColor: rule.is_active === false ? "#fafafa" : "white",
+        backgroundColor: rule.is_active === false ? "action.hover" : "background.paper",
       }}
     >
       {/* Kind + active + delete row */}

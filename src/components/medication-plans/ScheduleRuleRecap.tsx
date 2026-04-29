@@ -104,7 +104,7 @@ export const ScheduleRuleRecap: React.FC<{ rule: ScheduleRule }> = ({
         px: 1,
         mb: 0.75,
         borderRadius: 1,
-        backgroundColor: "#fafafa",
+        backgroundColor: "action.hover",
         borderLeft: "3px solid #1976d2",
       }}
     >

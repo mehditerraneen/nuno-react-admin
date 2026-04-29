@@ -143,7 +143,7 @@ const CnsCarePlanDetailsGrid = () => {
       <TableContainer component={Paper} variant="outlined">
         <Table size="small">
           <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+            <TableRow sx={{ backgroundColor: "action.hover" }}>
               <TableCell sx={{ fontWeight: 600 }}>Code</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Custom Description</TableCell>
@@ -157,7 +157,7 @@ const CnsCarePlanDetailsGrid = () => {
             {details.map((detail, index) => (
               <TableRow
                 key={index}
-                sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}
+                sx={{ "&:nth-of-type(odd)": { backgroundColor: "action.hover" } }}
               >
                 <TableCell>
                   <Chip label={detail.item?.code || "—"} size="small" variant="outlined" />

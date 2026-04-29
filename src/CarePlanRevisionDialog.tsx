@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -7,7 +8,9 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Divider,
   TextField,
+  Typography,
 } from "@mui/material";
 import {
   Identifier,
@@ -16,12 +19,19 @@ import {
   useTranslate,
 } from "react-admin";
 import type { MyDataProvider } from "./dataProvider";
+import { RevisionTriggerPicker } from "./components/care-plan-revision/RevisionTriggerPicker";
 
 interface CarePlanRevisionDialogProps {
   open: boolean;
   onClose: () => void;
   onRevised: () => void;
   carePlanId: Identifier;
+}
+
+interface PendingTrigger {
+  kind: string;
+  source_id: number;
+  summary: string;
 }
 
 export const CarePlanRevisionDialog: React.FC<CarePlanRevisionDialogProps> = ({
@@ -34,20 +44,49 @@ export const CarePlanRevisionDialog: React.FC<CarePlanRevisionDialogProps> = ({
   const notify = useNotify();
   const translate = useTranslate();
   const [comment, setComment] = useState("");
+  const [pending, setPending] = useState<PendingTrigger[]>([]);
   const [saving, setSaving] = useState(false);
 
   const handleClose = () => {
     if (saving) return;
     setComment("");
+    setPending([]);
     onClose();
   };
 
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      await dataProvider.markCarePlanAsRevised(carePlanId, comment);
-      notify(translate("care_plan_revision.success"), { type: "success" });
+      const revision = await dataProvider.markCarePlanAsRevised(
+        carePlanId,
+        comment,
+      );
+      // Attach pending triggers in parallel; revision is created either way.
+      const failures: string[] = [];
+      await Promise.all(
+        pending.map(async (p) => {
+          try {
+            await dataProvider.attachRevisionTrigger(
+              carePlanId,
+              revision.id,
+              p.kind,
+              p.source_id,
+            );
+          } catch (e) {
+            failures.push(p.summary);
+          }
+        }),
+      );
+      if (failures.length === 0) {
+        notify(translate("care_plan_revision.success"), { type: "success" });
+      } else {
+        notify(
+          `Révision créée mais ${failures.length} motif(s) n'ont pas pu être attachés : ${failures.join(", ")}`,
+          { type: "warning" },
+        );
+      }
       setComment("");
+      setPending([]);
       onRevised();
       onClose();
     } catch (err: unknown) {
@@ -78,6 +117,29 @@ export const CarePlanRevisionDialog: React.FC<CarePlanRevisionDialogProps> = ({
           onChange={(e) => setComment(e.target.value)}
           disabled={saving}
         />
+
+        <Divider sx={{ my: 3 }} />
+        <Typography variant="subtitle2" gutterBottom>
+          Motifs de la révision
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+          Optionnel — chute, prescription, plan CNS, hospitalisation, etc.
+        </Typography>
+        <Box sx={{ mt: 1 }}>
+          <RevisionTriggerPicker
+            carePlanId={carePlanId}
+            pending={pending}
+            onPick={(item) => setPending((cur) => [...cur, item])}
+            onRemovePending={(item) =>
+              setPending((cur) =>
+                cur.filter(
+                  (p) => !(p.kind === item.kind && p.source_id === item.source_id),
+                ),
+              )
+            }
+            disabled={saving}
+          />
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={saving}>

@@ -52,7 +52,7 @@ const DetailSummaryCard: React.FC<{
       mb: 1,
       borderLeft: "4px solid",
       borderLeftColor: tone === "added" ? "success.main" : "error.main",
-      backgroundColor: tone === "added" ? "#e8f5e9" : "#ffebee",
+      backgroundColor: tone === "added" ? "success.light" : "error.light",
     }}
   >
     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
@@ -372,7 +372,7 @@ export const CarePlanDiffPanel: React.FC<CarePlanDiffPanelProps> = ({
                       mb: 1,
                       borderLeft: "4px solid",
                       borderLeftColor: "warning.main",
-                      backgroundColor: "#fff8e1",
+                      backgroundColor: "warning.light",
                     }}
                   >
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>

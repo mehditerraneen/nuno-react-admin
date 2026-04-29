@@ -67,7 +67,7 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
         mb: 1,
         cursor: onClick ? "pointer" : "default",
         borderLeft: `4px solid ${leftStripe}`,
-        backgroundColor: isPending ? "#fff9c4" : "white",
+        backgroundColor: isPending ? "warning.light" : "background.paper",
         transition: "box-shadow .15s ease, transform .15s ease",
         "&:hover": onClick
           ? { boxShadow: 2, transform: "translateY(-1px)" }
@@ -114,7 +114,7 @@ export const MedicationBoardCard: React.FC<MedicationBoardCardProps> = ({
             py: 0.25,
             mb: 0.75,
             borderRadius: 1,
-            backgroundColor: hasRx ? rx.soft : "#eef2f7",
+            backgroundColor: hasRx ? rx.soft : "action.hover",
             color: hasRx ? rx.text : "#37474f",
             fontSize: "0.78rem",
             fontWeight: 600,

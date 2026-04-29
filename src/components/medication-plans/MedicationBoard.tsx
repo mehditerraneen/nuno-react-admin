@@ -87,7 +87,7 @@ const LaneColumn: React.FC<{
         display: "flex",
         flexDirection: "column",
         borderTop: `4px solid ${lane.accent}`,
-        backgroundColor: "#fafafa",
+        backgroundColor: "action.hover",
       }}
     >
       <Box
@@ -468,7 +468,7 @@ export const MedicationBoard: React.FC = () => {
             alignItems: "center",
             gap: 1,
             flexWrap: "wrap",
-            backgroundColor: "#fafafa",
+            backgroundColor: "action.hover",
           }}
         >
           <Typography variant="caption" sx={{ fontWeight: 600, mr: 1 }}>

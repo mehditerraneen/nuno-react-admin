@@ -277,7 +277,7 @@ const LinkedMedicationsSection = () => {
         <Typography variant="h6" gutterBottom>
           {translate("prescription_show.linked.title")}
         </Typography>
-        <Paper sx={{ p: 2, backgroundColor: "#f5f5f5" }}>
+        <Paper sx={{ p: 2, backgroundColor: "action.hover" }}>
           <Typography variant="body2" color="text.secondary">
             {translate("prescription_show.linked.none")}
           </Typography>
@@ -417,7 +417,7 @@ const NotesBlock = () => {
       <Typography variant="subtitle2" color="text.secondary">
         {translate("prescription_show.notes")}
       </Typography>
-      <Paper sx={{ p: 2, backgroundColor: "#f5f5f5" }}>
+      <Paper sx={{ p: 2, backgroundColor: "action.hover" }}>
         <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
           {noteText}
         </Typography>

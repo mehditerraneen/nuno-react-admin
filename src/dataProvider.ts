@@ -81,12 +81,34 @@ export interface CarePlanDetailAction {
   order: number;
 }
 
+export interface CarePlanRevisionTrigger {
+  id: number;
+  kind: string;
+  kind_label: string;
+  source_id: number;
+  summary: string;
+  payload: Record<string, unknown>;
+  created_at: string | null;
+}
+
+export interface CarePlanRevisionTriggerKind {
+  kind: string;
+  label: string;
+}
+
+export interface CarePlanRevisionTriggerCandidate {
+  kind: string;
+  source_id: number;
+  summary: string;
+}
+
 export interface CarePlanRevision {
   id: number;
   revised_on: string;
   revised_by_id: number | null;
   revised_by: string | null;
   comment: string;
+  triggers?: CarePlanRevisionTrigger[];
 }
 
 export interface CarePlanDetailSummary {
@@ -393,6 +415,27 @@ export interface MyDataProvider extends DataProvider {
   deleteCarePlanRevision: (
     carePlanId: Identifier,
     revisionId: Identifier,
+  ) => Promise<void>;
+  // Care plan revision triggers (why was this revision created?)
+  getRevisionTriggerKinds: (
+    carePlanId: Identifier,
+  ) => Promise<CarePlanRevisionTriggerKind[]>;
+  searchRevisionTriggerCandidates: (
+    carePlanId: Identifier,
+    kind: string,
+    q?: string,
+    limit?: number,
+  ) => Promise<CarePlanRevisionTriggerCandidate[]>;
+  attachRevisionTrigger: (
+    carePlanId: Identifier,
+    revisionId: Identifier,
+    kind: string,
+    sourceId: number,
+  ) => Promise<CarePlanRevisionTrigger>;
+  detachRevisionTrigger: (
+    carePlanId: Identifier,
+    revisionId: Identifier,
+    triggerId: Identifier,
   ) => Promise<void>;
   getCarePlanDiff: (
     carePlanId: Identifier,
@@ -2307,6 +2350,55 @@ export const dataProvider: MyDataProvider = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.detail || "Failed to delete revision");
+    }
+  },
+
+  getRevisionTriggerKinds: async (carePlanId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions/trigger-kinds`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to fetch trigger kinds");
+    }
+    return response.json();
+  },
+
+  searchRevisionTriggerCandidates: async (
+    carePlanId,
+    kind,
+    q,
+    limit = 20,
+  ) => {
+    const params = new URLSearchParams({ kind, limit: String(limit) });
+    if (q) params.set("q", q);
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions/trigger-candidates?${params}`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to fetch trigger candidates");
+    }
+    return response.json();
+  },
+
+  attachRevisionTrigger: async (carePlanId, revisionId, kind, sourceId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions/${revisionId}/triggers`;
+    const response = await authenticatedFetch(url, {
+      method: "POST",
+      body: JSON.stringify({ kind, source_id: sourceId }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to attach trigger");
+    }
+    return response.json();
+  },
+
+  detachRevisionTrigger: async (carePlanId, revisionId, triggerId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions/${revisionId}/triggers/${triggerId}`;
+    const response = await authenticatedFetch(url, { method: "DELETE" });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to detach trigger");
     }
   },
 

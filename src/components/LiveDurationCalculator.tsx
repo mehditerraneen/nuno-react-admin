@@ -149,7 +149,7 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
     return (
       <Paper
         variant="outlined"
-        sx={{ p: 2, mt: 2, backgroundColor: "#fff3e0" }}
+        sx={{ p: 2, mt: 2, backgroundColor: "warning.light" }}
         className={className}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -177,7 +177,7 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
       sx={{
         p: 2,
         mt: 2,
-        backgroundColor: "#f0f7ff",
+        backgroundColor: "info.light",
         border: "1px solid #2196f3",
       }}
       className={className}

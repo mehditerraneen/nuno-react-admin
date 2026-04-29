@@ -218,7 +218,7 @@ const MedicationCard = ({
         )}
 
         {medication.remarks && (
-          <Box sx={{ mt: 2, p: 1, backgroundColor: "#f5f5f5", borderRadius: 1 }}>
+          <Box sx={{ mt: 2, p: 1, backgroundColor: "action.hover", borderRadius: 1 }}>
             <Typography variant="body2">
               <strong>{translate("medication_plan_show.med.remarks")}:</strong>{" "}
               {medication.remarks}
@@ -285,7 +285,7 @@ const PrescriptionGroupHeaderInner: React.FC<{
           label={`#${prescriptionId}`}
           size="small"
           sx={{
-            backgroundColor: "white",
+            backgroundColor: "background.paper",
             color: s.text,
             border: `1px solid ${s.main}`,
             fontWeight: 600,
@@ -296,7 +296,7 @@ const PrescriptionGroupHeaderInner: React.FC<{
         size="small"
         label={count}
         sx={{
-          backgroundColor: "white",
+          backgroundColor: "background.paper",
           color: s.text,
           border: `1px solid ${s.main}`,
           fontWeight: 600,
@@ -431,7 +431,7 @@ const MedicationsSection = () => {
                   count={group.medications.length}
                 />
               </AccordionSummary>
-              <AccordionDetails sx={{ backgroundColor: "white" }}>
+              <AccordionDetails sx={{ backgroundColor: "background.paper" }}>
                 {group.medications.map((medication) => (
                   <MedicationCard
                     key={medication.id}
@@ -538,7 +538,7 @@ const MedicationPlanShowLayout = () => {
           mt: 1,
           mb: 1,
           p: 1.5,
-          bgcolor: "grey.50",
+          bgcolor: "action.hover",
           borderRadius: 1,
         }}
       >

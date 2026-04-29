@@ -36,7 +36,7 @@ const MedicationsSection = () => {
 
   if (!record?.medications || record.medications.length === 0) {
     return (
-      <Box sx={{ mt: 2, p: 2, backgroundColor: "#f5f5f5", borderRadius: 1 }}>
+      <Box sx={{ mt: 2, p: 2, backgroundColor: "action.hover", borderRadius: 1 }}>
         <Typography variant="body2" color="text.secondary">
           No medications in this plan yet.
         </Typography>

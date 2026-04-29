@@ -61,6 +61,8 @@ import {
 import { formatDurationDisplay } from "./utils/timeUtils";
 import { CarePlanPrintButton } from "./components/CarePlanPrintView";
 import { WriteOnly } from "./components/auth/WriteOnly";
+import { RevisionTriggerChips } from "./components/care-plan-revision/RevisionTriggerChips";
+import { EditTriggersDialog } from "./components/care-plan-revision/EditTriggersDialog";
 
 const formatRevisionDate = (iso: string | null | undefined) => {
   if (!iso) return "—";
@@ -82,6 +84,9 @@ const CarePlanRevisionsPanel: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [triggerEditFor, setTriggerEditFor] = useState<CarePlanRevision | null>(
+    null,
+  );
 
   if (!record) return null;
 
@@ -128,7 +133,7 @@ const CarePlanRevisionsPanel: React.FC = () => {
         my: 2,
         borderLeft: "4px solid",
         borderLeftColor: latest ? "success.main" : "warning.main",
-        backgroundColor: latest ? "#f1f8e9" : "#fffde7",
+        backgroundColor: latest ? "success.light" : "warning.light",
       }}
     >
       <Box
@@ -164,6 +169,10 @@ const CarePlanRevisionsPanel: React.FC = () => {
                   “{latest.comment}”
                 </Typography>
               )}
+              <RevisionTriggerChips
+                triggers={latest.triggers}
+                onManage={isStaff ? () => setTriggerEditFor(latest) : undefined}
+              />
             </>
           ) : (
             <Typography variant="body2" color="text.secondary">
@@ -230,6 +239,10 @@ const CarePlanRevisionsPanel: React.FC = () => {
                   “{r.comment}”
                 </Typography>
               )}
+              <RevisionTriggerChips
+                triggers={r.triggers}
+                onManage={isStaff ? () => setTriggerEditFor(r) : undefined}
+              />
             </Box>
           ))}
         </Box>
@@ -241,6 +254,17 @@ const CarePlanRevisionsPanel: React.FC = () => {
         onClose={() => setDialogOpen(false)}
         onRevised={() => refresh()}
       />
+
+      {triggerEditFor && (
+        <EditTriggersDialog
+          open={!!triggerEditFor}
+          carePlanId={record.id}
+          revisionId={triggerEditFor.id}
+          initialTriggers={triggerEditFor.triggers || []}
+          onClose={() => setTriggerEditFor(null)}
+          onChanged={() => refresh()}
+        />
+      )}
     </Paper>
   );
 };
@@ -534,7 +558,7 @@ const CarePlanDetails = () => {
                   >
                     <Table size="small">
                       <TableHead>
-                        <TableRow sx={{ backgroundColor: "#fff8e1" }}>
+                        <TableRow sx={{ backgroundColor: "warning.light" }}>
                           <TableCell sx={{ fontWeight: 600 }}>
                             {translate("care_plan_show.action")}
                           </TableCell>
@@ -636,7 +660,7 @@ const CarePlanShowLayout = () => {
           mt: 1,
           mb: 1,
           p: 1.5,
-          bgcolor: "grey.50",
+          bgcolor: "action.hover",
           borderRadius: 1,
         }}
       >

@@ -66,7 +66,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
         p: 2,
         mt: 2,
         maxWidth: 800,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "action.hover",
         border: "1px solid #e0e0e0",
       }}
     >
@@ -344,7 +344,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
         p: 3,
         mt: 2,
         maxWidth: 800,
-        backgroundColor: "#e3f2fd",
+        backgroundColor: "info.light",
         border: "2px solid #2196f3",
       }}
     >
@@ -459,7 +459,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
       <TableContainer component={Paper} variant="outlined">
         <Table size="small">
           <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+            <TableRow sx={{ backgroundColor: "action.hover" }}>
               <TableCell sx={{ fontWeight: 600 }}>
                 {translate("care_plan_summary.col_detail")}
               </TableCell>
@@ -507,7 +507,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
                       return (
                         <TableRow
                           key={`${detailIndex}-${itemIndex}`}
-                          sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}
+                          sx={{ "&:nth-of-type(odd)": { backgroundColor: "action.hover" } }}
                         >
                           <TableCell>
                             <Typography variant="caption">
@@ -536,7 +536,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
                       );
                     });
                   })}
-                  <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
+                  <TableRow sx={{ backgroundColor: "info.light" }}>
                     <TableCell colSpan={5} sx={{ fontWeight: 700 }}>
                       {translate("care_plan_summary.total")}
                     </TableCell>
@@ -574,7 +574,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: "#fff3e0" }}>
+                <TableRow sx={{ backgroundColor: "warning.light" }}>
                   <TableCell sx={{ fontWeight: 600 }}>
                     {translate("care_plan_summary.col_code")}
                   </TableCell>
@@ -591,7 +591,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
               </TableHead>
               <TableBody>
                 {missingCodes.map((mc, index) => (
-                  <TableRow key={index} sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fff8e1" } }}>
+                  <TableRow key={index} sx={{ "&:nth-of-type(odd)": { backgroundColor: "warning.light" } }}>
                     <TableCell>
                       <Chip label={mc.code} size="small" color="warning" variant="outlined" />
                     </TableCell>

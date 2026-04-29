@@ -256,7 +256,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
   return (
     <Box sx={{ width: "100%" }}>
       {/* Header with Progress Steps */}
-      <Paper elevation={1} sx={{ p: 2, mb: 2, backgroundColor: "#f8f9fa" }}>
+      <Paper elevation={1} sx={{ p: 2, mb: 2, backgroundColor: "action.hover" }}>
         <Typography
           variant="h6"
           gutterBottom
@@ -401,7 +401,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
               {/* Next Step Hint */}
               <Paper
                 variant="outlined"
-                sx={{ p: 2, mt: 3, backgroundColor: "#e3f2fd" }}
+                sx={{ p: 2, mt: 3, backgroundColor: "info.light" }}
               >
                 <Typography
                   variant="body2"
@@ -429,7 +429,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
               {/* Horizontal Occurrences Display */}
               <Paper
                 variant="outlined"
-                sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}
+                sx={{ p: 3, mb: 3, backgroundColor: "action.hover" }}
               >
                 <Typography
                   variant="subtitle1"
@@ -514,7 +514,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
               {/* Next Step Hint */}
               <Paper
                 variant="outlined"
-                sx={{ p: 2, mt: 3, backgroundColor: "#e8f5e8" }}
+                sx={{ p: 2, mt: 3, backgroundColor: "success.light" }}
               >
                 <Typography
                   variant="body2"
@@ -548,8 +548,8 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   sx={{
-                    backgroundColor: "#f5f5f5",
-                    "&:hover": { backgroundColor: "#eeeeee" },
+                    backgroundColor: "action.hover",
+                    "&:hover": { backgroundColor: "action.selected" },
                   }}
                 >
                   <Box
@@ -593,7 +593,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                       sx={{
                         p: 2,
                         mb: 3,
-                        backgroundColor: "#f8f9fa",
+                        backgroundColor: "action.hover",
                         border: "1px solid #e0e0e0",
                         boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                         position: "relative",
@@ -602,7 +602,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                           position: "absolute",
                           top: "-12px",
                           right: "10px",
-                          backgroundColor: "#ffeb3b",
+                          backgroundColor: "warning.light",
                           padding: "2px 8px",
                           borderRadius: "4px",
                           fontSize: "0.75rem",
@@ -716,7 +716,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
               {/* Tips Panel */}
               <Paper
                 variant="outlined"
-                sx={{ p: 2, backgroundColor: "#f3e5f5" }}
+                sx={{ p: 2, backgroundColor: "secondary.light" }}
               >
                 <Typography
                   variant="subtitle2"
@@ -780,7 +780,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
 
               <Paper
                 variant="outlined"
-                sx={{ p: 2, mb: 3, backgroundColor: "#fff8e1" }}
+                sx={{ p: 2, mb: 3, backgroundColor: "warning.light" }}
               >
                 <Typography variant="body2" color="text.secondary">
                   💡 {translate("care_plan_detail.actions.tip")}
