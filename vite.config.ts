@@ -13,8 +13,15 @@ const pkg = JSON.parse(
 );
 
 const gitCommit = (() => {
+  // Read VITE_GIT_COMMIT from env first (CI/Dokploy can inject it cheaply),
+  // then fall back to invoking git locally — silenced so the build log isn't
+  // polluted on machines (Alpine, etc.) without git installed.
+  if (process.env.VITE_GIT_COMMIT) return process.env.VITE_GIT_COMMIT;
   try {
-    return execSync("git rev-parse --short HEAD", { cwd: __dirname })
+    return execSync("git rev-parse --short HEAD", {
+      cwd: __dirname,
+      stdio: ["ignore", "pipe", "ignore"],
+    })
       .toString()
       .trim();
   } catch {
