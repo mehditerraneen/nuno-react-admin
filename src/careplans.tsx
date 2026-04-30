@@ -1,7 +1,9 @@
-import { Box, Button, Chip } from "@mui/material";
+import { Box, Button, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
   List,
   Datagrid,
@@ -70,6 +72,112 @@ const carePlanFilters = [
   <BooleanInput key="last_valid_plan" source="last_valid_plan" label="Last Valid Plan Only" />,
 ];
 
+const TRIGGER_KIND_ICON: Record<string, string> = {
+  fall: "🦴",
+  prescription: "💊",
+  cns_plan: "📋",
+  hospitalization: "🏥",
+  wound: "🩹",
+};
+
+interface TriggerSummaryItem {
+  kind: string;
+  summary: string;
+}
+
+const RelativeUpdatedField = ({ record }: { record: any }) => {
+  const iso: string | null = record?.updated_on || null;
+  if (!iso) return <span>—</span>;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return <span>—</span>;
+  const relative = formatDistanceToNow(d, { addSuffix: true, locale: fr });
+  const absolute = d.toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return (
+    <Tooltip title={absolute} arrow>
+      <span style={{ whiteSpace: "nowrap" }}>{relative}</span>
+    </Tooltip>
+  );
+};
+
+const TriggerSummaryField = ({ record }: { record: any }) => {
+  const items: TriggerSummaryItem[] = record?.triggers_summary || [];
+  if (!items.length) return <span style={{ color: "#999" }}>—</span>;
+
+  // Group by kind, keep order of first appearance, count + collect summaries.
+  const groups = new Map<string, { count: number; summaries: string[] }>();
+  for (const t of items) {
+    const g = groups.get(t.kind) || { count: 0, summaries: [] };
+    g.count += 1;
+    if (t.summary) g.summaries.push(t.summary);
+    groups.set(t.kind, g);
+  }
+
+  return (
+    <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+      {Array.from(groups.entries()).map(([kind, g]) => {
+        const icon = TRIGGER_KIND_ICON[kind] || "•";
+        const tooltip = (
+          <Box sx={{ minWidth: 200, maxWidth: 360 }}>
+            {g.summaries.slice(0, 8).map((s, i) => (
+              <Typography
+                key={i}
+                variant="caption"
+                component="div"
+                sx={{ lineHeight: 1.5 }}
+              >
+                {icon} {s}
+              </Typography>
+            ))}
+            {g.summaries.length > 8 && (
+              <Typography variant="caption" component="div" sx={{ opacity: 0.7 }}>
+                … +{g.summaries.length - 8}
+              </Typography>
+            )}
+          </Box>
+        );
+        return (
+          <Tooltip key={kind} title={tooltip} arrow placement="top">
+            <Chip
+              label={`${icon} ${g.count}`}
+              size="small"
+              variant="outlined"
+              sx={{ cursor: "default" }}
+            />
+          </Tooltip>
+        );
+      })}
+    </Stack>
+  );
+};
+
+const PlanNumberWithReplaces = ({ record }: { record: any }) => {
+  const n = record?.plan_number;
+  const replaces = record?.replace_plan_number;
+  return (
+    <Stack direction="row" spacing={0.5} alignItems="center">
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        {n}
+      </Typography>
+      {replaces ? (
+        <Tooltip title={`Remplace le plan n°${replaces}`} arrow>
+          <Chip
+            label={`← n°${replaces}`}
+            size="small"
+            variant="outlined"
+            sx={{ height: 20, fontSize: 11 }}
+          />
+        </Tooltip>
+      ) : null}
+    </Stack>
+  );
+};
+
 const CarePlanListActions = () => (
   <TopToolbar>
     <FilterButton />
@@ -109,8 +217,12 @@ export const CarePlanList = () => (
     >
       <TextField source="id" />
       <ReferenceField source="patient_id" reference="patients" />
-      <NumberField source="plan_number" />
-      <DateField source="plan_start_date" />
+      <FunctionField
+        source="plan_number"
+        label="Plan n°"
+        render={(record: any) => <PlanNumberWithReplaces record={record} />}
+      />
+      <DateField source="plan_start_date" label="Début" />
       <FunctionField
         source="last_valid_plan"
         label="Plan valide"
@@ -126,8 +238,16 @@ export const CarePlanList = () => (
           ) : null
         }
       />
-      <DateField source="updated_on" label="Updated" showTime />
-      <TextField source="updated_by" label="Updated By" />
+      <FunctionField
+        label="Motifs"
+        render={(record: any) => <TriggerSummaryField record={record} />}
+      />
+      <FunctionField
+        source="updated_on"
+        label="Mis à jour"
+        render={(record: any) => <RelativeUpdatedField record={record} />}
+      />
+      <TextField source="updated_by" label="Par" />
       <ShowButton />
       <WriteOnly>
         <EditButton />
