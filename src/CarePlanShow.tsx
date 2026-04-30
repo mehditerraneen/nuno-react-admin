@@ -261,6 +261,7 @@ const CarePlanRevisionsPanel: React.FC = () => {
           carePlanId={record.id}
           revisionId={triggerEditFor.id}
           initialTriggers={triggerEditFor.triggers || []}
+          initialRevisedOn={triggerEditFor.revised_on}
           onClose={() => setTriggerEditFor(null)}
           onChanged={() => refresh()}
         />

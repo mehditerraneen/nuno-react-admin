@@ -420,6 +420,11 @@ export interface MyDataProvider extends DataProvider {
     carePlanId: Identifier,
     revisionId: Identifier,
   ) => Promise<void>;
+  updateCarePlanRevisionDate: (
+    carePlanId: Identifier,
+    revisionId: Identifier,
+    revisedOn: string,
+  ) => Promise<CarePlanRevision>;
   // Care plan revision triggers (why was this revision created?)
   getRevisionTriggerKinds: (
     carePlanId: Identifier,
@@ -2364,6 +2369,19 @@ export const dataProvider: MyDataProvider = {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.detail || "Failed to delete revision");
     }
+  },
+
+  updateCarePlanRevisionDate: async (carePlanId, revisionId, revisedOn) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions/${revisionId}`;
+    const response = await authenticatedFetch(url, {
+      method: "PATCH",
+      body: JSON.stringify({ revised_on: revisedOn }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to update revision date");
+    }
+    return response.json();
   },
 
   getRevisionTriggerKinds: async (carePlanId) => {
