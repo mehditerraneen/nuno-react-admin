@@ -100,6 +100,7 @@ export interface CarePlanRevisionTriggerCandidate {
   kind: string;
   source_id: number;
   summary: string;
+  payload?: Record<string, unknown>;
 }
 
 export interface CarePlanRevision {

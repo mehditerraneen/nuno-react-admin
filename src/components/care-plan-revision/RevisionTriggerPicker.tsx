@@ -10,6 +10,7 @@ import {
   Select,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useDataProvider, type Identifier } from "react-admin";
@@ -20,6 +21,7 @@ import type {
   CarePlanRevisionTriggerKind,
   MyDataProvider,
 } from "../../dataProvider";
+import { FormatTriggerPayload } from "./formatTriggerPayload";
 
 const KIND_ICON: Record<string, string> = {
   fall: "🦴",
@@ -144,17 +146,23 @@ export const RevisionTriggerPicker = ({
       {(existing.length > 0 || pending.length > 0) && (
         <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2, gap: 1 }}>
           {existing.map((t) => (
-            <Chip
+            <Tooltip
               key={`x-${t.id}`}
-              label={`${KIND_ICON[t.kind] || "•"} ${t.summary || t.kind_label}`}
-              onDelete={
-                onRemoveExisting ? () => onRemoveExisting(t) : undefined
-              }
-              disabled={disabled}
-              size="small"
-              color="primary"
-              variant="filled"
-            />
+              title={<FormatTriggerPayload payload={t.payload} />}
+              arrow
+              placement="top"
+            >
+              <Chip
+                label={`${KIND_ICON[t.kind] || "•"} ${t.summary || t.kind_label}`}
+                onDelete={
+                  onRemoveExisting ? () => onRemoveExisting(t) : undefined
+                }
+                disabled={disabled}
+                size="small"
+                color="primary"
+                variant="filled"
+              />
+            </Tooltip>
           ))}
           {pending.map((p) => (
             <Chip
@@ -202,6 +210,21 @@ export const RevisionTriggerPicker = ({
           isOptionEqualToValue={(a, b) =>
             a.kind === b.kind && a.source_id === b.source_id
           }
+          renderOption={(props, option) => {
+            const { key, ...liProps } = props as React.HTMLAttributes<HTMLLIElement> & {
+              key?: React.Key;
+            };
+            return (
+              <Tooltip
+                key={key ?? `${option.kind}-${option.source_id}`}
+                title={<FormatTriggerPayload payload={option.payload} />}
+                placement="right"
+                arrow
+              >
+                <li {...liProps}>{option.summary}</li>
+              </Tooltip>
+            );
+          }}
           onChange={(_, value) => {
             if (value) {
               onPick({
