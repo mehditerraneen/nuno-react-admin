@@ -26,6 +26,7 @@ const KIND_ICON: Record<string, string> = {
   prescription: "💊",
   cns_plan: "📋",
   hospitalization: "🏥",
+  wound: "🩹",
 };
 
 interface SelectedItem {
