@@ -278,7 +278,10 @@ export const InitialAssessmentPanel = ({ carePlanId, defaultOpen = false }: Prop
     ? [
         { key: "mms", label: "MMS", data: data.mms },
         { key: "gds15", label: "GDS-15", data: data.gds15 },
+        { key: "mna", label: "MNA", data: data.mna },
         { key: "braden", label: "Braden", data: data.braden },
+        { key: "tinetti", label: "Tinetti", data: data.tinetti },
+        { key: "mif", label: "MIF", data: data.mif },
         { key: "fall_risk", label: "Chute", data: data.fall_risk },
       ]
     : [];
@@ -405,6 +408,51 @@ export const InitialAssessmentPanel = ({ carePlanId, defaultOpen = false }: Prop
                   <Typography variant="caption" color="text.secondary">
                     Évalué le {formatDate(data.fall_risk.assessment_date)}
                     {data.fall_risk.risk_level ? ` — ${data.fall_risk.risk_level}` : ""}
+                  </Typography>
+                )
+              }
+            />
+            <AssessmentBlock
+              title="MNA (nutrition)"
+              data={data?.mna ?? null}
+              addUrl={data?.admin_create_urls.mna ?? "#"}
+              subtitle={
+                data?.mna?.assessment_date && (
+                  <Typography variant="caption" color="text.secondary">
+                    Évalué le {formatDate(data.mna.assessment_date)}
+                    {data.mna.assessment_type
+                      ? ` — ${data.mna.assessment_type === "SCREENING" ? "Dépistage" : "Complet"}`
+                      : ""}
+                  </Typography>
+                )
+              }
+            />
+            <AssessmentBlock
+              title="Tinetti (équilibre/marche)"
+              data={data?.tinetti ?? null}
+              addUrl={data?.admin_create_urls.tinetti ?? "#"}
+              subtitle={
+                data?.tinetti?.assessment_date && (
+                  <Typography variant="caption" color="text.secondary">
+                    Évalué le {formatDate(data.tinetti.assessment_date)}
+                    {data.tinetti.balance_score != null && data.tinetti.gait_score != null
+                      ? ` — équilibre ${data.tinetti.balance_score}/16 · marche ${data.tinetti.gait_score}/12`
+                      : ""}
+                  </Typography>
+                )
+              }
+            />
+            <AssessmentBlock
+              title="MIF (indépendance)"
+              data={data?.mif ?? null}
+              addUrl={data?.admin_create_urls.mif ?? "#"}
+              subtitle={
+                data?.mif?.assessment_date && (
+                  <Typography variant="caption" color="text.secondary">
+                    Évalué le {formatDate(data.mif.assessment_date)}
+                    {data.mif.motor_score != null && data.mif.cognitive_score != null
+                      ? ` — moteur ${data.mif.motor_score}/91 · cognitif ${data.mif.cognitive_score}/35`
+                      : ""}
                   </Typography>
                 )
               }

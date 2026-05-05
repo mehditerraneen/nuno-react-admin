@@ -208,6 +208,26 @@ export interface FallRiskData extends AssessmentBase {
   risk_level: string | null;
 }
 
+export interface MNAData extends AssessmentBase {
+  assessment_date: string | null;
+  assessment_type: string | null;
+  nutritional_status: string | null;
+}
+
+export interface TinettiData extends AssessmentBase {
+  assessment_date: string | null;
+  balance_score: number | null;
+  gait_score: number | null;
+  fall_risk_level: string | null;
+}
+
+export interface MIFData extends AssessmentBase {
+  assessment_date: string | null;
+  motor_score: number | null;
+  cognitive_score: number | null;
+  independence_level: string | null;
+}
+
 export interface ActiveAssessmentsBundle {
   patient_id: number;
   anamnesis: AnamnesisData | null;
@@ -215,12 +235,18 @@ export interface ActiveAssessmentsBundle {
   gds15: GDS15Data | null;
   braden: BradenData | null;
   fall_risk: FallRiskData | null;
+  mna: MNAData | null;
+  tinetti: TinettiData | null;
+  mif: MIFData | null;
   admin_create_urls: {
     anamnesis: string;
     mms: string;
     gds15: string;
     braden: string;
     fall_risk: string;
+    mna: string;
+    tinetti: string;
+    mif: string;
   };
 }
 
