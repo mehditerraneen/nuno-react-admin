@@ -8,8 +8,6 @@ import {
   Box,
   Typography,
   TextField,
-  Switch,
-  FormControlLabel,
   IconButton,
   Grid,
   Alert,
@@ -402,106 +400,28 @@ export const AddMedicationDialog = ({
             />
           </Grid>
 
-          {/* Schedule */}
+          {/* Schedule moved to dedicated rule editor — opened
+              automatically right after the medication is created. */}
           <Grid size={12}>
-            <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-              {translate("medication_plan_show.add.default_schedule")}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" gutterBottom>
-              {translate("medication_plan_show.add.default_schedule_hint")}
-            </Typography>
-          </Grid>
-
-          {/* Morning */}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.morning}
-                  onChange={(e) => setFormData({ ...formData, morning: e.target.checked })}
-                />
-              }
-              label={translate("medication_plan_show.add.morning")}
-            />
-            {formData.morning && (
-              <TextField
-                label={translate("medication_plan_show.add.dose")}
-                value={formData.morning_dose}
-                onChange={(e) => setFormData({ ...formData, morning_dose: e.target.value })}
-                size="small"
-                fullWidth
-                sx={{ ml: 2 }}
-              />
-            )}
-          </Grid>
-
-          {/* Noon */}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.noon}
-                  onChange={(e) => setFormData({ ...formData, noon: e.target.checked })}
-                />
-              }
-              label={translate("medication_plan_show.add.noon")}
-            />
-            {formData.noon && (
-              <TextField
-                label={translate("medication_plan_show.add.dose")}
-                value={formData.noon_dose}
-                onChange={(e) => setFormData({ ...formData, noon_dose: e.target.value })}
-                size="small"
-                fullWidth
-                sx={{ ml: 2 }}
-              />
-            )}
-          </Grid>
-
-          {/* Evening */}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.evening}
-                  onChange={(e) => setFormData({ ...formData, evening: e.target.checked })}
-                />
-              }
-              label={translate("medication_plan_show.add.evening")}
-            />
-            {formData.evening && (
-              <TextField
-                label={translate("medication_plan_show.add.dose")}
-                value={formData.evening_dose}
-                onChange={(e) => setFormData({ ...formData, evening_dose: e.target.value })}
-                size="small"
-                fullWidth
-                sx={{ ml: 2 }}
-              />
-            )}
-          </Grid>
-
-          {/* Night */}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.night}
-                  onChange={(e) => setFormData({ ...formData, night: e.target.checked })}
-                />
-              }
-              label={translate("medication_plan_show.add.night")}
-            />
-            {formData.night && (
-              <TextField
-                label={translate("medication_plan_show.add.dose")}
-                value={formData.night_dose}
-                onChange={(e) => setFormData({ ...formData, night_dose: e.target.value })}
-                size="small"
-                fullWidth
-                sx={{ ml: 2 }}
-              />
-            )}
+            <Box
+              sx={{
+                mt: 2,
+                p: 1.5,
+                border: "1px solid",
+                borderColor: "info.light",
+                borderRadius: 1,
+                backgroundColor: "info.lighter",
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                💡 L'horaire d'administration se définit avec des{" "}
+                <strong>règles de planification</strong> (parties du
+                journée, heures précises, hebdomadaire, mensuel,
+                spécifique, PRN, échelle glycémique). L'éditeur de
+                règles s'ouvre automatiquement après la création du
+                médicament.
+              </Typography>
+            </Box>
           </Grid>
         </Grid>
       </DialogContent>
