@@ -272,6 +272,17 @@ export const InitialAssessmentPanel = ({ carePlanId, defaultOpen = false }: Prop
     );
   };
 
+  // At-a-glance severity chips shown in the panel header so the
+  // clinician can spot concerning scores without expanding.
+  const summaryChips: { key: string; label: string; data: AssessmentBase | null }[] = data
+    ? [
+        { key: "mms", label: "MMS", data: data.mms },
+        { key: "gds15", label: "GDS-15", data: data.gds15 },
+        { key: "braden", label: "Braden", data: data.braden },
+        { key: "fall_risk", label: "Chute", data: data.fall_risk },
+      ]
+    : [];
+
   return (
     <Paper sx={{ p: 2, mt: 2 }}>
       <Box
@@ -280,6 +291,8 @@ export const InitialAssessmentPanel = ({ carePlanId, defaultOpen = false }: Prop
           alignItems: "center",
           justifyContent: "space-between",
           cursor: "pointer",
+          gap: 1,
+          flexWrap: "wrap",
         }}
         onClick={() => setOpen((v) => !v)}
       >
@@ -290,6 +303,43 @@ export const InitialAssessmentPanel = ({ carePlanId, defaultOpen = false }: Prop
           </Typography>
           {loading && <CircularProgress size={14} sx={{ ml: 1 }} />}
         </Box>
+        {!loading && data && (
+          <Box
+            sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", flex: 1, justifyContent: "flex-end" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {summaryChips.map(({ key, label, data: a }) => {
+              if (!a) {
+                return (
+                  <Tooltip key={key} title="Pas d'évaluation enregistrée" arrow>
+                    <Chip
+                      label={`${label} —`}
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 22, fontSize: 11 }}
+                    />
+                  </Tooltip>
+                );
+              }
+              const color = a.severity ? SEVERITY_CHIP[a.severity] : "default";
+              const text = a.score === null
+                ? `${label} ?`
+                : a.max_score != null
+                  ? `${label} ${a.score}/${a.max_score}`
+                  : `${label} ${a.score}`;
+              return (
+                <Tooltip key={key} title={a.severity_label || ""} arrow>
+                  <Chip
+                    label={text}
+                    size="small"
+                    color={color}
+                    sx={{ height: 22, fontSize: 11, fontWeight: 600 }}
+                  />
+                </Tooltip>
+              );
+            })}
+          </Box>
+        )}
         <IconButton size="small">
           {open ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         </IconButton>
