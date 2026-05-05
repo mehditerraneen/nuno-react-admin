@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Autocomplete,
   Box,
@@ -78,6 +78,8 @@ export const RevisionTriggerPicker = ({
     [],
   );
   const [loading, setLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   // Load kinds on mount.
   useEffect(() => {
@@ -179,6 +181,19 @@ export const RevisionTriggerPicker = ({
         </Stack>
       )}
 
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: "block", mb: 1 }}
+      >
+        Vous pouvez ajouter <b>plusieurs motifs</b> — choisissez un type, sélectionnez
+        l'élément concerné, puis recommencez (chute + prescription + plaie, etc.).
+        {(existing.length > 0 || pending.length > 0) &&
+          ` ${existing.length + pending.length} motif${
+            existing.length + pending.length > 1 ? "s" : ""
+          } actuellement.`}
+      </Typography>
+
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="stretch">
         <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel id="revision-trigger-kind-label">Type</InputLabel>
@@ -207,6 +222,10 @@ export const RevisionTriggerPicker = ({
           value={null}
           inputValue={q}
           onInputChange={(_, v) => setQ(v)}
+          open={dropdownOpen}
+          onOpen={() => setDropdownOpen(true)}
+          onClose={() => setDropdownOpen(false)}
+          blurOnSelect={false}
           getOptionLabel={(o) => o.summary}
           isOptionEqualToValue={(a, b) =>
             a.kind === b.kind && a.source_id === b.source_id
@@ -233,14 +252,21 @@ export const RevisionTriggerPicker = ({
                 source_id: value.source_id,
                 summary: value.summary,
               });
-              // Clear query so user can pick another.
+              // Clear query so user can pick another, and keep the
+              // dropdown open + input focused so adding multiple
+              // motives feels like one continuous action.
               setQ("");
+              setDropdownOpen(true);
+              setTimeout(() => inputRef.current?.focus(), 0);
             }
           }}
           renderInput={(params) => (
             <TextField
               {...params}
               placeholder="Rechercher…"
+              inputRef={(el) => {
+                inputRef.current = el;
+              }}
               InputProps={{
                 ...params.InputProps,
                 endAdornment: (
