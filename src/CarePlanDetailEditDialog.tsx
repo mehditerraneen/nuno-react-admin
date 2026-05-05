@@ -16,15 +16,25 @@ import {
   Identifier,
 } from "react-admin";
 import {
+  Alert,
+  AlertTitle,
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   CircularProgress,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import CloseIcon from "@mui/icons-material/Close";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import { useFormState } from "react-hook-form";
 import {
   type MyDataProvider,
   type CarePlanDetail,
@@ -54,6 +64,39 @@ interface FormAction {
   order?: number;
 }
 
+/**
+ * Small relay component rendered inside the SimpleForm — gives the
+ * dialog access to react-hook-form state (isDirty + the dirty fields
+ * map) so the Save button can be enabled only when there's actually
+ * something to save, and we can show a 'Voir mes modifications' panel.
+ */
+const FormStateRelay = ({
+  onState,
+}: {
+  onState: (state: { isDirty: boolean; dirtyFields: Record<string, unknown> }) => void;
+}) => {
+  const { isDirty, dirtyFields } = useFormState();
+  useEffect(() => {
+    onState({ isDirty, dirtyFields: dirtyFields as Record<string, unknown> });
+    // dirtyFields is referentially stable per react-hook-form internals;
+    // we depend on isDirty to keep this fresh on every change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty, JSON.stringify(dirtyFields)]);
+  return null;
+};
+
+const FIELD_LABELS_FR: Record<string, string> = {
+  name: "Nom",
+  time_start: "Heure de début",
+  time_end: "Heure de fin",
+  care_actions: "Actions à prévoir",
+  params_occurrence_ids: "Occurrences",
+  long_term_care_items: "Prestations",
+  actions: "Actions personnalisées",
+  objective_id: "Objectif",
+  responsible_role: "Responsable",
+};
+
 interface CarePlanDetailEditDialogProps {
   open: boolean;
   onClose: () => void;
@@ -71,6 +114,10 @@ export const CarePlanDetailEditDialog: React.FC<
   const translate = useTranslate();
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [formStateInfo, setFormStateInfo] = useState<{
+    isDirty: boolean;
+    dirtyFields: Record<string, unknown>;
+  }>({ isDirty: false, dirtyFields: {} });
 
   const handleDelete = async () => {
     if (!window.confirm(translate("care_plan_detail.validation.delete_confirm")))
@@ -319,16 +366,98 @@ export const CarePlanDetailEditDialog: React.FC<
     }
   };
 
+  // Derive a human-friendly list of dirty field names. dirtyFields is
+  // a hierarchical object — for arrays react-hook-form returns an
+  // array of partial dirty maps; we treat any truthy value as 'this
+  // field changed'.
+  const dirtyFieldNames = Object.entries(formStateInfo.dirtyFields)
+    .filter(([, v]) => {
+      if (v === false || v === undefined || v === null) return false;
+      if (Array.isArray(v)) return v.some((entry) => !!entry);
+      return true;
+    })
+    .map(([k]) => FIELD_LABELS_FR[k] ?? k);
+
+  const validationErrorEntries = Object.entries(validationErrors).filter(
+    ([k]) => k !== "_global",
+  );
+  const globalError = validationErrors._global;
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>{translate("care_plan_detail.title_edit")}</DialogTitle>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", pr: 1 }}>
+        <Box sx={{ flexGrow: 1 }}>
+          {translate("care_plan_detail.title_edit")}
+        </Box>
+        <Tooltip title="Fermer" arrow>
+          <span>
+            <IconButton
+              onClick={onClose}
+              disabled={isSaving || isDeleting}
+              size="small"
+            >
+              <CloseIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </DialogTitle>
       <DialogContent>
+        {/* Validation error summary — shown above the form when the
+            backend rejects the save. */}
+        {(globalError || validationErrorEntries.length > 0) && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <AlertTitle>
+              {translate("care_plan_detail.validation.fix_errors")}
+            </AlertTitle>
+            {globalError && (
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                {globalError}
+              </Typography>
+            )}
+            {validationErrorEntries.length > 0 && (
+              <Stack spacing={0.5}>
+                {validationErrorEntries.map(([field, msg]) => (
+                  <Typography key={field} variant="body2">
+                    <strong>{FIELD_LABELS_FR[field] ?? field}:</strong> {msg}
+                  </Typography>
+                ))}
+              </Stack>
+            )}
+          </Alert>
+        )}
+
+        {/* Live preview of changes the user has made but not yet saved. */}
+        {formStateInfo.isDirty && dirtyFieldNames.length > 0 && (
+          <Alert
+            severity="info"
+            icon={<EditNoteIcon fontSize="inherit" />}
+            sx={{ mb: 2 }}
+          >
+            <AlertTitle>
+              Modifications non enregistrées ({dirtyFieldNames.length})
+            </AlertTitle>
+            <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
+              {dirtyFieldNames.map((name) => (
+                <Chip
+                  key={name}
+                  label={name}
+                  size="small"
+                  variant="outlined"
+                  color="info"
+                  sx={{ height: 22 }}
+                />
+              ))}
+            </Stack>
+          </Alert>
+        )}
+
         <SimpleForm
           onSubmit={handleSubmit}
           record={initialValues} // Pre-fill form with existing data
           toolbar={<></>} // Hide default toolbar
           id="care-plan-edit-form"
         >
+          <FormStateRelay onState={setFormStateInfo} />
           {/* New Tabbed Layout */}
           <TabbedCareFormLayout
             mode="edit"
@@ -354,18 +483,31 @@ export const CarePlanDetailEditDialog: React.FC<
         <Button onClick={onClose} disabled={isSaving || isDeleting}>
           {translate("care_plan_detail.cancel")}
         </Button>
-        <Button
-          type="submit"
-          form="care-plan-edit-form"
-          variant="contained"
-          disabled={isSaving || isDeleting}
+        <Tooltip
+          title={
+            !formStateInfo.isDirty
+              ? "Aucune modification à enregistrer"
+              : ""
+          }
+          arrow
         >
-          {isSaving ? (
-            <CircularProgress size={24} />
-          ) : (
-            translate("care_plan_detail.save")
-          )}
-        </Button>
+          <span>
+            <Button
+              type="submit"
+              form="care-plan-edit-form"
+              variant="contained"
+              disabled={
+                isSaving || isDeleting || !formStateInfo.isDirty
+              }
+            >
+              {isSaving ? (
+                <CircularProgress size={24} />
+              ) : (
+                translate("care_plan_detail.save")
+              )}
+            </Button>
+          </span>
+        </Tooltip>
       </DialogActions>
     </Dialog>
   );

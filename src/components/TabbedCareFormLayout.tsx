@@ -679,7 +679,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                           alignItems="center"
                           sx={{ mb: 2 }}
                         >
-                          <Grid size={{ xs: 12, md: 7 }}>
+                          <Grid size={{ xs: 12, md: 9 }}>
                             <ReferenceInput
                               source="long_term_care_item_id"
                               reference="longtermcareitems"
@@ -690,6 +690,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                               required
                             >
                               <SelectInput
+                                fullWidth
                                 validate={validateNoDuplicate}
                                 optionText={(choice: LongTermCareItem) => {
                                   const wp = choice.weekly_package || 0;
