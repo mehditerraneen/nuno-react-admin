@@ -167,8 +167,9 @@ const RESPONSIBLE_ROLE_CHOICES = [
   { id: "nurse", name: "Infirmier·ère" },
   { id: "care_assistant", name: "Aide-soignant·e" },
   { id: "physiotherapist", name: "Kinésithérapeute" },
+  { id: "occupational_therapist", name: "Ergothérapeute" },
   { id: "physician", name: "Médecin" },
-  { id: "family", name: "Famille" },
+  { id: "caregiver", name: "Aidant·es" },
   { id: "patient", name: "Patient" },
   { id: "other", name: "Autre" },
 ];

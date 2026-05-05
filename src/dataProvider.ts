@@ -156,8 +156,9 @@ export type ResponsibleRole =
   | "nurse"
   | "care_assistant"
   | "physiotherapist"
+  | "occupational_therapist"
   | "physician"
-  | "family"
+  | "caregiver"
   | "patient"
   | "other"
   | "";
