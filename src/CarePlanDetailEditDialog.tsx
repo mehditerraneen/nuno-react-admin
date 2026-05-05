@@ -20,7 +20,6 @@ import {
   AlertTitle,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -41,7 +40,7 @@ import {
   type CarePlanDetailUpdatePayload,
   type LongTermCareItem, // Added for typing choice in SelectInput
 } from "./dataProvider";
-import { type FieldValues } from "react-hook-form";
+import { type FieldValues, useWatch } from "react-hook-form";
 import {
   formatTimeFieldsInFormData,
   formatDurationDisplay,
@@ -67,21 +66,31 @@ interface FormAction {
 /**
  * Small relay component rendered inside the SimpleForm — gives the
  * dialog access to react-hook-form state (isDirty + the dirty fields
- * map) so the Save button can be enabled only when there's actually
- * something to save, and we can show a 'Voir mes modifications' panel.
+ * map + the live values) so the Save button can be enabled only when
+ * there's actually something to save, and the change-preview panel
+ * can render before → after for each modified field.
  */
 const FormStateRelay = ({
   onState,
 }: {
-  onState: (state: { isDirty: boolean; dirtyFields: Record<string, unknown> }) => void;
+  onState: (state: {
+    isDirty: boolean;
+    dirtyFields: Record<string, unknown>;
+    values: FieldValues;
+  }) => void;
 }) => {
   const { isDirty, dirtyFields } = useFormState();
+  const values = useWatch();
   useEffect(() => {
-    onState({ isDirty, dirtyFields: dirtyFields as Record<string, unknown> });
-    // dirtyFields is referentially stable per react-hook-form internals;
-    // we depend on isDirty to keep this fresh on every change.
+    onState({
+      isDirty,
+      dirtyFields: dirtyFields as Record<string, unknown>,
+      values: values as FieldValues,
+    });
+    // dirtyFields and values are objects we serialize as deps so
+    // react picks up the change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDirty, JSON.stringify(dirtyFields)]);
+  }, [isDirty, JSON.stringify(dirtyFields), JSON.stringify(values)]);
   return null;
 };
 
@@ -95,6 +104,191 @@ const FIELD_LABELS_FR: Record<string, string> = {
   actions: "Actions personnalisées",
   objective_id: "Objectif",
   responsible_role: "Responsable",
+};
+
+const RESPONSIBLE_ROLE_LABELS_FR: Record<string, string> = {
+  nurse: "Infirmier·ère",
+  care_assistant: "Aide-soignant·e",
+  physiotherapist: "Kinésithérapeute",
+  occupational_therapist: "Ergothérapeute",
+  physician: "Médecin",
+  caregiver: "Aidant·es",
+  patient: "Patient",
+  other: "Autre",
+  "": "—",
+};
+
+const formatTimeForDiff = (v: unknown): string => {
+  if (!v) return "—";
+  if (v instanceof Date) {
+    if (Number.isNaN(v.getTime())) return "—";
+    const h = String(v.getHours()).padStart(2, "0");
+    const m = String(v.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  }
+  if (typeof v === "string") {
+    // already 'HH:MM' or ISO — keep first 5 chars when looks like time
+    if (/^\d{2}:\d{2}/.test(v)) return v.slice(0, 5);
+    const d = new Date(v);
+    if (!Number.isNaN(d.getTime())) {
+      const h = String(d.getHours()).padStart(2, "0");
+      const m = String(d.getMinutes()).padStart(2, "0");
+      return `${h}:${m}`;
+    }
+  }
+  return String(v);
+};
+
+const truncate = (s: string, n = 40) =>
+  s.length > n ? s.slice(0, n) + "…" : s;
+
+interface ChangeDiffProps {
+  field: string;
+  before: unknown;
+  after: unknown;
+  objectives: Array<{ id: number; title: string }>;
+}
+
+/**
+ * Render a single before → after line for one dirty field. Knows
+ * about the kind-specific shape of each field so the user sees a
+ * meaningful summary instead of a JSON blob.
+ */
+const ChangeDiff = ({ field, before, after, objectives }: ChangeDiffProps) => {
+  const arrow = " → ";
+
+  let beforeStr = "—";
+  let afterStr = "—";
+
+  switch (field) {
+    case "name":
+    case "care_actions": {
+      const b = typeof before === "string" ? before : "";
+      const a = typeof after === "string" ? after : "";
+      beforeStr = b ? `"${truncate(b)}"` : "—";
+      afterStr = a ? `"${truncate(a)}"` : "—";
+      break;
+    }
+    case "time_start":
+    case "time_end": {
+      beforeStr = formatTimeForDiff(before);
+      afterStr = formatTimeForDiff(after);
+      break;
+    }
+    case "objective_id": {
+      const idB = before == null || before === "" ? null : Number(before);
+      const idA = after == null || after === "" ? null : Number(after);
+      beforeStr = idB == null
+        ? "—"
+        : objectives.find((o) => o.id === idB)?.title ?? `#${idB}`;
+      afterStr = idA == null
+        ? "—"
+        : objectives.find((o) => o.id === idA)?.title ?? `#${idA}`;
+      break;
+    }
+    case "responsible_role": {
+      const b = (typeof before === "string" ? before : "") as string;
+      const a = (typeof after === "string" ? after : "") as string;
+      beforeStr = RESPONSIBLE_ROLE_LABELS_FR[b] ?? b ?? "—";
+      afterStr = RESPONSIBLE_ROLE_LABELS_FR[a] ?? a ?? "—";
+      break;
+    }
+    case "params_occurrence_ids": {
+      const b = Array.isArray(before) ? (before as number[]) : [];
+      const a = Array.isArray(after) ? (after as number[]) : [];
+      beforeStr = `${b.length} occurrence${b.length > 1 ? "s" : ""}`;
+      afterStr = `${a.length} occurrence${a.length > 1 ? "s" : ""}`;
+      // Annotate added/removed when the count is the same
+      if (b.length === a.length) {
+        const added = a.filter((id) => !b.includes(id));
+        const removed = b.filter((id) => !a.includes(id));
+        if (added.length || removed.length) {
+          afterStr += ` (${[
+            removed.length && `−${removed.length}`,
+            added.length && `+${added.length}`,
+          ]
+            .filter(Boolean)
+            .join(", ")})`;
+        }
+      }
+      break;
+    }
+    case "long_term_care_items": {
+      const b = Array.isArray(before)
+        ? (before as Array<{ long_term_care_item_id: number; quantity: number }>)
+        : [];
+      const a = Array.isArray(after)
+        ? (after as Array<{ long_term_care_item_id: number; quantity: number }>)
+        : [];
+      const beforeIds = new Set(b.map((i) => i?.long_term_care_item_id));
+      const afterIds = new Set(a.map((i) => i?.long_term_care_item_id));
+      const added = [...afterIds].filter((id) => id && !beforeIds.has(id));
+      const removed = [...beforeIds].filter((id) => id && !afterIds.has(id));
+      const qtyChanged = a.filter((aItem) => {
+        const bItem = b.find(
+          (x) => x?.long_term_care_item_id === aItem?.long_term_care_item_id,
+        );
+        return bItem && Number(bItem.quantity) !== Number(aItem?.quantity);
+      });
+      beforeStr = `${b.length} prestation${b.length > 1 ? "s" : ""}`;
+      const afterParts = [
+        `${a.length} prestation${a.length > 1 ? "s" : ""}`,
+      ];
+      if (added.length || removed.length || qtyChanged.length) {
+        const detail = [
+          removed.length && `−${removed.length}`,
+          added.length && `+${added.length}`,
+          qtyChanged.length && `qté ×${qtyChanged.length}`,
+        ]
+          .filter(Boolean)
+          .join(", ");
+        afterParts.push(`(${detail})`);
+      }
+      afterStr = afterParts.join(" ");
+      break;
+    }
+    case "actions": {
+      const b = Array.isArray(before) ? (before as unknown[]).length : 0;
+      const a = Array.isArray(after) ? (after as unknown[]).length : 0;
+      beforeStr = `${b} action${b > 1 ? "s" : ""}`;
+      afterStr = `${a} action${a > 1 ? "s" : ""}`;
+      break;
+    }
+    default: {
+      try {
+        beforeStr = before == null ? "—" : truncate(JSON.stringify(before));
+        afterStr = after == null ? "—" : truncate(JSON.stringify(after));
+      } catch {
+        beforeStr = String(before);
+        afterStr = String(after);
+      }
+    }
+  }
+
+  return (
+    <Box sx={{ display: "flex", gap: 1, alignItems: "baseline", flexWrap: "wrap" }}>
+      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: 130 }}>
+        {FIELD_LABELS_FR[field] ?? field}
+      </Typography>
+      <Typography
+        variant="caption"
+        component="span"
+        sx={{ color: "text.secondary", textDecoration: "line-through" }}
+      >
+        {beforeStr}
+      </Typography>
+      <Typography variant="caption" component="span" sx={{ opacity: 0.7 }}>
+        {arrow}
+      </Typography>
+      <Typography
+        variant="caption"
+        component="span"
+        sx={{ fontWeight: 600, color: "info.dark" }}
+      >
+        {afterStr}
+      </Typography>
+    </Box>
+  );
 };
 
 interface CarePlanDetailEditDialogProps {
@@ -117,7 +311,8 @@ export const CarePlanDetailEditDialog: React.FC<
   const [formStateInfo, setFormStateInfo] = useState<{
     isDirty: boolean;
     dirtyFields: Record<string, unknown>;
-  }>({ isDirty: false, dirtyFields: {} });
+    values: FieldValues;
+  }>({ isDirty: false, dirtyFields: {}, values: {} });
 
   const handleDelete = async () => {
     if (!window.confirm(translate("care_plan_detail.validation.delete_confirm")))
@@ -366,17 +561,17 @@ export const CarePlanDetailEditDialog: React.FC<
     }
   };
 
-  // Derive a human-friendly list of dirty field names. dirtyFields is
-  // a hierarchical object — for arrays react-hook-form returns an
+  // List of field keys that react-hook-form flagged as dirty.
+  // dirtyFields is a hierarchical object — for arrays it returns an
   // array of partial dirty maps; we treat any truthy value as 'this
   // field changed'.
-  const dirtyFieldNames = Object.entries(formStateInfo.dirtyFields)
+  const dirtyFieldKeys = Object.entries(formStateInfo.dirtyFields)
     .filter(([, v]) => {
       if (v === false || v === undefined || v === null) return false;
       if (Array.isArray(v)) return v.some((entry) => !!entry);
       return true;
     })
-    .map(([k]) => FIELD_LABELS_FR[k] ?? k);
+    .map(([k]) => k);
 
   const validationErrorEntries = Object.entries(validationErrors).filter(
     ([k]) => k !== "_global",
@@ -426,25 +621,26 @@ export const CarePlanDetailEditDialog: React.FC<
           </Alert>
         )}
 
-        {/* Live preview of changes the user has made but not yet saved. */}
-        {formStateInfo.isDirty && dirtyFieldNames.length > 0 && (
+        {/* Live preview of changes the user has made but not yet saved.
+            Each row reads as 'Field: before → after' so the user can
+            confirm exactly what's about to be persisted. */}
+        {formStateInfo.isDirty && dirtyFieldKeys.length > 0 && (
           <Alert
             severity="info"
             icon={<EditNoteIcon fontSize="inherit" />}
             sx={{ mb: 2 }}
           >
             <AlertTitle>
-              Modifications non enregistrées ({dirtyFieldNames.length})
+              Modifications non enregistrées ({dirtyFieldKeys.length})
             </AlertTitle>
-            <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
-              {dirtyFieldNames.map((name) => (
-                <Chip
-                  key={name}
-                  label={name}
-                  size="small"
-                  variant="outlined"
-                  color="info"
-                  sx={{ height: 22 }}
+            <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+              {dirtyFieldKeys.map((key) => (
+                <ChangeDiff
+                  key={key}
+                  field={key}
+                  before={(initialValues as Record<string, unknown>)[key]}
+                  after={formStateInfo.values[key]}
+                  objectives={objectives}
                 />
               ))}
             </Stack>
