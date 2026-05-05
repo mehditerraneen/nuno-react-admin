@@ -34,9 +34,12 @@ import EditIcon from "@mui/icons-material/Edit";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import PrintIcon from "@mui/icons-material/Print";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import type { MedicationPlan, Medication } from "../../types/medicationPlans";
 import { ScheduleRulesDialog } from "./ScheduleRulesDialog";
 import { AddMedicationDialog } from "./AddMedicationDialog";
+import { ChangePrescriptionDialog } from "./ChangePrescriptionDialog";
 import { useEffect, useState } from "react";
 import { prescriptionStyle } from "./medBoardPalette";
 import { groupByPrescription } from "./medBoardUtils";
@@ -318,6 +321,8 @@ const MedicationsSection = () => {
   const record = useRecordContext<MedicationPlan>();
   const translate = useTranslate();
   const dataProvider = useDataProvider();
+  const refresh = useRefresh();
+  const notify = useNotify();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [prescriptions, setPrescriptions] = useState<RawPrescription[]>([]);
   const [scheduleDialogFor, setScheduleDialogFor] = useState<Medication | null>(
@@ -377,6 +382,44 @@ const MedicationsSection = () => {
     );
   }
 
+  const [printing, setPrinting] = useState(false);
+  const [changeRxFor, setChangeRxFor] = useState<{
+    prescriptionId: number | null;
+    medications: Medication[];
+  } | null>(null);
+
+  const handlePrint = async () => {
+    if (!record?.id) return;
+    setPrinting(true);
+    try {
+      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL || "";
+      const { authenticatedFetch } = await import("../../dataProvider");
+      const response = await authenticatedFetch(
+        `${apiUrl}/medication-plans/${record.id}/document`,
+      );
+      if (!response.ok) throw new Error("Document generation failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      // Office files don't render inline in browsers — trigger a real
+      // download instead of window.open.
+      const a = document.createElement("a");
+      a.href = url;
+      // Try to use the server-suggested filename.
+      const cd = response.headers.get("content-disposition") || "";
+      const match = cd.match(/filename="?([^"]+)"?/);
+      a.download = match?.[1] || `medication_plan_${record.id}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      notify(`Erreur d'impression : ${msg}`, { type: "error" });
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   return (
     <Box sx={{ mt: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
@@ -392,6 +435,13 @@ const MedicationsSection = () => {
             variant="contained"
             color="primary"
             label={translate("medication_plan_show.open_board")}
+          />
+          <Button
+            label={printing ? "Génération…" : "Imprimer"}
+            startIcon={<PrintIcon />}
+            onClick={handlePrint}
+            disabled={printing}
+            variant="outlined"
           />
           <WriteOnly>
             <Button
@@ -440,6 +490,25 @@ const MedicationsSection = () => {
                 />
               </AccordionSummary>
               <AccordionDetails sx={{ backgroundColor: "background.paper" }}>
+                <WriteOnly>
+                  {group.prescriptionId != null && (
+                    <Box sx={{ mb: 1.5, display: "flex", justifyContent: "flex-end" }}>
+                      <Button
+                        size="small"
+                        startIcon={<SwapHorizIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setChangeRxFor({
+                            prescriptionId: group.prescriptionId,
+                            medications: group.medications,
+                          });
+                        }}
+                        label="Changer la prescription"
+                        variant="outlined"
+                      />
+                    </Box>
+                  )}
+                </WriteOnly>
                 {group.medications.map((medication) => (
                   <MedicationCard
                     key={medication.id}
@@ -467,6 +536,18 @@ const MedicationsSection = () => {
           onClose={() => setScheduleDialogFor(null)}
           medication={scheduleDialogFor}
           planId={record.id}
+        />
+      )}
+
+      {changeRxFor && (
+        <ChangePrescriptionDialog
+          open
+          onClose={() => setChangeRxFor(null)}
+          planId={record.id}
+          patientId={record.patient_id}
+          medications={changeRxFor.medications}
+          currentPrescriptionId={changeRxFor.prescriptionId}
+          onChanged={() => refresh()}
         />
       )}
     </Box>
