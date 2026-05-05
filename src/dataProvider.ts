@@ -110,6 +110,65 @@ export interface CarePlanRevision {
   revised_by: string | null;
   comment: string;
   triggers?: CarePlanRevisionTrigger[];
+  outcomes?: CarePlanObjectiveOutcome[];
+}
+
+export type CarePlanObjectivePriority = "high" | "medium" | "low";
+export type CarePlanObjectiveStatus =
+  | "active"
+  | "achieved"
+  | "partially_achieved"
+  | "abandoned";
+
+export interface CarePlanObjective {
+  id: number;
+  care_plan_id: number;
+  title: string;
+  description: string;
+  priority: CarePlanObjectivePriority;
+  priority_label: string;
+  status: CarePlanObjectiveStatus;
+  status_label: string;
+  target_date: string | null;
+  created_on: string | null;
+  updated_on: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+}
+
+export type CarePlanObjectiveOutcomeStatus =
+  | "achieved"
+  | "partially_achieved"
+  | "unchanged"
+  | "regressed"
+  | "abandoned";
+
+export interface CarePlanObjectiveOutcome {
+  id: number;
+  objective_id: number;
+  status: CarePlanObjectiveOutcomeStatus;
+  status_label: string;
+  note: string;
+  created_at: string | null;
+}
+
+export type ResponsibleRole =
+  | "nurse"
+  | "care_assistant"
+  | "physiotherapist"
+  | "physician"
+  | "family"
+  | "patient"
+  | "other"
+  | "";
+
+export interface ActiveAssessmentsBundle {
+  patient_id: number;
+  anamnesis: Record<string, unknown> | null;
+  mms: Record<string, unknown> | null;
+  gds15: Record<string, unknown> | null;
+  braden: Record<string, unknown> | null;
+  fall_risk: Record<string, unknown> | null;
 }
 
 export interface CarePlanDetailSummary {
@@ -169,6 +228,9 @@ export interface CarePlanDetail {
   care_actions: string;
   actions?: CarePlanDetailAction[];
   care_plan_to_master_id: number;
+  objective_id?: number | null;
+  responsible_role?: ResponsibleRole;
+  responsible_role_label?: string;
 }
 
 export interface LongTermCareItemQuantityCreate {
@@ -187,6 +249,8 @@ export interface CarePlanDetailCreate {
   long_term_care_items: LongTermCareItemQuantityCreate[];
   care_actions: string;
   actions?: CarePlanDetailActionCreate[];
+  objective_id?: number | null;
+  responsible_role?: ResponsibleRole;
 }
 
 export interface MedicalCareSummaryPerPatientDetail {
@@ -426,6 +490,47 @@ export interface MyDataProvider extends DataProvider {
     revisionId: Identifier,
     revisedOn: string,
   ) => Promise<CarePlanRevision>;
+  // Care plan objectives (clinical goals)
+  listCarePlanObjectives: (
+    carePlanId: Identifier,
+  ) => Promise<CarePlanObjective[]>;
+  createCarePlanObjective: (
+    carePlanId: Identifier,
+    payload: {
+      title: string;
+      description?: string;
+      priority?: CarePlanObjectivePriority;
+      status?: CarePlanObjectiveStatus;
+      target_date?: string | null;
+    },
+  ) => Promise<CarePlanObjective>;
+  updateCarePlanObjective: (
+    carePlanId: Identifier,
+    objectiveId: Identifier,
+    payload: Partial<{
+      title: string;
+      description: string;
+      priority: CarePlanObjectivePriority;
+      status: CarePlanObjectiveStatus;
+      target_date: string | null;
+    }>,
+  ) => Promise<CarePlanObjective>;
+  deleteCarePlanObjective: (
+    carePlanId: Identifier,
+    objectiveId: Identifier,
+  ) => Promise<void>;
+  upsertCarePlanRevisionOutcomes: (
+    carePlanId: Identifier,
+    revisionId: Identifier,
+    outcomes: Array<{
+      objective_id: number;
+      status: CarePlanObjectiveOutcomeStatus;
+      note?: string;
+    }>,
+  ) => Promise<CarePlanRevision>;
+  getCarePlanActiveAssessments: (
+    carePlanId: Identifier,
+  ) => Promise<ActiveAssessmentsBundle>;
   // Care plan revision triggers (why was this revision created?)
   getRevisionTriggerKinds: (
     carePlanId: Identifier,
@@ -2381,6 +2486,74 @@ export const dataProvider: MyDataProvider = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.detail || "Failed to update revision date");
+    }
+    return response.json();
+  },
+
+  listCarePlanObjectives: async (carePlanId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/objectives`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to fetch objectives");
+    }
+    return response.json();
+  },
+
+  createCarePlanObjective: async (carePlanId, payload) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/objectives`;
+    const response = await authenticatedFetch(url, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to create objective");
+    }
+    return response.json();
+  },
+
+  updateCarePlanObjective: async (carePlanId, objectiveId, payload) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/objectives/${objectiveId}`;
+    const response = await authenticatedFetch(url, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to update objective");
+    }
+    return response.json();
+  },
+
+  deleteCarePlanObjective: async (carePlanId, objectiveId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/objectives/${objectiveId}`;
+    const response = await authenticatedFetch(url, { method: "DELETE" });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to delete objective");
+    }
+  },
+
+  upsertCarePlanRevisionOutcomes: async (carePlanId, revisionId, outcomes) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions/${revisionId}/outcomes`;
+    const response = await authenticatedFetch(url, {
+      method: "PUT",
+      body: JSON.stringify({ outcomes }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to save outcomes");
+    }
+    return response.json();
+  },
+
+  getCarePlanActiveAssessments: async (carePlanId) => {
+    const url = `${apiUrl}/careplans/${carePlanId}/active-assessments`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to fetch active assessments");
     }
     return response.json();
   },

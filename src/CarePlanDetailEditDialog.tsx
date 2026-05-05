@@ -60,11 +60,12 @@ interface CarePlanDetailEditDialogProps {
   carePlanId: Identifier;
   detailToEdit: CarePlanDetail;
   cnsCarePlanId?: Identifier;
+  objectives?: import("./dataProvider").CarePlanObjective[];
 }
 
 export const CarePlanDetailEditDialog: React.FC<
   CarePlanDetailEditDialogProps
-> = ({ open, onClose, carePlanId, detailToEdit, cnsCarePlanId }) => {
+> = ({ open, onClose, carePlanId, detailToEdit, cnsCarePlanId, objectives = [] }) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
   const translate = useTranslate();
@@ -252,6 +253,11 @@ export const CarePlanDetailEditDialog: React.FC<
           quantity: item.quantity || 1,
         })),
       care_actions: formattedValues.care_actions,
+      objective_id:
+        formattedValues.objective_id != null && formattedValues.objective_id !== ""
+          ? Number(formattedValues.objective_id)
+          : null,
+      responsible_role: formattedValues.responsible_role || "",
       actions: (formattedValues.actions ?? [])
         .filter((a: FormAction) => a && a.action_text && a.action_text.trim())
         .map((a: FormAction, idx: number) => {
@@ -329,6 +335,7 @@ export const CarePlanDetailEditDialog: React.FC<
             cnsItemIds={cnsItemIds}
             cnsCustomDescriptions={cnsCustomDescriptions}
             validationErrors={validationErrors}
+            objectives={objectives}
           />
         </SimpleForm>
       </DialogContent>

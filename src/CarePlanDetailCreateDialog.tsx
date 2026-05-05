@@ -14,7 +14,11 @@ import {
   DialogTitle,
   CircularProgress,
 } from "@mui/material";
-import { type MyDataProvider, type CarePlanDetailCreate } from "./dataProvider";
+import {
+  type MyDataProvider,
+  type CarePlanDetailCreate,
+  type CarePlanObjective,
+} from "./dataProvider";
 import { type FieldValues } from "react-hook-form";
 import {
   parseValidationErrors,
@@ -31,11 +35,12 @@ interface CarePlanDetailCreateDialogProps {
   onClose: () => void;
   carePlanId: Identifier;
   cnsCarePlanId?: Identifier;
+  objectives?: CarePlanObjective[];
 }
 
 export const CarePlanDetailCreateDialog: React.FC<
   CarePlanDetailCreateDialogProps
-> = ({ open, onClose, carePlanId, cnsCarePlanId }) => {
+> = ({ open, onClose, carePlanId, cnsCarePlanId, objectives = [] }) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
   const translate = useTranslate();
@@ -176,6 +181,11 @@ export const CarePlanDetailCreateDialog: React.FC<
               quantity: item.quantity || 1,
             })) || [], // Transform array input format, filter out empty rows
         care_actions: formattedData.care_actions || "",
+        objective_id:
+          formattedData.objective_id != null && formattedData.objective_id !== ""
+            ? Number(formattedData.objective_id)
+            : null,
+        responsible_role: formattedData.responsible_role || "",
         actions: (formattedData.actions || [])
           .filter((a: any) => a && a.action_text && a.action_text.trim())
           .map((a: any, idx: number) => {
@@ -256,6 +266,8 @@ export const CarePlanDetailCreateDialog: React.FC<
             long_term_care_items: [],
             care_actions: "",
             actions: [],
+            objective_id: null,
+            responsible_role: "",
           }}
           toolbar={<></>} // Hide default toolbar
           id="care-plan-create-form"
@@ -268,6 +280,7 @@ export const CarePlanDetailCreateDialog: React.FC<
             cnsItemIds={cnsItemIds}
             cnsCustomDescriptions={cnsCustomDescriptions}
             validationErrors={validationErrors}
+            objectives={objectives}
           />
 
           {/* Debug info */}

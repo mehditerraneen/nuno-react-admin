@@ -63,6 +63,13 @@ import { CarePlanPrintButton } from "./components/CarePlanPrintView";
 import { WriteOnly } from "./components/auth/WriteOnly";
 import { RevisionTriggerChips } from "./components/care-plan-revision/RevisionTriggerChips";
 import { EditTriggersDialog } from "./components/care-plan-revision/EditTriggersDialog";
+import { ObjectivesPanel } from "./components/care-plan-objective/ObjectivesPanel";
+import { InitialAssessmentPanel } from "./components/care-plan-objective/InitialAssessmentPanel";
+import type {
+  CarePlanObjective,
+  CarePlanObjectiveOutcome,
+  CarePlanObjectiveOutcomeStatus,
+} from "./dataProvider";
 
 const formatRevisionDate = (iso: string | null | undefined) => {
   if (!iso) return "—";
@@ -71,6 +78,61 @@ const formatRevisionDate = (iso: string | null | undefined) => {
   } catch {
     return iso;
   }
+};
+
+const OUTCOME_COLOR: Record<
+  CarePlanObjectiveOutcomeStatus,
+  "success" | "warning" | "default" | "error" | "info"
+> = {
+  achieved: "success",
+  partially_achieved: "warning",
+  unchanged: "info",
+  regressed: "error",
+  abandoned: "default",
+};
+
+const OutcomesChips: React.FC<{
+  outcomes?: CarePlanObjectiveOutcome[];
+  objectivesById: Map<number, CarePlanObjective>;
+}> = ({ outcomes, objectivesById }) => {
+  if (!outcomes || outcomes.length === 0) return null;
+  return (
+    <Box sx={{ display: "flex", gap: 0.75, mt: 1, flexWrap: "wrap" }}>
+      {outcomes.map((o) => {
+        const obj = objectivesById.get(o.objective_id);
+        const title = obj?.title ?? `Objectif #${o.objective_id}`;
+        const tooltip = (
+          <Box>
+            <Typography variant="caption" sx={{ fontWeight: 600 }}>
+              {title}
+            </Typography>
+            <Typography variant="caption" sx={{ display: "block" }}>
+              → {o.status_label}
+            </Typography>
+            {o.note && (
+              <Typography
+                variant="caption"
+                sx={{ display: "block", mt: 0.5, fontStyle: "italic" }}
+              >
+                "{o.note}"
+              </Typography>
+            )}
+          </Box>
+        );
+        return (
+          <Tooltip key={o.id} title={tooltip} arrow placement="top">
+            <Chip
+              label={`🎯 ${title.length > 20 ? title.slice(0, 20) + "…" : title} : ${o.status_label}`}
+              size="small"
+              color={OUTCOME_COLOR[o.status]}
+              variant="filled"
+              sx={{ height: 22, fontSize: 11, cursor: "default" }}
+            />
+          </Tooltip>
+        );
+      })}
+    </Box>
+  );
 };
 
 const CarePlanRevisionsPanel: React.FC = () => {
@@ -92,6 +154,9 @@ const CarePlanRevisionsPanel: React.FC = () => {
 
   const revisions = (record.revisions ?? []) as CarePlanRevision[];
   const [latest, ...older] = revisions;
+  const objectivesById = new Map<number, CarePlanObjective>(
+    ((record.objectives ?? []) as CarePlanObjective[]).map((o) => [o.id, o]),
+  );
 
   const handleDelete = async (revisionId: number) => {
     if (!window.confirm(translate("care_plan_revision.delete_confirm"))) return;
@@ -173,6 +238,10 @@ const CarePlanRevisionsPanel: React.FC = () => {
                 triggers={latest.triggers}
                 onManage={isStaff ? () => setTriggerEditFor(latest) : undefined}
               />
+              <OutcomesChips
+                outcomes={latest.outcomes}
+                objectivesById={objectivesById}
+              />
             </>
           ) : (
             <Typography variant="body2" color="text.secondary">
@@ -243,6 +312,10 @@ const CarePlanRevisionsPanel: React.FC = () => {
                 triggers={r.triggers}
                 onManage={isStaff ? () => setTriggerEditFor(r) : undefined}
               />
+              <OutcomesChips
+                outcomes={r.outcomes}
+                objectivesById={objectivesById}
+              />
             </Box>
           ))}
         </Box>
@@ -251,6 +324,7 @@ const CarePlanRevisionsPanel: React.FC = () => {
       <CarePlanRevisionDialog
         open={dialogOpen}
         carePlanId={record.id}
+        objectives={(record.objectives ?? []) as CarePlanObjective[]}
         onClose={() => setDialogOpen(false)}
         onRevised={() => refresh()}
       />
@@ -481,6 +555,27 @@ const CarePlanDetails = () => {
                     color="warning"
                   />
                 )}
+                {detail.objective_id && (
+                  <Chip
+                    label={`🎯 ${
+                      ((record?.objectives ?? []) as CarePlanObjective[]).find(
+                        (o) => o.id === detail.objective_id,
+                      )?.title ?? `Objectif #${detail.objective_id}`
+                    }`}
+                    size="small"
+                    color="primary"
+                    variant="filled"
+                    sx={{ maxWidth: 280 }}
+                  />
+                )}
+                {detail.responsible_role && (
+                  <Chip
+                    label={detail.responsible_role_label || detail.responsible_role}
+                    size="small"
+                    variant="outlined"
+                    color="secondary"
+                  />
+                )}
                 <Box sx={{ flexGrow: 1 }} />
                 <WriteOnly>
                   <IconButton
@@ -609,6 +704,7 @@ const CarePlanDetails = () => {
           onClose={handleCloseCreateDialog}
           carePlanId={record.id}
           cnsCarePlanId={record.medical_care_summary_per_patient_id}
+          objectives={(record.objectives ?? []) as CarePlanObjective[]}
         />
       )}
       {record && detailToEdit && (
@@ -618,6 +714,7 @@ const CarePlanDetails = () => {
           carePlanId={record.id}
           detailToEdit={detailToEdit}
           cnsCarePlanId={record.medical_care_summary_per_patient_id}
+          objectives={(record.objectives ?? []) as CarePlanObjective[]}
         />
       )}
     </Paper>
@@ -685,9 +782,34 @@ const CarePlanShowLayout = () => {
         </Box>
       </Box>
       <CarePlanRevisionsPanel />
+      <CarePlanInitialAssessmentMount />
+      <CarePlanObjectivesMount />
       <CarePlanDiffMount />
       <CarePlanDetails />
     </SimpleShowLayout>
+  );
+};
+
+const CarePlanInitialAssessmentMount: React.FC = () => {
+  const record = useRecordContext();
+  if (!record?.id) return null;
+  return <InitialAssessmentPanel carePlanId={record.id} />;
+};
+
+const CarePlanObjectivesMount: React.FC = () => {
+  const record = useRecordContext();
+  const refresh = useRefresh();
+  const { identity } = useGetIdentity();
+  const isStaff = !!(identity as { isStaff?: boolean } | undefined)?.isStaff;
+  if (!record?.id) return null;
+  const objectives = (record.objectives ?? []) as CarePlanObjective[];
+  return (
+    <ObjectivesPanel
+      carePlanId={record.id}
+      objectives={objectives}
+      canEdit={isStaff}
+      onChanged={() => refresh()}
+    />
   );
 };
 

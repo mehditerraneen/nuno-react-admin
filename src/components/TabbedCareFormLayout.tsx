@@ -159,13 +159,26 @@ interface TabbedCareFormLayoutProps {
   cnsItemIds: number[];
   cnsCustomDescriptions?: Record<string, string>;
   validationErrors: Record<string, string>;
+  objectives?: Array<{ id: number; title: string; status: string }>;
 }
+
+const RESPONSIBLE_ROLE_CHOICES = [
+  { id: "", name: "—" },
+  { id: "nurse", name: "Infirmier·ère" },
+  { id: "care_assistant", name: "Aide-soignant·e" },
+  { id: "physiotherapist", name: "Kinésithérapeute" },
+  { id: "physician", name: "Médecin" },
+  { id: "family", name: "Famille" },
+  { id: "patient", name: "Patient" },
+  { id: "other", name: "Autre" },
+];
 
 export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
   mode,
   cnsItemIds,
   cnsCustomDescriptions = {},
   validationErrors,
+  objectives = [],
 }) => {
   const translate = useTranslate();
   const [activeTab, setActiveTab] = useState(0);
@@ -394,6 +407,35 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                       )
                     }
                     error={!!validationErrors.care_actions}
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 8 }}>
+                  <SelectInput
+                    source="objective_id"
+                    label="Objectif rattaché"
+                    fullWidth
+                    choices={[
+                      { id: null, name: "— Aucun —" },
+                      ...objectives
+                        .filter((o) => o.status === "active")
+                        .map((o) => ({ id: o.id, name: o.title })),
+                    ]}
+                    helperText={
+                      objectives.length === 0
+                        ? "Aucun objectif défini sur ce plan. Créez-en un d'abord pour pouvoir lier ce détail."
+                        : "But clinique que ce détail aide à atteindre."
+                    }
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <SelectInput
+                    source="responsible_role"
+                    label="Responsable"
+                    fullWidth
+                    choices={RESPONSIBLE_ROLE_CHOICES}
+                    helperText="Qui réalise ce détail"
                   />
                 </Grid>
               </Grid>
