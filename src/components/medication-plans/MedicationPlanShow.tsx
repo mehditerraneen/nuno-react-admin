@@ -72,6 +72,14 @@ const MedicationCard = ({
   const translate = useTranslate();
   const rules = medication.schedule_rules ?? [];
 
+  // A medication is *stopped* only when its end date is in the past.
+  // A future date_ended means "scheduled to stop on …", not "stopped now".
+  const isStopped = (() => {
+    if (!medication.date_ended) return false;
+    const today = new Date().toISOString().slice(0, 10);
+    return medication.date_ended <= today;
+  })();
+
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
@@ -79,7 +87,7 @@ const MedicationCard = ({
           <Typography variant="h6" component="div">
             {medication.medicine_abbreviated_name}
           </Typography>
-          {medication.date_ended ? (
+          {isStopped ? (
             <Chip
               label={translate("medication_plan_show.med.ended")}
               size="small"
