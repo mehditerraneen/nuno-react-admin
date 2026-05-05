@@ -38,6 +38,25 @@ const formatDate = (iso: string | null | undefined): string => {
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("fr-FR");
 };
 
+// The backend ships admin URLs as paths starting with '/admin/...'.
+// In production the React app and the Django admin live at the same
+// host but the React app talks to the FastAPI mount under '/fast', so
+// resolving '/admin/...' relative to the page would land on the React
+// host (wrong). Strip '/fast' from VITE_SIMPLE_REST_URL to get the
+// Django host base and build absolute URLs.
+const getDjangoBaseUrl = (): string => {
+  const apiUrl =
+    (import.meta.env.VITE_SIMPLE_REST_URL as string | undefined) || "";
+  return apiUrl.replace(/\/fast\/?$/, "");
+};
+
+const toAdminUrl = (path: string | null | undefined): string => {
+  if (!path) return "#";
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = getDjangoBaseUrl();
+  return `${base}${path.startsWith("/") ? path : "/" + path}`;
+};
+
 // Translate the backend severity bucket into a MUI Chip color so the
 // score badge is glanceable (green / orange / red).
 const SEVERITY_CHIP: Record<
@@ -79,7 +98,7 @@ const ScoreChip = ({ assessment }: { assessment: AssessmentBase }) => {
 const EditLink = ({ url, label = "Modifier" }: { url: string; label?: string }) => (
   <Button
     component="a"
-    href={url}
+    href={toAdminUrl(url)}
     target="_blank"
     rel="noopener"
     size="small"
@@ -94,7 +113,7 @@ const EditLink = ({ url, label = "Modifier" }: { url: string; label?: string }) 
 const AddLink = ({ url, label = "Ajouter" }: { url: string; label?: string }) => (
   <Button
     component="a"
-    href={url}
+    href={toAdminUrl(url)}
     target="_blank"
     rel="noopener"
     size="small"
