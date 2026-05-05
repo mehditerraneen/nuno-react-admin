@@ -163,13 +163,65 @@ export type ResponsibleRole =
   | "other"
   | "";
 
+export type AssessmentSeverity = "good" | "moderate" | "bad" | null;
+
+export interface AssessmentBase {
+  id: number;
+  admin_url: string;
+  score: number | null;
+  max_score: number | null;
+  severity: AssessmentSeverity;
+  severity_label: string | null;
+}
+
+export interface AnamnesisData {
+  id: number;
+  admin_url: string;
+  first_contact_date: string | null;
+  contract_start_date: string | null;
+  reason_for_dependence: string | null;
+  civil_status: string | null;
+  general_evaluation: string | null;
+  legal_protection_regimes?: string | null;
+  anticipated_directives?: string | null;
+  spoken_languages?: string | null;
+  understood_languages?: string | null;
+}
+
+export interface MMSData extends AssessmentBase {
+  examination_date: string | null;
+  evaluation_impossible: boolean;
+  examiner: string | null;
+}
+
+export interface GDS15Data extends AssessmentBase {
+  assessment_date: string | null;
+  examiner: string | null;
+}
+
+export interface BradenData extends AssessmentBase {
+  assessment_date: string | null;
+}
+
+export interface FallRiskData extends AssessmentBase {
+  assessment_date: string | null;
+  risk_level: string | null;
+}
+
 export interface ActiveAssessmentsBundle {
   patient_id: number;
-  anamnesis: Record<string, unknown> | null;
-  mms: Record<string, unknown> | null;
-  gds15: Record<string, unknown> | null;
-  braden: Record<string, unknown> | null;
-  fall_risk: Record<string, unknown> | null;
+  anamnesis: AnamnesisData | null;
+  mms: MMSData | null;
+  gds15: GDS15Data | null;
+  braden: BradenData | null;
+  fall_risk: FallRiskData | null;
+  admin_create_urls: {
+    anamnesis: string;
+    mms: string;
+    gds15: string;
+    braden: string;
+    fall_risk: string;
+  };
 }
 
 export interface CarePlanDetailSummary {
