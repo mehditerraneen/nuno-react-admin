@@ -28,6 +28,7 @@ import {
   RaRecord,
   useDataProvider,
   useNotify,
+  useRecordContext,
   Identifier,
   TopToolbar,
   FilterButton,
@@ -179,6 +180,196 @@ const PlanNumberWithReplaces = ({ record }: { record: any }) => {
   );
 };
 
+interface RevisionTrigger {
+  kind: string;
+  summary: string;
+}
+
+interface RevisionOutcome {
+  id: number;
+  objective_id: number;
+  objective_title: string | null;
+  status: string;
+  status_label: string;
+  note: string;
+}
+
+interface RevisionSummary {
+  id: number;
+  revised_on: string | null;
+  revised_by: string | null;
+  comment: string;
+  triggers: RevisionTrigger[];
+  outcomes: RevisionOutcome[];
+}
+
+const OUTCOME_COLOR: Record<
+  string,
+  "success" | "warning" | "info" | "error" | "default"
+> = {
+  achieved: "success",
+  partially_achieved: "warning",
+  unchanged: "info",
+  regressed: "error",
+  abandoned: "default",
+};
+
+const formatRevisionDate = (iso: string | null): string => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+};
+
+const PlanRevisionsTimeline = () => {
+  const record = useRecordContext();
+  if (!record) return null;
+  const revisions = (record.revisions_summary ?? []) as RevisionSummary[];
+
+  if (revisions.length === 0) {
+    return (
+      <Box sx={{ px: 3, py: 2, color: "text.secondary" }}>
+        <Typography variant="body2">
+          Aucune révision pour ce plan.
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ px: 3, py: 2, backgroundColor: "background.default" }}>
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}
+      >
+        Évolution — {revisions.length} révision{revisions.length > 1 ? "s" : ""}
+      </Typography>
+      <Box
+        sx={{
+          position: "relative",
+          pl: 2.5,
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            left: 6,
+            top: 4,
+            bottom: 4,
+            width: 2,
+            backgroundColor: "divider",
+          },
+        }}
+      >
+        {revisions.map((r) => (
+          <Box
+            key={r.id}
+            sx={{
+              position: "relative",
+              mb: 1.5,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: -23,
+                top: 6,
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                backgroundColor: "primary.main",
+                border: "2px solid",
+                borderColor: "background.paper",
+              },
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {formatRevisionDate(r.revised_on)}
+              </Typography>
+              {r.revised_by && (
+                <Typography variant="caption" color="text.secondary">
+                  · par {r.revised_by}
+                </Typography>
+              )}
+            </Box>
+            {r.comment && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", fontStyle: "italic", mt: 0.25 }}
+              >
+                "{r.comment}"
+              </Typography>
+            )}
+            {/* Motifs */}
+            {r.triggers.length > 0 && (
+              <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
+                {r.triggers.map((t, idx) => (
+                  <Tooltip key={idx} title={t.summary || t.kind} arrow>
+                    <Chip
+                      label={`${TRIGGER_KIND_ICON[t.kind] || "•"} ${
+                        t.summary && t.summary.length > 40
+                          ? t.summary.slice(0, 40) + "…"
+                          : t.summary || t.kind
+                      }`}
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: 11 }}
+                    />
+                  </Tooltip>
+                ))}
+              </Stack>
+            )}
+            {/* Outcomes */}
+            {r.outcomes.length > 0 && (
+              <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
+                {r.outcomes.map((o) => {
+                  const title = o.objective_title || `Objectif #${o.objective_id}`;
+                  const tooltip = (
+                    <Box sx={{ minWidth: 200 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, display: "block" }}>
+                        🎯 {title}
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: "block" }}>
+                        → {o.status_label}
+                      </Typography>
+                      {o.note && (
+                        <Typography
+                          variant="caption"
+                          sx={{ display: "block", mt: 0.5, fontStyle: "italic" }}
+                        >
+                          "{o.note}"
+                        </Typography>
+                      )}
+                    </Box>
+                  );
+                  return (
+                    <Tooltip key={o.id} title={tooltip} arrow>
+                      <Chip
+                        label={`🎯 ${
+                          title.length > 24 ? title.slice(0, 24) + "…" : title
+                        }: ${o.status_label}`}
+                        size="small"
+                        color={OUTCOME_COLOR[o.status] || "default"}
+                        variant="filled"
+                        sx={{ height: 20, fontSize: 11 }}
+                      />
+                    </Tooltip>
+                  );
+                })}
+              </Stack>
+            )}
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
 const CarePlanListActions = () => (
   <TopToolbar>
     <FilterButton />
@@ -206,6 +397,8 @@ export const CarePlanList = () => (
   >
     <Datagrid
       rowClick="show"
+      expand={<PlanRevisionsTimeline />}
+      expandSingle
       rowSx={(record) =>
         record.last_valid_plan
           ? {
