@@ -78,6 +78,7 @@ const TRIGGER_KIND_ICON: Record<string, string> = {
   cns_plan: "📋",
   hospitalization: "🏥",
   wound: "🩹",
+  periodic: "🔁",
 };
 
 interface TriggerSummaryItem {

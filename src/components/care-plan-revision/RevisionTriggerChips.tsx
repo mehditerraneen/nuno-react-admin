@@ -6,6 +6,8 @@ const KIND_ICON: Record<string, string> = {
   prescription: "💊",
   cns_plan: "📋",
   hospitalization: "🏥",
+  wound: "🩹",
+  periodic: "🔁",
 };
 
 interface RevisionTriggerChipsProps {
