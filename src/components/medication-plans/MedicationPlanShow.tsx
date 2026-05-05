@@ -26,11 +26,14 @@ import {
   Chip,
   Grid,
   Divider,
+  IconButton,
   Paper,
+  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/DeleteOutline";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AssignmentIcon from "@mui/icons-material/Assignment";
@@ -40,6 +43,7 @@ import type { MedicationPlan, Medication } from "../../types/medicationPlans";
 import { ScheduleRulesDialog } from "./ScheduleRulesDialog";
 import { AddMedicationDialog } from "./AddMedicationDialog";
 import { ChangePrescriptionDialog } from "./ChangePrescriptionDialog";
+import { EditMedicationDialog } from "./EditMedicationDialog";
 import { useEffect, useState } from "react";
 import { prescriptionStyle } from "./medBoardPalette";
 import { groupByPrescription } from "./medBoardUtils";
@@ -72,7 +76,12 @@ const MedicationCard = ({
   planId: number;
 }) => {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const translate = useTranslate();
+  const refresh = useRefresh();
+  const notify = useNotify();
+  const dataProvider = useDataProvider();
   const rules = medication.schedule_rules ?? [];
 
   // A medication is *stopped* only when its end date is in the past.
@@ -83,11 +92,27 @@ const MedicationCard = ({
     return medication.date_ended <= today;
   })();
 
+  const handleDelete = async () => {
+    const label = medication.medicine_abbreviated_name || medication.medicine_name || "ce médicament";
+    if (!window.confirm(`Supprimer ${label} de ce plan ?`)) return;
+    setDeleting(true);
+    try {
+      await (dataProvider as any).deleteMedication(planId, medication.id);
+      notify("Médicament supprimé", { type: "success" });
+      refresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      notify(`Erreur : ${msg}`, { type: "error" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-          <Typography variant="h6" component="div">
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, gap: 1 }}>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {medication.medicine_abbreviated_name}
           </Typography>
           {isStopped ? (
@@ -103,6 +128,31 @@ const MedicationCard = ({
               color="success"
             />
           )}
+          <WriteOnly>
+            <Tooltip title="Modifier" arrow>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => setEditDialogOpen(true)}
+                  disabled={deleting}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Supprimer" arrow>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  color="error"
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </WriteOnly>
         </Box>
 
         <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -243,6 +293,13 @@ const MedicationCard = ({
         onClose={() => setScheduleDialogOpen(false)}
         medication={medication}
         planId={planId}
+      />
+      <EditMedicationDialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        planId={planId}
+        medication={medication}
+        onSaved={() => refresh()}
       />
     </Card>
   );
