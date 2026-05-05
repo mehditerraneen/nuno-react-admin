@@ -307,7 +307,7 @@ export interface CarePlanDetail {
   care_actions: string;
   actions?: CarePlanDetailAction[];
   care_plan_to_master_id: number;
-  objective_id?: number | null;
+  objective_ids?: number[];
   responsible_role?: ResponsibleRole;
   responsible_role_label?: string;
 }
@@ -328,7 +328,7 @@ export interface CarePlanDetailCreate {
   long_term_care_items: LongTermCareItemQuantityCreate[];
   care_actions: string;
   actions?: CarePlanDetailActionCreate[];
-  objective_id?: number | null;
+  objective_ids?: number[];
   responsible_role?: ResponsibleRole;
 }
 

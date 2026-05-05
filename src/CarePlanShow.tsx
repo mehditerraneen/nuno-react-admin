@@ -555,19 +555,25 @@ const CarePlanDetails = () => {
                     color="warning"
                   />
                 )}
-                {detail.objective_id && (
-                  <Chip
-                    label={`🎯 ${
-                      ((record?.objectives ?? []) as CarePlanObjective[]).find(
-                        (o) => o.id === detail.objective_id,
-                      )?.title ?? `Objectif #${detail.objective_id}`
-                    }`}
-                    size="small"
-                    color="primary"
-                    variant="filled"
-                    sx={{ maxWidth: 280 }}
-                  />
-                )}
+                {Array.isArray(detail.objective_ids) &&
+                  detail.objective_ids.length > 0 &&
+                  (() => {
+                    const planObjectives = (record?.objectives ?? []) as CarePlanObjective[];
+                    return detail.objective_ids.map((oid: number) => {
+                      const obj = planObjectives.find((o) => o.id === oid);
+                      const title = obj?.title ?? `Objectif #${oid}`;
+                      return (
+                        <Chip
+                          key={`obj-${oid}`}
+                          label={`🎯 ${title.length > 28 ? title.slice(0, 28) + "…" : title}`}
+                          size="small"
+                          color="primary"
+                          variant="filled"
+                          sx={{ maxWidth: 280 }}
+                        />
+                      );
+                    });
+                  })()}
                 {detail.responsible_role && (
                   <Chip
                     label={detail.responsible_role_label || detail.responsible_role}

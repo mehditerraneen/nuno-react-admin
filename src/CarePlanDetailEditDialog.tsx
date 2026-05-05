@@ -102,7 +102,7 @@ const FIELD_LABELS_FR: Record<string, string> = {
   params_occurrence_ids: "Occurrences",
   long_term_care_items: "Prestations",
   actions: "Actions personnalisées",
-  objective_id: "Objectif",
+  objective_ids: "Objectifs",
   responsible_role: "Responsable",
 };
 
@@ -175,15 +175,20 @@ const ChangeDiff = ({ field, before, after, objectives }: ChangeDiffProps) => {
       afterStr = formatTimeForDiff(after);
       break;
     }
-    case "objective_id": {
-      const idB = before == null || before === "" ? null : Number(before);
-      const idA = after == null || after === "" ? null : Number(after);
-      beforeStr = idB == null
-        ? "—"
-        : objectives.find((o) => o.id === idB)?.title ?? `#${idB}`;
-      afterStr = idA == null
-        ? "—"
-        : objectives.find((o) => o.id === idA)?.title ?? `#${idA}`;
+    case "objective_ids": {
+      const titlesOf = (raw: unknown): string => {
+        const ids = Array.isArray(raw)
+          ? (raw.map((v) => Number(v)).filter((n) => !Number.isNaN(n)) as number[])
+          : [];
+        if (ids.length === 0) return "—";
+        const titles = ids.map(
+          (id) => objectives.find((o) => o.id === id)?.title ?? `#${id}`,
+        );
+        const joined = titles.join(" · ");
+        return joined.length > 80 ? joined.slice(0, 80) + "…" : joined;
+      };
+      beforeStr = titlesOf(before);
+      afterStr = titlesOf(after);
       break;
     }
     case "responsible_role": {
@@ -495,10 +500,11 @@ export const CarePlanDetailEditDialog: React.FC<
           quantity: item.quantity || 1,
         })),
       care_actions: formattedValues.care_actions,
-      objective_id:
-        formattedValues.objective_id != null && formattedValues.objective_id !== ""
-          ? Number(formattedValues.objective_id)
-          : null,
+      objective_ids: Array.isArray(formattedValues.objective_ids)
+        ? formattedValues.objective_ids
+            .filter((v: unknown) => v != null && v !== "")
+            .map((v: unknown) => Number(v))
+        : [],
       responsible_role: formattedValues.responsible_role || "",
       actions: (formattedValues.actions ?? [])
         .filter((a: FormAction) => a && a.action_text && a.action_text.trim())

@@ -41,6 +41,7 @@ import {
   SimpleFormIterator,
   ReferenceInput,
   SelectInput,
+  SelectArrayInput,
   NumberInput,
   useDataProvider,
   useNotify,
@@ -412,20 +413,17 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                 </Grid>
 
                 <Grid size={{ xs: 12, sm: 8 }}>
-                  <SelectInput
-                    source="objective_id"
-                    label="Objectif rattaché"
+                  <SelectArrayInput
+                    source="objective_ids"
+                    label="Objectifs rattachés"
                     fullWidth
-                    choices={[
-                      { id: null, name: "— Aucun —" },
-                      ...objectives
-                        .filter((o) => o.status === "active")
-                        .map((o) => ({ id: o.id, name: o.title })),
-                    ]}
+                    choices={objectives
+                      .filter((o) => o.status === "active")
+                      .map((o) => ({ id: o.id, name: o.title }))}
                     helperText={
                       objectives.length === 0
                         ? "Aucun objectif défini sur ce plan. Créez-en un d'abord pour pouvoir lier ce détail."
-                        : "But clinique que ce détail aide à atteindre."
+                        : "Buts cliniques que ce détail aide à atteindre — sélectionnez-en autant que pertinent."
                     }
                   />
                 </Grid>

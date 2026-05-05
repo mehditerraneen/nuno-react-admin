@@ -181,10 +181,11 @@ export const CarePlanDetailCreateDialog: React.FC<
               quantity: item.quantity || 1,
             })) || [], // Transform array input format, filter out empty rows
         care_actions: formattedData.care_actions || "",
-        objective_id:
-          formattedData.objective_id != null && formattedData.objective_id !== ""
-            ? Number(formattedData.objective_id)
-            : null,
+        objective_ids: Array.isArray(formattedData.objective_ids)
+          ? formattedData.objective_ids
+              .filter((v: unknown) => v != null && v !== "")
+              .map((v: unknown) => Number(v))
+          : [],
         responsible_role: formattedData.responsible_role || "",
         actions: (formattedData.actions || [])
           .filter((a: any) => a && a.action_text && a.action_text.trim())
@@ -266,7 +267,7 @@ export const CarePlanDetailCreateDialog: React.FC<
             long_term_care_items: [],
             care_actions: "",
             actions: [],
-            objective_id: null,
+            objective_ids: [],
             responsible_role: "",
           }}
           toolbar={<></>} // Hide default toolbar
