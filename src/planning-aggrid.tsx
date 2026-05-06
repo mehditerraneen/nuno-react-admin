@@ -958,17 +958,58 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         }
     };
 
-    const handleCancelBatch = async (runId: number) => {
+    const handleCancelBatch = async (runId: number, force: boolean = false) => {
         try {
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${runId}/cancel`, {
-                method: 'POST',
-            });
+            const qs = force ? '?force=true' : '';
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/batch-optimize/${runId}/cancel${qs}`,
+                { method: 'POST' },
+            );
             if (response.ok) {
-                notify('Batch optimization annulée', { type: 'info' });
-                setActiveBatchRun(null);
-                setBatchPolling(false);
+                const result = await response.json().catch(() => ({}));
+                if (force) {
+                    notify('Batch optimization annulée (force).', { type: 'info' });
+                    setActiveBatchRun(null);
+                    setBatchPolling(false);
+                } else {
+                    notify(
+                        result.message ??
+                            "Annulation demandée — le runner sortira proprement à la prochaine borne d'essai.",
+                        { type: 'info' },
+                    );
+                    // Keep polling so the UI shows the transition to CANCELLED.
+                }
                 loadBatchRuns();
+            }
+        } catch (e: any) {
+            notify(`Erreur: ${e.message}`, { type: 'error' });
+        }
+    };
+
+    const handleResumeBatch = async (runId: number) => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/batch-optimize/${runId}/resume`,
+                { method: 'POST' },
+            );
+            if (response.ok) {
+                const result = await response.json().catch(() => ({}));
+                notify(
+                    `Run #${runId} relancé — reprise au-delà de l'essai ${
+                        result.completed_trials ?? '?'
+                    }/${result.total_trials ?? '?'}.`,
+                    { type: 'success' },
+                );
+                setBatchPolling(true);
+                loadBatchRuns();
+            } else {
+                const error = await response.json().catch(() => ({}));
+                notify(
+                    `Impossible de reprendre : ${error.detail ?? response.statusText}`,
+                    { type: 'error' },
+                );
             }
         } catch (e: any) {
             notify(`Erreur: ${e.message}`, { type: 'error' });
@@ -2440,22 +2481,62 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                             <CompareArrowsIcon color="secondary" />
                             <Typography variant="h6">Comparaison des solutions batch</Typography>
                         </Box>
-                        {activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) && (
-                            <Box display="flex" alignItems="center" gap={1}>
-                                <CircularProgress size={20} />
-                                <Typography variant="body2" color="text.secondary">
-                                    {activeBatchRun.completed_trials}/{activeBatchRun.total_trials} essais ({activeBatchRun.progress_percent}%)
-                                </Typography>
-                                <MuiButton
-                                    size="small"
-                                    color="error"
-                                    startIcon={<StopCircleIcon />}
-                                    onClick={() => handleCancelBatch(activeBatchRun.id)}
-                                >
-                                    Arrêter
-                                </MuiButton>
-                            </Box>
-                        )}
+                        {activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) && (() => {
+                            // 'Stale' = no heartbeat at all, or heartbeat older
+                            // than 5 minutes. That's almost certainly a worker
+                            // that died — Reprendre re-enqueues the same run.
+                            const hb = activeBatchRun.last_heartbeat
+                                ? new Date(activeBatchRun.last_heartbeat).getTime()
+                                : null;
+                            const ageMs = hb ? Date.now() - hb : null;
+                            const isStale = activeBatchRun.status === 'RUNNING'
+                                && (ageMs === null || ageMs > 5 * 60 * 1000);
+                            const cancelling = !!activeBatchRun.cancel_requested;
+                            return (
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    {!isStale && <CircularProgress size={20} />}
+                                    <Typography variant="body2" color="text.secondary">
+                                        {activeBatchRun.completed_trials}/{activeBatchRun.total_trials} essais ({activeBatchRun.progress_percent}%)
+                                        {cancelling ? ' · annulation en cours…' : ''}
+                                        {isStale ? ` · 💤 worker silencieux${ageMs !== null ? ` depuis ${Math.round(ageMs / 60000)} min` : ''}` : ''}
+                                    </Typography>
+                                    {isStale && (
+                                        <Tooltip title="Le worker semble mort. Reprendre relance le run sans perdre les essais déjà calculés." arrow>
+                                            <MuiButton
+                                                size="small"
+                                                color="primary"
+                                                variant="contained"
+                                                startIcon={<PlayArrowIcon />}
+                                                onClick={() => handleResumeBatch(activeBatchRun.id)}
+                                            >
+                                                Reprendre
+                                            </MuiButton>
+                                        </Tooltip>
+                                    )}
+                                    <MuiButton
+                                        size="small"
+                                        color="error"
+                                        startIcon={<StopCircleIcon />}
+                                        onClick={() => handleCancelBatch(activeBatchRun.id, false)}
+                                        disabled={cancelling}
+                                    >
+                                        {cancelling ? 'Annulation…' : 'Arrêter'}
+                                    </MuiButton>
+                                    {(isStale || cancelling) && (
+                                        <Tooltip title="Annulation force — kill du worker RQ. À utiliser seulement si le runner est vraiment bloqué et l'annulation coopérative ne réagit pas." arrow>
+                                            <MuiButton
+                                                size="small"
+                                                color="error"
+                                                variant="outlined"
+                                                onClick={() => handleCancelBatch(activeBatchRun.id, true)}
+                                            >
+                                                Force
+                                            </MuiButton>
+                                        </Tooltip>
+                                    )}
+                                </Box>
+                            );
+                        })()}
                     </Box>
                 </DialogTitle>
                 <DialogContent>
