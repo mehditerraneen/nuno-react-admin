@@ -59,9 +59,13 @@ import {
     TableHead,
     TableRow,
     Collapse,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
     Button as MuiButton,
     CircularProgress,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddIcon from '@mui/icons-material/Add';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -583,6 +587,8 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const [batchRuns, setBatchRuns] = useState<any[]>([]);
     const [activeBatchRun, setActiveBatchRun] = useState<any>(null);
     const [batchTopTrials, setBatchTopTrials] = useState<any[]>([]);
+    const [batchPreflight, setBatchPreflight] = useState<any | null>(null);
+    const [batchPreflightLoading, setBatchPreflightLoading] = useState(false);
     const [batchPolling, setBatchPolling] = useState(false);
     const [applyingTrial, setApplyingTrial] = useState<number | null>(null);
 
@@ -931,6 +937,36 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             }
         }, 10000); // Poll every 10s
     };
+
+    // Fetch the preflight (eligible employees + rules) when the start
+    // dialog opens. Refresh every time it opens so a recent contract
+    // edit is reflected without a page reload.
+    useEffect(() => {
+        if (!batchDialog || !planningId) return;
+        let cancelled = false;
+        setBatchPreflightLoading(true);
+        setBatchPreflight(null);
+        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+        authenticatedFetch(
+            `${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize/preflight`,
+        )
+            .then(async (r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then((data) => {
+                if (!cancelled) setBatchPreflight(data);
+            })
+            .catch((e) => {
+                if (!cancelled) {
+                    notify(`Pré-vol indisponible : ${e.message}`, { type: 'warning' });
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setBatchPreflightLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [batchDialog, planningId, notify]);
 
     const handleStartBatch = async () => {
         try {
@@ -2438,6 +2474,139 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                             L'optimisation utilise Optuna (recherche bayésienne) pour explorer des milliers de combinaisons de paramètres.
                             Les 10 meilleures solutions sont conservées pour comparaison.
                         </Alert>
+
+                        {/* Pre-launch preflight: who's in, who's out, why. */}
+                        {batchPreflightLoading && (
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <CircularProgress size={16} />
+                                <Typography variant="caption" color="text.secondary">
+                                    Vérification des employés éligibles…
+                                </Typography>
+                            </Box>
+                        )}
+                        {batchPreflight && (() => {
+                            const includedCount = batchPreflight.employees_included?.length ?? 0;
+                            const excludedCount = batchPreflight.employees_excluded?.length ?? 0;
+                            const missingShifts = batchPreflight.missing_required_shift_types || [];
+                            const canLaunch = batchPreflight.can_launch !== false;
+                            return (
+                                <Box>
+                                    <Alert
+                                        severity={canLaunch ? (excludedCount > 0 ? 'warning' : 'success') : 'error'}
+                                        sx={{ mb: 1 }}
+                                    >
+                                        <strong>{includedCount}</strong> employé(s) seront chargés ·{' '}
+                                        <strong>{excludedCount}</strong> ignoré(s).
+                                        {missingShifts.length > 0 && (
+                                            <>
+                                                {' '}
+                                                ⚠️ Shift type(s) requis manquant(s) :{' '}
+                                                <strong>{missingShifts.join(', ')}</strong>
+                                            </>
+                                        )}
+                                        {!canLaunch && !missingShifts.length && (
+                                            <> Impossible de lancer (aucun employé éligible).</>
+                                        )}
+                                    </Alert>
+
+                                    <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+                                        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                ✅ Inclus ({includedCount})
+                                            </Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails sx={{ p: 1, maxHeight: 220, overflowY: 'auto' }}>
+                                            <Table size="small">
+                                                <TableHead>
+                                                    <TableRow>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Nom</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Occupation</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }} align="right">FTE</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Fin contrat</TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {batchPreflight.employees_included.map((e: any) => (
+                                                        <TableRow key={e.id}>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>
+                                                                {e.full_name}
+                                                                {e.is_intern && (
+                                                                    <Chip label="CDD" size="small" sx={{ ml: 0.5, height: 16, fontSize: 10 }} />
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>{e.occupation || '—'}</TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }} align="right">
+                                                                {e.fte != null ? e.fte.toFixed(2) : '—'}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>{e.end_contract || '—'}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </AccordionDetails>
+                                    </Accordion>
+
+                                    {excludedCount > 0 && (
+                                        <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+                                            <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                    🚫 Ignorés ({excludedCount})
+                                                </Typography>
+                                            </AccordionSummary>
+                                            <AccordionDetails sx={{ p: 1, maxHeight: 220, overflowY: 'auto' }}>
+                                                <Table size="small">
+                                                    <TableHead>
+                                                        <TableRow>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>Nom</TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>Raison</TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>Détail</TableCell>
+                                                        </TableRow>
+                                                    </TableHead>
+                                                    <TableBody>
+                                                        {batchPreflight.employees_excluded.map((e: any) => (
+                                                            <TableRow key={e.id}>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>{e.full_name}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>
+                                                                    <Chip
+                                                                        label={e.reason_label}
+                                                                        size="small"
+                                                                        color={e.reason === 'contract_ended' ? 'default' : 'warning'}
+                                                                        sx={{ height: 18, fontSize: 10 }}
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
+                                                                    {e.details}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </AccordionDetails>
+                                        </Accordion>
+                                    )}
+
+                                    <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+                                        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                ⚙️ Règles d'éligibilité ({batchPreflight.rules?.length || 0})
+                                            </Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails sx={{ p: 1 }}>
+                                            {(batchPreflight.rules || []).map((r: any) => (
+                                                <Box key={r.key} sx={{ mb: 1 }}>
+                                                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                                        {r.label}
+                                                    </Typography>
+                                                    <Typography variant="caption" component="div" color="text.secondary" sx={{ pl: 1, fontFamily: 'ui-monospace, monospace', fontSize: 11 }}>
+                                                        {r.detail}
+                                                    </Typography>
+                                                </Box>
+                                            ))}
+                                        </AccordionDetails>
+                                    </Accordion>
+                                </Box>
+                            );
+                        })()}
                         {batchRuns.length > 0 && (
                             <Box>
                                 <Typography variant="subtitle2" gutterBottom>Runs précédents:</Typography>
@@ -2463,7 +2632,10 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                             size="large"
                             startIcon={batchStarting ? <CircularProgress size={20} color="inherit" /> : <RocketLaunchIcon />}
                             onClick={handleStartBatch}
-                            disabled={batchStarting}
+                            disabled={
+                                batchStarting
+                                || (batchPreflight && batchPreflight.can_launch === false)
+                            }
                             fullWidth
                         >
                             {batchStarting ? 'Démarrage...' : `Lancer (${batchPreset})`}
