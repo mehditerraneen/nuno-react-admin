@@ -475,9 +475,10 @@ const CarePlanFormFields = ({ isEdit }: CarePlanFormFieldsProps) => {
             shouldDirty: true,
           });
           if (cnsPlanId === null) {
-            notify("No linked CNS care plan found for this patient.", {
-              type: "info",
-            });
+            notify(
+              "Aucun plan CNS associé à ce patient — vous pouvez créer le plan de soins sans.",
+              { type: "info" },
+            );
           }
         })
         .catch((error: Error) => {
@@ -486,7 +487,10 @@ const CarePlanFormFields = ({ isEdit }: CarePlanFormFieldsProps) => {
             shouldValidate: true,
             shouldDirty: true,
           });
-          notify("Error fetching latest CNS care plan.", { type: "warning" });
+          notify(
+            "Impossible de récupérer le plan CNS — le plan de soins peut quand même être créé sans.",
+            { type: "info" },
+          );
         });
     } else if (!isEdit && !selectedPatientId) {
       // Clear the field if patient is deselected in create mode
@@ -522,11 +526,15 @@ const CarePlanFormFields = ({ isEdit }: CarePlanFormFieldsProps) => {
         <DateInput source="plan_end_date" />
         <DateInput source="plan_decision_date" />
       </Box>
-      <NumberInput source="medical_care_summary_per_patient_id" />
+      <NumberInput
+        source="medical_care_summary_per_patient_id"
+        label="Plan CNS lié (optionnel)"
+        helperText="Optionnel — laissez vide si le patient n'a pas de plan CNS, ou si vous ne l'avez pas encore reçu. Le plan de soins peut être créé sans."
+      />
       {watchedCnsPlanId && (
         <Box sx={{ mt: 1, mb: 2 }}>
           <Link to={`/cnscareplans/${watchedCnsPlanId}/show`}>
-            {"View Related CNS Care Plan (ID: "}
+            {"Voir le plan CNS lié (ID : "}
             {watchedCnsPlanId}
             {")"}
           </Link>
