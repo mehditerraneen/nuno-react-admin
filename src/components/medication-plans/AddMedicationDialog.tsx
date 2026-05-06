@@ -95,6 +95,30 @@ export const AddMedicationDialog = ({
   const [medicineSearch, setMedicineSearch] = useState("");
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [catalogInfo, setCatalogInfo] = useState<{
+    last_imported_at: string | null;
+    last_imported_by: string | null;
+    admin_url: string;
+    total_medicines: number;
+  } | null>(null);
+
+  // Fetch the Liste Positive import metadata once when the dialog
+  // opens so the user can see freshness + how to refresh it.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (dataProvider as any)
+      .getMedicinesCatalogInfo()
+      .then((info: typeof catalogInfo) => {
+        if (!cancelled) setCatalogInfo(info);
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogInfo(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, dataProvider]);
 
   // Prescriptions (patient-scoped)
   const [prescriptionOptions, setPrescriptionOptions] = useState<RxOption[]>([]);
@@ -351,6 +375,46 @@ export const AddMedicationDialog = ({
                 />
               )}
             />
+            {catalogInfo && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 0.5 }}
+              >
+                {catalogInfo.last_imported_at ? (
+                  <>
+                    Liste Positive CNS importée le{" "}
+                    <strong>
+                      {new Date(catalogInfo.last_imported_at).toLocaleDateString(
+                        "fr-FR",
+                      )}
+                    </strong>
+                    {catalogInfo.last_imported_by
+                      ? ` par ${catalogInfo.last_imported_by}`
+                      : ""}{" "}
+                    · {catalogInfo.total_medicines.toLocaleString("fr-FR")} médicaments
+                  </>
+                ) : (
+                  "Liste Positive CNS jamais importée"
+                )}
+                {" — "}
+                <MuiLink
+                  href={(() => {
+                    const apiUrl =
+                      (import.meta.env.VITE_SIMPLE_REST_URL as
+                        | string
+                        | undefined) || "";
+                    const base = apiUrl.replace(/\/fast\/?$/, "");
+                    return `${base}${catalogInfo.admin_url}`;
+                  })()}
+                  target="_blank"
+                  rel="noopener"
+                  underline="hover"
+                >
+                  gérer / importer
+                </MuiLink>
+              </Typography>
+            )}
           </Grid>
 
           {/* Dosage */}

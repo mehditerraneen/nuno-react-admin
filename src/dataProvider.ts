@@ -664,6 +664,14 @@ export interface MyDataProvider extends DataProvider {
 
   // Medication Plans methods
   searchMedicines: (query: string, limit?: number) => Promise<any[]>;
+  getMedicinesCatalogInfo: () => Promise<{
+    last_imported_at: string | null;
+    last_imported_by: string | null;
+    file_path: string | null;
+    admin_url: string;
+    config_name: string | null;
+    total_medicines: number;
+  }>;
   getMedicationDistributions: (
     planId: Identifier,
     params?: { date_from?: string; date_to?: string; event_id?: number },
@@ -2927,6 +2935,15 @@ export const dataProvider: MyDataProvider = {
       throw new Error("Failed to search medicines");
     }
 
+    return response.json();
+  },
+
+  getMedicinesCatalogInfo: async () => {
+    const url = `${apiUrl}/medication-plans/medicines/catalog-info`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch catalog info");
+    }
     return response.json();
   },
 
