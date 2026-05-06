@@ -569,6 +569,31 @@ export interface MyDataProvider extends DataProvider {
     revisionId: Identifier,
     revisedOn: string,
   ) => Promise<CarePlanRevision>;
+  getCarePlanRevisionDiff: (
+    carePlanId: Identifier,
+    revisionId: Identifier,
+    against?: number,
+  ) => Promise<{
+    revision_id: number;
+    revised_on: string | null;
+    against_revision_id: number | null;
+    against_revised_on: string | null;
+    against_has_snapshot: boolean;
+    details: {
+      added: Array<Record<string, unknown>>;
+      removed: Array<Record<string, unknown>>;
+      changed: Array<{ name: string; changes: Record<string, unknown> }>;
+    };
+    objectives: {
+      added: Array<{ id: number; title: string }>;
+      removed: Array<{ id: number; title: string }>;
+      changed: Array<{
+        id: number;
+        title: string;
+        changes: Record<string, { before: unknown; after: unknown }>;
+      }>;
+    };
+  }>;
   // Care plan objectives (clinical goals)
   listCarePlanObjectives: (
     carePlanId: Identifier,
@@ -2573,6 +2598,19 @@ export const dataProvider: MyDataProvider = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.detail || "Failed to update revision date");
+    }
+    return response.json();
+  },
+
+  getCarePlanRevisionDiff: async (carePlanId, revisionId, against) => {
+    const params = new URLSearchParams();
+    if (against != null) params.set("against", String(against));
+    const qs = params.toString() ? `?${params}` : "";
+    const url = `${apiUrl}/careplans/${carePlanId}/revisions/${revisionId}/diff${qs}`;
+    const response = await authenticatedFetch(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Failed to fetch revision diff");
     }
     return response.json();
   },

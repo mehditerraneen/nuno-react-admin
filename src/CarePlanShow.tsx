@@ -63,6 +63,7 @@ import { CarePlanPrintButton } from "./components/CarePlanPrintView";
 import { WriteOnly } from "./components/auth/WriteOnly";
 import { RevisionTriggerChips } from "./components/care-plan-revision/RevisionTriggerChips";
 import { EditTriggersDialog } from "./components/care-plan-revision/EditTriggersDialog";
+import { RevisionDiffPanel } from "./components/care-plan-revision/RevisionDiffPanel";
 import { ObjectivesPanel } from "./components/care-plan-objective/ObjectivesPanel";
 import { InitialAssessmentPanel } from "./components/care-plan-objective/InitialAssessmentPanel";
 import type {
@@ -146,6 +147,9 @@ const CarePlanRevisionsPanel: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [diffOpenFor, setDiffOpenFor] = useState<Record<number, boolean>>({});
+  const toggleDiff = (id: number) =>
+    setDiffOpenFor((cur) => ({ ...cur, [id]: !cur[id] }));
   const [triggerEditFor, setTriggerEditFor] = useState<CarePlanRevision | null>(
     null,
   );
@@ -242,6 +246,23 @@ const CarePlanRevisionsPanel: React.FC = () => {
                 outcomes={latest.outcomes}
                 objectivesById={objectivesById}
               />
+              <Box sx={{ mt: 1 }}>
+                <Button
+                  size="small"
+                  onClick={() => toggleDiff(latest.id)}
+                  sx={{ textTransform: "none", py: 0, minHeight: 0 }}
+                >
+                  {diffOpenFor[latest.id]
+                    ? "▾ Masquer les changements"
+                    : "▸ Voir les changements"}
+                </Button>
+                {diffOpenFor[latest.id] && (
+                  <RevisionDiffPanel
+                    carePlanId={record.id}
+                    revisionId={latest.id}
+                  />
+                )}
+              </Box>
             </>
           ) : (
             <Typography variant="body2" color="text.secondary">
@@ -316,6 +337,23 @@ const CarePlanRevisionsPanel: React.FC = () => {
                 outcomes={r.outcomes}
                 objectivesById={objectivesById}
               />
+              <Box sx={{ mt: 0.5 }}>
+                <Button
+                  size="small"
+                  onClick={() => toggleDiff(r.id)}
+                  sx={{ textTransform: "none", py: 0, minHeight: 0 }}
+                >
+                  {diffOpenFor[r.id]
+                    ? "▾ Masquer les changements"
+                    : "▸ Voir les changements"}
+                </Button>
+                {diffOpenFor[r.id] && (
+                  <RevisionDiffPanel
+                    carePlanId={record.id}
+                    revisionId={r.id}
+                  />
+                )}
+              </Box>
             </Box>
           ))}
         </Box>
