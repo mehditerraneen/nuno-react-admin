@@ -2208,11 +2208,25 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                             const score = planning.last_optimization_score;
                             const duration = planning.last_optimization_duration;
                             const algo = planning.last_optimization_algorithm || 'CP-SAT';
-                            const scoreLabel = (score !== null && score !== undefined) ? ` — score: ${Math.round(score).toLocaleString('fr-FR')}` : '';
-                            const tooltip = `Algorithme: ${algo}${duration ? ` · Durée: ${duration.toFixed(1)}s` : ''}${(score !== null && score !== undefined) ? ` · Score: ${Math.round(score).toLocaleString('fr-FR')}` : ''}`;
+                            const trialNumber = planning.last_optimization_trial_number;
+                            const trialLabel = trialNumber != null ? ` · #${trialNumber}` : '';
+                            const scoreLabel = (score !== null && score !== undefined)
+                                ? ` · score ${Math.round(score).toLocaleString('fr-FR')}`
+                                : '';
+                            const tooltipParts = [`Algorithme : ${algo}`];
+                            if (trialNumber != null) tooltipParts.push(`Essai n° ${trialNumber}`);
+                            if (score !== null && score !== undefined) tooltipParts.push(`Score : ${Math.round(score).toLocaleString('fr-FR')}`);
+                            if (duration) tooltipParts.push(`Durée : ${duration.toFixed(1)} s`);
+                            const tooltip = tooltipParts.join(' · ');
                             return (
                                 <Tooltip title={tooltip}>
-                                    <Chip icon={<AutoAwesomeIcon />} label={`Optimisé ${dateStr} ${timeStr}${scoreLabel}`} color="success" size="small" variant="outlined" />
+                                    <Chip
+                                        icon={<AutoAwesomeIcon />}
+                                        label={`Optimisé ${dateStr} ${timeStr}${trialLabel}${scoreLabel}`}
+                                        color="success"
+                                        size="small"
+                                        variant="outlined"
+                                    />
                                 </Tooltip>
                             );
                         })()}
