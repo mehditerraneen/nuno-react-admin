@@ -80,6 +80,10 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
+import RuleIcon from '@mui/icons-material/Rule';
+import GavelIcon from '@mui/icons-material/Gavel';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -589,6 +593,14 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const [batchTopTrials, setBatchTopTrials] = useState<any[]>([]);
     const [batchPreflight, setBatchPreflight] = useState<any | null>(null);
     const [batchPreflightLoading, setBatchPreflightLoading] = useState(false);
+
+    // Rules & Audit dialog
+    const [rulesDialog, setRulesDialog] = useState(false);
+    const [rulesTab, setRulesTab] = useState<'catalogue' | 'audit'>('catalogue');
+    const [rulesCatalogue, setRulesCatalogue] = useState<any[] | null>(null);
+    const [rulesCatalogueLoading, setRulesCatalogueLoading] = useState(false);
+    const [auditResult, setAuditResult] = useState<any | null>(null);
+    const [auditLoading, setAuditLoading] = useState(false);
     const [batchPolling, setBatchPolling] = useState(false);
     const [applyingTrial, setApplyingTrial] = useState<number | null>(null);
 
@@ -936,6 +948,61 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 setBatchPolling(false);
             }
         }, 10000); // Poll every 10s
+    };
+
+    // Lazy-load the rules catalogue the first time the Rules dialog
+    // opens (catalogue is global, no planning context).
+    useEffect(() => {
+        if (!rulesDialog || rulesCatalogue !== null) return;
+        let cancelled = false;
+        setRulesCatalogueLoading(true);
+        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+        authenticatedFetch(`${apiUrl}/planning/planning-rules`)
+            .then(async (r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then((data) => {
+                if (!cancelled) setRulesCatalogue(data?.rules || []);
+            })
+            .catch((e) => {
+                if (!cancelled) {
+                    notify(`Catalogue indisponible : ${e.message}`, { type: 'warning' });
+                    setRulesCatalogue([]);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setRulesCatalogueLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [rulesDialog, rulesCatalogue, notify]);
+
+    const runPlanningAudit = async () => {
+        if (!planningId) return;
+        setAuditLoading(true);
+        setAuditResult(null);
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const r = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/audit`,
+            );
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const data = await r.json();
+            setAuditResult(data);
+            const total = data?.summary?.total_violations ?? 0;
+            if (total === 0) {
+                notify('Audit OK : aucune violation détectée.', { type: 'success' });
+            } else {
+                notify(
+                    `Audit terminé : ${total} violation(s) détectée(s).`,
+                    { type: 'warning' },
+                );
+            }
+        } catch (e: any) {
+            notify(`Erreur audit : ${e.message}`, { type: 'error' });
+        } finally {
+            setAuditLoading(false);
+        }
     };
 
     // Fetch the preflight (eligible employees + rules) when the start
@@ -2243,6 +2310,20 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                 <Button startIcon={<AutoAwesomeIcon />} onClick={() => setOptimizeDialog(true)} color="success" variant="contained" disabled={!isDraft} label="Optimiser" />
                             </span>
                         </Tooltip>
+                        <Tooltip title="Voir les règles d'optimisation et auditer le planning">
+                            <span>
+                                <Button
+                                    startIcon={<RuleIcon />}
+                                    onClick={() => {
+                                        setRulesTab('catalogue');
+                                        setRulesDialog(true);
+                                    }}
+                                    color="info"
+                                    variant="outlined"
+                                    label="Règles & Audit"
+                                />
+                            </span>
+                        </Tooltip>
                         <Tooltip title={activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) ? `Batch en cours: ${activeBatchRun.progress_percent}%` : !isDraft ? "Mode Brouillon requis" : "Optimisation batch (overnight)"}>
                             <span>
                                 <Button
@@ -2657,6 +2738,207 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     </Box>
                 </DialogContent>
                 <DialogActions><MuiButton onClick={() => setBatchDialog(false)}>Annuler</MuiButton></DialogActions>
+            </Dialog>
+
+            {/* Rules & Audit Dialog */}
+            <Dialog
+                open={rulesDialog}
+                onClose={() => setRulesDialog(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <RuleIcon color="info" />
+                        <Typography variant="h6">Règles d'optimisation & audit</Typography>
+                    </Box>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <ToggleButtonGroup
+                        value={rulesTab}
+                        exclusive
+                        onChange={(_e, v) => v && setRulesTab(v)}
+                        size="small"
+                        color="info"
+                        sx={{ mb: 2 }}
+                    >
+                        <ToggleButton value="catalogue">
+                            <GavelIcon sx={{ mr: 0.5, fontSize: 18 }} />
+                            Catalogue ({rulesCatalogue?.length ?? '…'})
+                        </ToggleButton>
+                        <ToggleButton value="audit">
+                            <VerifiedUserIcon sx={{ mr: 0.5, fontSize: 18 }} />
+                            Audit du planning
+                            {auditResult && auditResult.summary.total_violations > 0 && (
+                                <Chip
+                                    label={auditResult.summary.total_violations}
+                                    size="small"
+                                    color="error"
+                                    sx={{ ml: 0.75, height: 18 }}
+                                />
+                            )}
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+
+                    {rulesTab === 'catalogue' && (
+                        <Box>
+                            {rulesCatalogueLoading && (
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CircularProgress size={18} />
+                                    <Typography variant="body2" color="text.secondary">Chargement…</Typography>
+                                </Box>
+                            )}
+                            {rulesCatalogue && rulesCatalogue.map((r: any) => (
+                                <Accordion key={r.key} disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+                                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" width="100%">
+                                            <Typography variant="body2" sx={{ fontWeight: 600, flexGrow: 1 }}>
+                                                {r.label}
+                                            </Typography>
+                                            <Chip
+                                                label={
+                                                    r.kind === 'hard' ? 'Stricte'
+                                                    : r.kind === 'config' ? 'Configurable'
+                                                    : 'Souple'
+                                                }
+                                                size="small"
+                                                color={r.kind === 'hard' ? 'error' : r.kind === 'config' ? 'warning' : 'default'}
+                                                variant="outlined"
+                                                sx={{ height: 20 }}
+                                            />
+                                            {!r.auditable && (
+                                                <Chip label="non auditable" size="small" sx={{ height: 20 }} />
+                                            )}
+                                        </Box>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                            Source : {r.source}
+                                        </Typography>
+                                        <Typography variant="body2">{r.explanation}</Typography>
+                                    </AccordionDetails>
+                                </Accordion>
+                            ))}
+                        </Box>
+                    )}
+
+                    {rulesTab === 'audit' && (
+                        <Box>
+                            <Box display="flex" alignItems="center" gap={1} mb={2}>
+                                <MuiButton
+                                    variant="contained"
+                                    color="info"
+                                    startIcon={auditLoading ? <CircularProgress size={16} color="inherit" /> : <VerifiedUserIcon />}
+                                    onClick={runPlanningAudit}
+                                    disabled={auditLoading || !planningId}
+                                >
+                                    {auditLoading ? 'Analyse…' : 'Vérifier ce planning'}
+                                </MuiButton>
+                                <Typography variant="caption" color="text.secondary">
+                                    Confronte les ShiftAssignment actuels du planning aux règles auditables.
+                                </Typography>
+                            </Box>
+
+                            {auditResult && (() => {
+                                const total = auditResult.summary.total_violations;
+                                const high = auditResult.summary.by_severity.high;
+                                const med = auditResult.summary.by_severity.medium;
+                                const low = auditResult.summary.by_severity.low;
+                                const audited = auditResult.summary.rules_audited;
+                                const withV = auditResult.summary.rules_with_violations;
+                                return (
+                                    <>
+                                        <Alert
+                                            severity={total === 0 ? 'success' : high > 0 ? 'error' : 'warning'}
+                                            icon={total === 0 ? <VerifiedUserIcon /> : <ReportProblemIcon />}
+                                            sx={{ mb: 2 }}
+                                        >
+                                            {total === 0 ? (
+                                                <>Aucune violation détectée sur les <strong>{audited}</strong> règles auditables.</>
+                                            ) : (
+                                                <>
+                                                    <strong>{total}</strong> violation(s) sur <strong>{withV}/{audited}</strong> règles —
+                                                    {' '}haute : {high}, moyenne : {med}, basse : {low}.
+                                                </>
+                                            )}
+                                        </Alert>
+
+                                        {auditResult.rules.filter((r: any) => r.violations && r.violations.length > 0).map((r: any) => (
+                                            <Accordion key={r.key} disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }} defaultExpanded>
+                                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                                    <Box display="flex" alignItems="center" gap={1} width="100%">
+                                                        <ReportProblemIcon
+                                                            color={r.violations.some((v: any) => v.severity === 'high') ? 'error' : 'warning'}
+                                                            fontSize="small"
+                                                        />
+                                                        <Typography variant="body2" sx={{ fontWeight: 600, flexGrow: 1 }}>
+                                                            {r.label}
+                                                        </Typography>
+                                                        <Chip label={r.violations.length} size="small" color="error" sx={{ height: 20 }} />
+                                                    </Box>
+                                                </AccordionSummary>
+                                                <AccordionDetails sx={{ p: 1, maxHeight: 300, overflowY: 'auto' }}>
+                                                    <Table size="small">
+                                                        <TableHead>
+                                                            <TableRow>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>Employé</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>Date</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>Message</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>Détail</TableCell>
+                                                            </TableRow>
+                                                        </TableHead>
+                                                        <TableBody>
+                                                            {r.violations.map((v: any, i: number) => (
+                                                                <TableRow key={i}>
+                                                                    <TableCell sx={{ fontSize: '0.75rem' }}>{v.employee_name || '—'}</TableCell>
+                                                                    <TableCell sx={{ fontSize: '0.75rem' }}>{v.date || '—'}</TableCell>
+                                                                    <TableCell sx={{ fontSize: '0.75rem' }}>
+                                                                        <Chip
+                                                                            label={v.message}
+                                                                            size="small"
+                                                                            color={v.severity === 'high' ? 'error' : v.severity === 'medium' ? 'warning' : 'default'}
+                                                                            sx={{ height: 18, fontSize: 10 }}
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{v.detail || '—'}</TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </AccordionDetails>
+                                            </Accordion>
+                                        ))}
+
+                                        {auditResult.rules.filter((r: any) => r.violations !== null && r.violations.length === 0).length > 0 && (
+                                            <Box sx={{ mt: 2 }}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                                    ✅ Règles respectées
+                                                </Typography>
+                                                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                                    {auditResult.rules
+                                                        .filter((r: any) => r.violations !== null && r.violations.length === 0)
+                                                        .map((r: any) => (
+                                                            <Chip
+                                                                key={r.key}
+                                                                label={r.label}
+                                                                size="small"
+                                                                color="success"
+                                                                variant="outlined"
+                                                                sx={{ height: 22 }}
+                                                            />
+                                                        ))}
+                                                </Box>
+                                            </Box>
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setRulesDialog(false)}>Fermer</MuiButton>
+                </DialogActions>
             </Dialog>
 
             {/* Batch Compare Dialog */}
