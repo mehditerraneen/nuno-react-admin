@@ -64,6 +64,7 @@ import {
     AccordionDetails,
     Button as MuiButton,
     CircularProgress,
+    Autocomplete,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -84,6 +85,8 @@ import RuleIcon from '@mui/icons-material/Rule';
 import GavelIcon from '@mui/icons-material/Gavel';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -601,6 +604,13 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const [rulesCatalogueLoading, setRulesCatalogueLoading] = useState(false);
     const [auditResult, setAuditResult] = useState<any | null>(null);
     const [auditLoading, setAuditLoading] = useState(false);
+    // Extra-employees dialog
+    const [extraEmpDialog, setExtraEmpDialog] = useState(false);
+    const [extraEmpList, setExtraEmpList] = useState<any[]>([]);
+    const [availableEmpList, setAvailableEmpList] = useState<any[]>([]);
+    const [extraEmpLoading, setExtraEmpLoading] = useState(false);
+    const [extraEmpSelected, setExtraEmpSelected] = useState<number[]>([]);
+    const [extraEmpSubmitting, setExtraEmpSubmitting] = useState(false);
     const [batchPolling, setBatchPolling] = useState(false);
     const [applyingTrial, setApplyingTrial] = useState<number | null>(null);
 
@@ -1002,6 +1012,89 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             notify(`Erreur audit : ${e.message}`, { type: 'error' });
         } finally {
             setAuditLoading(false);
+        }
+    };
+
+    // Load extras + available employees when the dialog opens.
+    const reloadExtraEmployees = useCallback(async () => {
+        if (!planningId) return;
+        setExtraEmpLoading(true);
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const [extraR, availR] = await Promise.all([
+                authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/extra-employees`),
+                authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/available-employees`),
+            ]);
+            if (!extraR.ok) throw new Error(`extras HTTP ${extraR.status}`);
+            if (!availR.ok) throw new Error(`available HTTP ${availR.status}`);
+            const extras = await extraR.json();
+            const avail = await availR.json();
+            setExtraEmpList(extras.extra_employees || []);
+            setAvailableEmpList(avail.available_employees || []);
+        } catch (e: any) {
+            notify(`Erreur chargement employés : ${e.message}`, { type: 'error' });
+        } finally {
+            setExtraEmpLoading(false);
+        }
+    }, [planningId, notify]);
+
+    useEffect(() => {
+        if (extraEmpDialog) {
+            setExtraEmpSelected([]);
+            reloadExtraEmployees();
+        }
+    }, [extraEmpDialog, reloadExtraEmployees]);
+
+    const submitExtraEmployees = async () => {
+        if (!planningId || extraEmpSelected.length === 0) return;
+        setExtraEmpSubmitting(true);
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const r = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/extra-employees`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employee_ids: extraEmpSelected }),
+                },
+            );
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                throw new Error(err.detail || `HTTP ${r.status}`);
+            }
+            const data = await r.json();
+            notify(
+                `${data.added.length} employé(s) ajouté(s)` +
+                    (data.skipped.length ? ` (${data.skipped.length} ignoré(s))` : ''),
+                { type: 'success' },
+            );
+            await reloadExtraEmployees();
+            setExtraEmpSelected([]);
+            handleRefreshData();
+        } catch (e: any) {
+            notify(`Erreur ajout : ${e.message}`, { type: 'error' });
+        } finally {
+            setExtraEmpSubmitting(false);
+        }
+    };
+
+    const removeExtraEmployee = async (employeeId: number) => {
+        if (!planningId) return;
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const r = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/extra-employees/${employeeId}`,
+                { method: 'DELETE' },
+            );
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                throw new Error(err.detail || `HTTP ${r.status}`);
+            }
+            notify('Employé retiré du planning.', { type: 'success' });
+            await reloadExtraEmployees();
+            handleRefreshData();
+        } catch (e: any) {
+            notify(`Erreur retrait : ${e.message}`, { type: 'error' });
         }
     };
 
@@ -2355,6 +2448,21 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                 <Button startIcon={<UploadFileIcon />} onClick={() => setCsvImportDialog(true)} disabled={!isDraft} label="CSV" />
                             </span>
                         </Tooltip>
+                        <Tooltip title="Ajouter manuellement un ou plusieurs employés au planning (autorisé même validé)">
+                            <span>
+                                <Button
+                                    startIcon={<PersonAddIcon />}
+                                    onClick={() => setExtraEmpDialog(true)}
+                                    color="info"
+                                    variant="outlined"
+                                    label={
+                                        extraEmpList.length
+                                            ? `+ Employé (${extraEmpList.length})`
+                                            : '+ Employé'
+                                    }
+                                />
+                            </span>
+                        </Tooltip>
                         <Button startIcon={<AssessmentIcon />} onClick={handleAnalyzePlanning} disabled={analyzing} label={analyzing ? "..." : "Analyser"} />
                         <Button startIcon={exportingPdf ? <CircularProgress size={16} /> : <PictureAsPdfIcon />} onClick={handleExportPdf} color="error" variant="outlined" disabled={exportingPdf} label="PDF" />
                         {planning.status !== 'DRAFT' && (
@@ -2938,6 +3046,108 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 </DialogContent>
                 <DialogActions>
                     <MuiButton onClick={() => setRulesDialog(false)}>Fermer</MuiButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Extra Employees Dialog */}
+            <Dialog
+                open={extraEmpDialog}
+                onClose={() => setExtraEmpDialog(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <PersonAddIcon color="info" />
+                        <Typography variant="h6">Ajouter un employé au planning</Typography>
+                    </Box>
+                </DialogTitle>
+                <DialogContent dividers>
+                    {!isDraft && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            Ce planning est <strong>{planning?.status}</strong>. L'ajout sera tracé
+                            dans les notes ({`type EXTRA_EMPLOYEE`}) avec votre nom et la date.
+                        </Alert>
+                    )}
+
+                    <Typography variant="subtitle2" gutterBottom>
+                        Employés ajoutés manuellement ({extraEmpList.length})
+                    </Typography>
+                    {extraEmpList.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Aucun. Tous les employés du planning ont au moins une affectation.
+                        </Typography>
+                    ) : (
+                        <Box sx={{ mb: 2 }}>
+                            {extraEmpList.map((e) => (
+                                <Box
+                                    key={e.employee_id}
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={1}
+                                    sx={{ py: 0.5 }}
+                                >
+                                    <Chip label={e.abbreviation} size="small" />
+                                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                                        {e.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {new Date(e.added_at).toLocaleDateString('fr-FR')}
+                                    </Typography>
+                                    <Tooltip title="Retirer (uniquement si aucune affectation)">
+                                        <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={() => removeExtraEmployee(e.employee_id)}
+                                        >
+                                            <PersonRemoveIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
+
+                    <Typography variant="subtitle2" gutterBottom>
+                        Employés disponibles ({availableEmpList.length})
+                    </Typography>
+                    {extraEmpLoading ? (
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <CircularProgress size={18} />
+                            <Typography variant="body2" color="text.secondary">Chargement…</Typography>
+                        </Box>
+                    ) : availableEmpList.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                            Aucun candidat (tous les employés actifs sont déjà dans le planning).
+                        </Typography>
+                    ) : (
+                        <Autocomplete
+                            multiple
+                            disableCloseOnSelect
+                            options={availableEmpList}
+                            getOptionLabel={(o: any) => `${o.abbreviation} — ${o.name}${o.job_position ? ` (${o.job_position})` : ''}`}
+                            value={availableEmpList.filter((o: any) => extraEmpSelected.includes(o.employee_id))}
+                            onChange={(_e, v) => setExtraEmpSelected(v.map((o: any) => o.employee_id))}
+                            renderInput={(params) => (
+                                <MuiTextField {...params} placeholder="Sélectionner…" size="small" />
+                            )}
+                            sx={{ mt: 1 }}
+                        />
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setExtraEmpDialog(false)}>Fermer</MuiButton>
+                    <MuiButton
+                        variant="contained"
+                        color="info"
+                        startIcon={extraEmpSubmitting ? <CircularProgress size={16} color="inherit" /> : <PersonAddIcon />}
+                        onClick={submitExtraEmployees}
+                        disabled={extraEmpSelected.length === 0 || extraEmpSubmitting}
+                    >
+                        {extraEmpSubmitting
+                            ? 'Ajout…'
+                            : `Ajouter ${extraEmpSelected.length || ''}`.trim()}
+                    </MuiButton>
                 </DialogActions>
             </Dialog>
 
