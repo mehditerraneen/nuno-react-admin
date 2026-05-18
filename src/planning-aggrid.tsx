@@ -111,6 +111,11 @@ import { OptimizerAIChat } from './components/OptimizerAIChat';
 import ShiftHistoryPopover from './components/planning/ShiftHistoryPopover';
 import { WriteOnly } from './components/auth/WriteOnly';
 import { useIsReadOnly } from './hooks/useIsReadOnly';
+import {
+    classifyShift,
+    computeTotalHours,
+    type ShiftBreakdownEntry,
+} from './utils/planningHours';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -630,6 +635,27 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const [hiddenEmployees, setHiddenEmployees] = useState<Set<number>>(new Set());
     const [togglingVisibility, setTogglingVisibility] = useState<number | null>(null);
     const [sendingEmail, setSendingEmail] = useState<number | null>(null);
+
+    // Hours-calc debug detail (hidden — enabled via ?debug=hours URL param or
+    // localStorage 'planning.debugHours' = '1'). When enabled, a small bug icon
+    // appears on each employee row; clicking it shows the per-shift breakdown
+    // (code, category, hours, included/excluded reason).
+    const debugHoursEnabled = useMemo(() => {
+        try {
+            if (typeof window === 'undefined') return false;
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('debug') === 'hours' || params.get('debug') === '1') return true;
+            return window.localStorage.getItem('planning.debugHours') === '1';
+        } catch {
+            return false;
+        }
+    }, []);
+    const [debugHoursDialog, setDebugHoursDialog] = useState<{
+        employeeName: string;
+        totalHours: number;
+        maxMonthlyHours: number;
+        breakdown: ShiftBreakdownEntry[];
+    } | null>(null);
 
     // Grouping state
     const [groupBy, setGroupBy] = useState<'none' | 'job_position' | 'job_type' | 'alphabetical' | 'hours'>('none');
@@ -1487,15 +1513,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             if (filterJobPositions.length > 0 && !filterJobPositions.includes(employee.job_position)) return false;
             if (filterJobTypes.length > 0 && !filterJobTypes.includes(employee.job_type)) return false;
             if (filterHoursStatus !== 'all') {
-                // Calculate hours from shifts (same logic as row data)
-                let empTotalHours = 0;
-                if (employee.shifts) {
-                    Object.values(employee.shifts).forEach((shift: any) => {
-                        if (shift && shift.hours && shift.shift_category !== 'OFF') {
-                            empTotalHours += shift.hours;
-                        }
-                    });
-                }
+                const { total: empTotalHours } = computeTotalHours(employee.shifts);
                 const maxHours = employee.max_monthly_hours || 168;
                 const utilization = maxHours > 0 ? (empTotalHours / maxHours) * 100 : 0;
                 const isOverLimit = empTotalHours > maxHours;
@@ -1514,15 +1532,9 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
 
         return filteredEmployees.map((emp: any) => {
             // Calculate total hours from shifts
-            // Exclude only OFF category — LEAVE (CP, CONG) counts as paid hours
-            let calculatedTotalHours = 0;
-            if (emp.shifts) {
-                Object.values(emp.shifts).forEach((shift: any) => {
-                    if (shift && shift.hours && shift.shift_category !== 'OFF') {
-                        calculatedTotalHours += shift.hours;
-                    }
-                });
-            }
+            // Exclude OFF category and explicit non-work codes (DES*, REPOS).
+            // LEAVE (CP, CONG) still counts as paid hours.
+            const { total: calculatedTotalHours, breakdown: hoursBreakdown } = computeTotalHours(emp.shifts);
 
             const row: any = {
                 employee_id: emp.employee_id,
@@ -1546,6 +1558,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 is_inactive: emp.is_inactive || false,
                 is_hidden: hiddenEmployees.has(emp.employee_id),
                 total_hours: calculatedTotalHours, // Use calculated instead of backend value
+                hours_breakdown: hoursBreakdown, // For debug detail panel
                 shifts: emp.shifts || {},
             };
 
@@ -2020,6 +2033,26 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                 )}
                             </IconButton>
                         </Tooltip>
+                        {debugHoursEnabled && (
+                            <Tooltip title="Debug calcul heures (shifts inclus / exclus)">
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDebugHoursDialog({
+                                            employeeName: `${employee_abbr} — ${employee_name}`,
+                                            totalHours: total_hours,
+                                            maxMonthlyHours: max_monthly_hours,
+                                            breakdown: data.hours_breakdown || [],
+                                        });
+                                    }}
+                                    sx={{ padding: 0.15 }}
+                                    color="warning"
+                                >
+                                    <AssessmentIcon sx={{ fontSize: 12 }} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </Box>
 
                     {/* Avatar */}
@@ -2125,7 +2158,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 </Box>
             </Box>
         );
-    }, [togglingVisibility, sendingEmail, handleToggleEmployeeVisibility, handleSendPlanningEmail]);
+    }, [togglingVisibility, sendingEmail, handleToggleEmployeeVisibility, handleSendPlanningEmail, debugHoursEnabled]);
 
     // Custom header component for day columns
     const DayHeaderComponent = useCallback((props: any) => {
@@ -3649,6 +3682,94 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                         onClose={() => setAiChatOpen(false)}
                     />
                 </DialogContent>
+            </Dialog>
+
+            {/* Hidden debug: per-shift breakdown of worked hours.
+                Enable with ?debug=hours in the URL or localStorage('planning.debugHours','1'). */}
+            <Dialog
+                open={!!debugHoursDialog}
+                onClose={() => setDebugHoursDialog(null)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    Debug — Calcul des heures travaillées
+                    {debugHoursDialog && (
+                        <Typography variant="body2" color="text.secondary">
+                            {debugHoursDialog.employeeName}
+                        </Typography>
+                    )}
+                </DialogTitle>
+                <DialogContent dividers>
+                    {debugHoursDialog && (
+                        <>
+                            <Box mb={2}>
+                                <Typography variant="body2">
+                                    Total calculé : <strong>{debugHoursDialog.totalHours.toFixed(2)}h</strong>
+                                    {' / '}
+                                    Plafond mensuel : <strong>{debugHoursDialog.maxMonthlyHours.toFixed(2)}h</strong>
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Règle : exclus si <code>shift_category === 'OFF'</code>, ou code commence par <code>DES</code>, ou code dans (OFF, REPOS), ou heures &le; 0. Les congés (CP, CONG) comptent comme heures payées.
+                                </Typography>
+                            </Box>
+                            <TableContainer component={Paper} variant="outlined">
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Jour</TableCell>
+                                            <TableCell>Code</TableCell>
+                                            <TableCell>Catégorie</TableCell>
+                                            <TableCell align="right">Heures</TableCell>
+                                            <TableCell>Inclus ?</TableCell>
+                                            <TableCell>Raison</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {debugHoursDialog.breakdown.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={6} align="center">
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Aucun shift sur ce mois.
+                                                    </Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                        {debugHoursDialog.breakdown.map((entry) => (
+                                            <TableRow
+                                                key={entry.day}
+                                                sx={{
+                                                    backgroundColor: entry.included
+                                                        ? 'success.light'
+                                                        : entry.hours > 0
+                                                          ? 'warning.light'
+                                                          : 'inherit',
+                                                    opacity: entry.included ? 1 : 0.85,
+                                                }}
+                                            >
+                                                <TableCell>{entry.day}</TableCell>
+                                                <TableCell>
+                                                    <code>{entry.shift_code || '—'}</code>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <code>{entry.shift_category || '—'}</code>
+                                                </TableCell>
+                                                <TableCell align="right">{entry.hours.toFixed(2)}</TableCell>
+                                                <TableCell>{entry.included ? '✓' : '✗'}</TableCell>
+                                                <TableCell>
+                                                    <Typography variant="caption">{entry.reason}</Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setDebugHoursDialog(null)}>Fermer</MuiButton>
+                </DialogActions>
             </Dialog>
         </Box>
     );
