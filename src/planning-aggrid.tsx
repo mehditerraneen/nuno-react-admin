@@ -120,6 +120,8 @@ import { toPlanningEmailErrorMessage } from './utils/planningEmail';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
+const PDF_URL_CLEANUP_DELAY_MS = 60_000;
+const UNKNOWN_EMAIL_PLACEHOLDER = '(non renseignée)';
 
 const statusChoices = [
     { id: 'DRAFT', name: 'Brouillon' },
@@ -1454,7 +1456,8 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         try {
             setPreviewingEmailPdf(employeeId);
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/send-employee-planning/${employeeId}?preview=true`, { method: 'GET' });
+            const previewUrl = `${apiUrl}/planning/monthly-planning/${planningId}/send-employee-planning/${employeeId}?preview=true`;
+            const response = await authenticatedFetch(previewUrl, { method: 'GET' });
 
             if (!response.ok) {
                 const detail = await getResponseDetail(response);
@@ -1472,7 +1475,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 a.click();
                 document.body.removeChild(a);
             }
-            window.setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+            window.setTimeout(() => window.URL.revokeObjectURL(url), PDF_URL_CLEANUP_DELAY_MS);
         } catch (error: any) {
             console.error('Error previewing planning PDF:', error);
             notify(`Erreur PDF: ${error.message}`, { type: 'error' });
@@ -1483,7 +1486,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
 
     // Send planning email
     const handleSendPlanningEmail = async (employeeId: number, employeeName: string, employeeEmail?: string) => {
-        const targetEmail = employeeEmail || 'email inconnu';
+        const targetEmail = employeeEmail || UNKNOWN_EMAIL_PLACEHOLDER;
         const confirmed = window.confirm(`Envoyer le planning de ${employeeName} à ${targetEmail} ?`);
         if (!confirmed) return;
 
@@ -1521,13 +1524,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         try {
             setSendingAllEmails(true);
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/send-employees-planning`, { method: 'POST' });
+            const sendAllUrl = `${apiUrl}/planning/monthly-planning/${planningId}/send-employees-planning`;
+            const response = await authenticatedFetch(sendAllUrl, { method: 'POST' });
             if (!response.ok) {
                 const detail = await getResponseDetail(response);
                 throw new Error(toPlanningEmailErrorMessage(detail));
             }
 
             const result = await response.json();
+            // Keep backward compatibility across API payload variants.
             const sentCount = result.sent_count ?? result.sent ?? 0;
             const failedCount = result.failed_count ?? result.failed ?? 0;
             notify(
@@ -2257,7 +2262,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 </Box>
             </Box>
         );
-    }, [togglingVisibility, sendingEmail, sendingAllEmails, previewingEmailPdf, handleToggleEmployeeVisibility, handleSendPlanningEmail, handlePreviewPlanningPdf, debugHoursEnabled]);
+    }, [togglingVisibility, sendingEmail, previewingEmailPdf, handleToggleEmployeeVisibility, handleSendPlanningEmail, handlePreviewPlanningPdf, debugHoursEnabled]);
 
     // Custom header component for day columns
     const DayHeaderComponent = useCallback((props: any) => {

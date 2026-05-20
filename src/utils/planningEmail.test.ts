@@ -5,6 +5,12 @@ import {
 } from "./planningEmail";
 
 describe("classifyPlanningEmailError", () => {
+  it("returns unknown when detail is missing", () => {
+    expect(classifyPlanningEmailError("")).toBe("unknown");
+    expect(classifyPlanningEmailError()).toBe("unknown");
+    expect(classifyPlanningEmailError(null)).toBe("unknown");
+  });
+
   it("detects missing email errors", () => {
     expect(classifyPlanningEmailError("No email address for employee")).toBe(
       "missing_email",
@@ -42,6 +48,13 @@ describe("toPlanningEmailErrorMessage", () => {
   it("falls back to original detail when category is unknown", () => {
     expect(toPlanningEmailErrorMessage("Unexpected failure")).toBe(
       "Unexpected failure",
+    );
+  });
+
+  it("returns generic fallback when detail is missing", () => {
+    expect(toPlanningEmailErrorMessage()).toBe("Échec de l'envoi du planning.");
+    expect(toPlanningEmailErrorMessage(null)).toBe(
+      "Échec de l'envoi du planning.",
     );
   });
 });
