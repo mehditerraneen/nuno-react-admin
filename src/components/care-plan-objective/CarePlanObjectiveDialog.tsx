@@ -32,12 +32,11 @@ interface Props {
   onSaved: () => void;
 }
 
-const PRIORITY_OPTIONS: { value: CarePlanObjectivePriority; label: string }[] =
-  [
-    { value: "high", label: "Haute" },
-    { value: "medium", label: "Moyenne" },
-    { value: "low", label: "Basse" },
-  ];
+const PRIORITY_OPTIONS: { value: CarePlanObjectivePriority; label: string }[] = [
+  { value: "high", label: "Haute" },
+  { value: "medium", label: "Moyenne" },
+  { value: "low", label: "Basse" },
+];
 
 const STATUS_OPTIONS: { value: CarePlanObjectiveStatus; label: string }[] = [
   { value: "active", label: "Actif" },
@@ -87,11 +86,7 @@ export const CarePlanObjectiveDialog = ({
         target_date: targetDate || null,
       };
       if (initial?.id) {
-        await dataProvider.updateCarePlanObjective(
-          carePlanId,
-          initial.id,
-          payload,
-        );
+        await dataProvider.updateCarePlanObjective(carePlanId, initial.id, payload);
         notify("Objectif mis à jour", { type: "success" });
       } else {
         await dataProvider.createCarePlanObjective(carePlanId, payload);
@@ -100,21 +95,17 @@ export const CarePlanObjectiveDialog = ({
       onSaved();
       onClose();
     } catch (err) {
-      notify(`Erreur : ${err instanceof Error ? err.message : String(err)}`, {
-        type: "error",
-      });
+      notify(
+        `Erreur : ${err instanceof Error ? err.message : String(err)}`,
+        { type: "error" },
+      );
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={busy ? undefined : onClose}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={busy ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         {initial?.id ? "Modifier l'objectif" : "Nouvel objectif"}
       </DialogTitle>
@@ -149,9 +140,7 @@ export const CarePlanObjectiveDialog = ({
                 labelId="objective-priority-label"
                 label="Priorité"
                 value={priority}
-                onChange={(e) =>
-                  setPriority(e.target.value as CarePlanObjectivePriority)
-                }
+                onChange={(e) => setPriority(e.target.value as CarePlanObjectivePriority)}
                 disabled={busy}
               >
                 {PRIORITY_OPTIONS.map((o) => (
@@ -167,9 +156,7 @@ export const CarePlanObjectiveDialog = ({
                 labelId="objective-status-label"
                 label="Statut"
                 value={status}
-                onChange={(e) =>
-                  setStatus(e.target.value as CarePlanObjectiveStatus)
-                }
+                onChange={(e) => setStatus(e.target.value as CarePlanObjectiveStatus)}
                 disabled={busy}
               >
                 {STATUS_OPTIONS.map((o) => (

@@ -93,10 +93,7 @@ const MedicationCard = ({
   })();
 
   const handleDelete = async () => {
-    const label =
-      medication.medicine_abbreviated_name ||
-      medication.medicine_name ||
-      "ce médicament";
+    const label = medication.medicine_abbreviated_name || medication.medicine_name || "ce médicament";
     if (!window.confirm(`Supprimer ${label} de ce plan ?`)) return;
     setDeleting(true);
     try {
@@ -114,15 +111,7 @@ const MedicationCard = ({
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 1,
-            gap: 1,
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, gap: 1 }}>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {medication.medicine_abbreviated_name}
           </Typography>
@@ -290,14 +279,7 @@ const MedicationCard = ({
         )}
 
         {medication.remarks && (
-          <Box
-            sx={{
-              mt: 2,
-              p: 1,
-              backgroundColor: "action.hover",
-              borderRadius: 1,
-            }}
-          >
+          <Box sx={{ mt: 2, p: 1, backgroundColor: "action.hover", borderRadius: 1 }}>
             <Typography variant="body2">
               <strong>{translate("medication_plan_show.med.remarks")}:</strong>{" "}
               {medication.remarks}
@@ -414,7 +396,7 @@ const MedicationsSection = () => {
         const list: RawPrescription[] = Array.isArray(result)
           ? (result as RawPrescription[])
           : Array.isArray((result as { data?: unknown })?.data)
-            ? (result as { data: RawPrescription[] }).data
+            ? ((result as { data: RawPrescription[] }).data)
             : [];
         setPrescriptions(list);
       })
@@ -567,13 +549,7 @@ const MedicationsSection = () => {
               <AccordionDetails sx={{ backgroundColor: "background.paper" }}>
                 <WriteOnly>
                   {group.prescriptionId != null && (
-                    <Box
-                      sx={{
-                        mb: 1.5,
-                        display: "flex",
-                        justifyContent: "flex-end",
-                      }}
-                    >
+                    <Box sx={{ mb: 1.5, display: "flex", justifyContent: "flex-end" }}>
                       <Button
                         size="small"
                         startIcon={<SwapHorizIcon />}

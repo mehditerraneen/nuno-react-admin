@@ -42,7 +42,11 @@ import {
 
 const CnsCarePlanTitle = () => {
   const record = useRecordContext();
-  return <span>CNS Care Plan {record ? `#${record.plan_number}` : ""}</span>;
+  return (
+    <span>
+      CNS Care Plan {record ? `#${record.plan_number}` : ""}
+    </span>
+  );
 };
 
 const FieldGroup = ({
@@ -87,9 +91,7 @@ const LabelValue = ({
 const CnsCarePlanDetailsGrid = () => {
   const record = useRecordContext();
   const dataProvider = useDataProvider<MyDataProvider>();
-  const [details, setDetails] = useState<MedicalCareSummaryPerPatientDetail[]>(
-    [],
-  );
+  const [details, setDetails] = useState<MedicalCareSummaryPerPatientDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -155,16 +157,10 @@ const CnsCarePlanDetailsGrid = () => {
             {details.map((detail, index) => (
               <TableRow
                 key={index}
-                sx={{
-                  "&:nth-of-type(odd)": { backgroundColor: "action.hover" },
-                }}
+                sx={{ "&:nth-of-type(odd)": { backgroundColor: "action.hover" } }}
               >
                 <TableCell>
-                  <Chip
-                    label={detail.item?.code || "—"}
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Chip label={detail.item?.code || "—"} size="small" variant="outlined" />
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
@@ -185,9 +181,7 @@ const CnsCarePlanDetailsGrid = () => {
                   />
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">
-                    {detail.periodicity || "—"}
-                  </Typography>
+                  <Typography variant="body2">{detail.periodicity || "—"}</Typography>
                 </TableCell>
               </TableRow>
             ))}
@@ -231,7 +225,11 @@ const CnsCarePlanShowContent = () => {
             />
           )}
         </Box>
-        <ReferenceField source="patient_id" reference="patients" link={false}>
+        <ReferenceField
+          source="patient_id"
+          reference="patients"
+          link={false}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Person color="primary" />
             <Typography variant="h6" color="primary">
@@ -265,10 +263,7 @@ const CnsCarePlanShowContent = () => {
 
         {/* Support Period */}
         <Grid item xs={12} md={4}>
-          <FieldGroup
-            title="Support Period"
-            icon={<CalendarToday color="primary" />}
-          >
+          <FieldGroup title="Support Period" icon={<CalendarToday color="primary" />}>
             <LabelValue label="Start of Support">
               <DateField source="start_of_support" />
             </LabelValue>
@@ -279,10 +274,7 @@ const CnsCarePlanShowContent = () => {
               <DateField source="date_of_notification" emptyText="—" />
             </LabelValue>
             <LabelValue label="Notification to Provider">
-              <DateField
-                source="date_of_notification_to_provider"
-                emptyText="—"
-              />
+              <DateField source="date_of_notification_to_provider" emptyText="—" />
             </LabelValue>
           </FieldGroup>
         </Grid>
@@ -312,9 +304,7 @@ const CnsCarePlanShowContent = () => {
       </Grid>
 
       {/* Plan transitions */}
-      {(record.date_of_change_to_new_plan ||
-        record.date_of_start_of_plan_for_us ||
-        record.packageLevel) && (
+      {(record.date_of_change_to_new_plan || record.date_of_start_of_plan_for_us || record.packageLevel) && (
         <>
           <Divider sx={{ my: 3 }} />
           <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
@@ -336,8 +326,7 @@ const CnsCarePlanShowContent = () => {
             {record.request_start_date && (
               <LabelValue label="Request Period">
                 <Typography variant="body2">
-                  <DateField source="request_start_date" /> —{" "}
-                  <DateField source="request_end_date" />
+                  <DateField source="request_start_date" /> — <DateField source="request_end_date" />
                 </Typography>
               </LabelValue>
             )}

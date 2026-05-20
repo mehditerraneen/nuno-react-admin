@@ -49,13 +49,11 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
   sx,
 }) => {
   const { setValue, watch } = useFormContext();
-  const { data: allCareItems } = useGetList<LongTermCareItem>(
-    "longtermcareitems",
-    {
+  const { data: allCareItems } =
+    useGetList<LongTermCareItem>("longtermcareitems", {
       pagination: { page: 1, perPage: 500 },
       sort: { field: "code", order: "ASC" },
-    },
-  );
+    });
 
   // Watch form values
   const timeStart = useWatch({ name: "time_start" });
@@ -144,12 +142,7 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
           (item) => (item.long_term_care_item.weekly_package || 0) > 0,
         );
         const hasValidActions = actionsDurationTotal > 0;
-        console.log(
-          "🔄 Has valid care items:",
-          hasValidCareItems,
-          "actions:",
-          hasValidActions,
-        );
+        console.log("🔄 Has valid care items:", hasValidCareItems, "actions:", hasValidActions);
 
         if (startTimeStr && (hasValidCareItems || hasValidActions)) {
           const suggested = calculateSuggestedEndTime(
@@ -204,15 +197,7 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
       setShowSuggestion(false);
       setMatchStatus(null);
     }
-  }, [
-    timeStart,
-    careItemsKey,
-    actionsKey,
-    allCareItems,
-    autoSuggest,
-    source,
-    timeEnd,
-  ]);
+  }, [timeStart, careItemsKey, actionsKey, allCareItems, autoSuggest, source, timeEnd]);
 
   const handleApplySuggestion = () => {
     if (suggestedTime) {

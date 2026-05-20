@@ -46,13 +46,9 @@ class AuthService {
   private sessionExpiredShown = false;
 
   // Event listeners for session state changes
-  private listeners: Array<
-    (event: "warning" | "expired" | "refreshed") => void
-  > = [];
+  private listeners: Array<(event: "warning" | "expired" | "refreshed") => void> = [];
 
-  onSessionEvent(
-    listener: (event: "warning" | "expired" | "refreshed") => void,
-  ) {
+  onSessionEvent(listener: (event: "warning" | "expired" | "refreshed") => void) {
     this.listeners.push(listener);
     return () => {
       this.listeners = this.listeners.filter((l) => l !== listener);

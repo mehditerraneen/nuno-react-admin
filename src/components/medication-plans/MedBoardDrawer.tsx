@@ -136,7 +136,9 @@ export const MedBoardDrawer: React.FC<MedBoardDrawerProps> = ({
       if ((draft[k] ?? null) !== (medication[k] ?? null)) return true;
     }
     // Rules: serialize and compare
-    const origRules = (medication.schedule_rules ?? []).map(({ ...r }) => r);
+    const origRules = (medication.schedule_rules ?? []).map(
+      ({ ...r }) => r,
+    );
     const curRules = draftRules.map(({ __key, ...r }) => r);
     return JSON.stringify(origRules) !== JSON.stringify(curRules);
   }, [draft, medication, draftRules]);
@@ -248,14 +250,7 @@ export const MedBoardDrawer: React.FC<MedBoardDrawerProps> = ({
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box
-        sx={{
-          width: 520,
-          display: "flex",
-          flexDirection: "column",
-          height: "100%",
-        }}
-      >
+      <Box sx={{ width: 520, display: "flex", flexDirection: "column", height: "100%" }}>
         {/* Header */}
         <Box
           sx={{

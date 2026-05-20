@@ -93,9 +93,7 @@ export const AddMedicationDialog = ({
   const [medicineOptions, setMedicineOptions] = useState<Medicine[]>([]);
   const [medicineLoading, setMedicineLoading] = useState(false);
   const [medicineSearch, setMedicineSearch] = useState("");
-  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
-    null,
-  );
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [catalogInfo, setCatalogInfo] = useState<{
     last_imported_at: string | null;
@@ -123,9 +121,7 @@ export const AddMedicationDialog = ({
   }, [open, dataProvider]);
 
   // Prescriptions (patient-scoped)
-  const [prescriptionOptions, setPrescriptionOptions] = useState<RxOption[]>(
-    [],
-  );
+  const [prescriptionOptions, setPrescriptionOptions] = useState<RxOption[]>([]);
   const [selectedRx, setSelectedRx] = useState<RxOption | null>(null);
 
   useEffect(() => {
@@ -141,7 +137,7 @@ export const AddMedicationDialog = ({
         const list: RxOption[] = Array.isArray(result)
           ? (result as RxOption[])
           : Array.isArray((result as { data?: unknown })?.data)
-            ? (result as { data: RxOption[] }).data
+            ? ((result as { data: RxOption[] }).data)
             : [];
         setPrescriptionOptions(list);
       })
@@ -157,13 +153,8 @@ export const AddMedicationDialog = ({
     const date = rx.date ? new Date(rx.date).toLocaleDateString() : `#${rx.id}`;
     const doctor = rx.prescriptor_name || rx.prescriptor?.name;
     return doctor
-      ? translate("medication_plan_show.add.prescription_option", {
-          date,
-          doctor,
-        })
-      : translate("medication_plan_show.add.prescription_option_short", {
-          date,
-        });
+      ? translate("medication_plan_show.add.prescription_option", { date, doctor })
+      : translate("medication_plan_show.add.prescription_option_short", { date });
   };
 
   const handleRxSelection = (rx: RxOption | null) => {
@@ -173,8 +164,12 @@ export const AddMedicationDialog = ({
       prescription_id: rx ? rx.id : null,
       // Default dates to prescription's date range when linking; don't
       // clobber user edits when unlinking.
-      date_started: rx?.date ? rx.date.slice(0, 10) : prev.date_started,
-      date_ended: rx?.end_date ? rx.end_date.slice(0, 10) : prev.date_ended,
+      date_started: rx?.date
+        ? rx.date.slice(0, 10)
+        : prev.date_started,
+      date_ended: rx?.end_date
+        ? rx.end_date.slice(0, 10)
+        : prev.date_ended,
     }));
   };
 
@@ -240,18 +235,17 @@ export const AddMedicationDialog = ({
         night_dose: formData.night_dose || null,
       })) as Medication;
 
-      notify(translate("medication_plan_show.add.success"), {
-        type: "success",
-      });
+      notify(translate("medication_plan_show.add.success"), { type: "success" });
       refresh();
       handleClose();
       if (onCreated && created?.id) {
         onCreated(created);
       }
     } catch (error: any) {
-      notify(error.message || translate("medication_plan_show.add.failure"), {
-        type: "error",
-      });
+      notify(
+        error.message || translate("medication_plan_show.add.failure"),
+        { type: "error" },
+      );
     } finally {
       setSubmitting(false);
     }
@@ -285,13 +279,7 @@ export const AddMedicationDialog = ({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Typography variant="h6">
             {translate("medication_plan_show.add.title")}
           </Typography>
@@ -379,9 +367,7 @@ export const AddMedicationDialog = ({
                     ...params.InputProps,
                     endAdornment: (
                       <>
-                        {medicineLoading ? (
-                          <CircularProgress color="inherit" size={20} />
-                        ) : null}
+                        {medicineLoading ? <CircularProgress color="inherit" size={20} /> : null}
                         {params.InputProps.endAdornment}
                       </>
                     ),
@@ -399,15 +385,14 @@ export const AddMedicationDialog = ({
                   <>
                     Liste Positive CNS importée le{" "}
                     <strong>
-                      {new Date(
-                        catalogInfo.last_imported_at,
-                      ).toLocaleDateString("fr-FR")}
+                      {new Date(catalogInfo.last_imported_at).toLocaleDateString(
+                        "fr-FR",
+                      )}
                     </strong>
                     {catalogInfo.last_imported_by
                       ? ` par ${catalogInfo.last_imported_by}`
                       : ""}{" "}
-                    · {catalogInfo.total_medicines.toLocaleString("fr-FR")}{" "}
-                    médicaments
+                    · {catalogInfo.total_medicines.toLocaleString("fr-FR")} médicaments
                   </>
                 ) : (
                   "Liste Positive CNS jamais importée"
@@ -437,9 +422,7 @@ export const AddMedicationDialog = ({
             <TextField
               label={`${translate("medication_plan_show.add.dosage")} *`}
               value={formData.dosage}
-              onChange={(e) =>
-                setFormData({ ...formData, dosage: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
               placeholder={translate(
                 "medication_plan_show.add.dosage_placeholder",
               )}
@@ -453,9 +436,7 @@ export const AddMedicationDialog = ({
               label={`${translate("medication_plan_show.add.start_date")} *`}
               type="date"
               value={formData.date_started}
-              onChange={(e) =>
-                setFormData({ ...formData, date_started: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, date_started: e.target.value })}
               InputLabelProps={{ shrink: true }}
               fullWidth
             />
@@ -465,9 +446,7 @@ export const AddMedicationDialog = ({
               label={translate("medication_plan_show.add.end_date")}
               type="date"
               value={formData.date_ended}
-              onChange={(e) =>
-                setFormData({ ...formData, date_ended: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, date_ended: e.target.value })}
               InputLabelProps={{ shrink: true }}
               fullWidth
             />
@@ -478,9 +457,7 @@ export const AddMedicationDialog = ({
             <TextField
               label={translate("medication_plan_show.add.remarks")}
               value={formData.remarks}
-              onChange={(e) =>
-                setFormData({ ...formData, remarks: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
               multiline
               rows={2}
               fullWidth
@@ -502,10 +479,11 @@ export const AddMedicationDialog = ({
             >
               <Typography variant="caption" color="text.secondary">
                 💡 L'horaire d'administration se définit avec des{" "}
-                <strong>règles de planification</strong> (parties du journée,
-                heures précises, hebdomadaire, mensuel, spécifique, PRN, échelle
-                glycémique). L'éditeur de règles s'ouvre automatiquement après
-                la création du médicament.
+                <strong>règles de planification</strong> (parties du
+                journée, heures précises, hebdomadaire, mensuel,
+                spécifique, PRN, échelle glycémique). L'éditeur de
+                règles s'ouvre automatiquement après la création du
+                médicament.
               </Typography>
             </Box>
           </Grid>

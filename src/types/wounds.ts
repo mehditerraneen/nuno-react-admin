@@ -3,95 +3,90 @@
  * Based on inur.django medical.models.Wound, WoundEvolution, and WoundImage
  */
 
-import { RaRecord } from "react-admin";
+import { RaRecord } from 'react-admin';
 
 // ============================================================================
 // ENUMS AND CONSTANTS
 // ============================================================================
 
-export type BodyView = "FRONT" | "BACK" | "SIDE";
-export type WoundStatus = "ACTIVE" | "HEALED" | "INFECTED" | "ARCHIVED";
-export type EvolutionType =
-  | "ASSESSMENT"
-  | "TREATMENT"
-  | "PROGRESS"
-  | "COMPLICATION"
-  | "HEALING";
-export type SeverityLevel = "MILD" | "MODERATE" | "SEVERE" | "CRITICAL";
-export type TrendIndicator = "improving" | "stable" | "worsening" | "unknown";
-export type ImageType = "INDIVIDUAL" | "PATIENT_DIAGRAM";
+export type BodyView = 'FRONT' | 'BACK' | 'SIDE';
+export type WoundStatus = 'ACTIVE' | 'HEALED' | 'INFECTED' | 'ARCHIVED';
+export type EvolutionType = 'ASSESSMENT' | 'TREATMENT' | 'PROGRESS' | 'COMPLICATION' | 'HEALING';
+export type SeverityLevel = 'MILD' | 'MODERATE' | 'SEVERE' | 'CRITICAL';
+export type TrendIndicator = 'improving' | 'stable' | 'worsening' | 'unknown';
+export type ImageType = 'INDIVIDUAL' | 'PATIENT_DIAGRAM';
 
 // Body area constants matching Django model
 export const BODY_AREAS = {
   // Front view
-  HEAD: "Tête",
-  NECK: "Cou",
-  SHOULDER_LEFT: "Épaule G",
-  SHOULDER_RIGHT: "Épaule D",
-  CHEST: "Poitrine",
-  STOMACH: "Estomac",
-  ABDOMEN: "Abdomen",
-  ARM_LEFT: "Bras G",
-  ARM_RIGHT: "Bras D",
-  FOREARM_LEFT: "Avant-bras G",
-  FOREARM_RIGHT: "Avant-bras D",
-  HAND_LEFT: "Main G",
-  HAND_RIGHT: "Main D",
-  THIGH_LEFT: "Cuisse G",
-  THIGH_RIGHT: "Cuisse D",
-  KNEE_LEFT: "Genou G",
-  KNEE_RIGHT: "Genou D",
-  SHIN_LEFT: "Tibia G",
-  SHIN_RIGHT: "Tibia D",
-  FOOT_LEFT: "Pied G",
-  FOOT_RIGHT: "Pied D",
+  HEAD: 'Tête',
+  NECK: 'Cou',
+  SHOULDER_LEFT: 'Épaule G',
+  SHOULDER_RIGHT: 'Épaule D',
+  CHEST: 'Poitrine',
+  STOMACH: 'Estomac',
+  ABDOMEN: 'Abdomen',
+  ARM_LEFT: 'Bras G',
+  ARM_RIGHT: 'Bras D',
+  FOREARM_LEFT: 'Avant-bras G',
+  FOREARM_RIGHT: 'Avant-bras D',
+  HAND_LEFT: 'Main G',
+  HAND_RIGHT: 'Main D',
+  THIGH_LEFT: 'Cuisse G',
+  THIGH_RIGHT: 'Cuisse D',
+  KNEE_LEFT: 'Genou G',
+  KNEE_RIGHT: 'Genou D',
+  SHIN_LEFT: 'Tibia G',
+  SHIN_RIGHT: 'Tibia D',
+  FOOT_LEFT: 'Pied G',
+  FOOT_RIGHT: 'Pied D',
 
   // Back view
-  "SHOULDER-BACK-LEFT": "Épaule G (Dos)",
-  "SHOULDER-BACK-RIGHT": "Épaule D (Dos)",
-  "BACK-UPPER": "Dos supérieur",
-  "BACK-MIDDLE": "Dos moyen",
-  "BACK-LOWER": "Dos inférieur",
-  BUTT_LEFT: "Fesse G",
-  BUTT_RIGHT: "Fesse D",
-  "ARM-BACK-LEFT": "Bras G (Dos)",
-  "ARM-BACK-RIGHT": "Bras D (Dos)",
-  "FOREARM-BACK-LEFT": "Avant-bras G (Dos)",
-  "FOREARM-BACK-RIGHT": "Avant-bras D (Dos)",
-  "HAND-BACK-LEFT": "Main G (Dos)",
-  "HAND-BACK-RIGHT": "Main D (Dos)",
-  "THIGH-BACK-LEFT": "Cuisse G (Dos)",
-  "THIGH-BACK-RIGHT": "Cuisse D (Dos)",
-  "KNEE-BACK-LEFT": "Genou G (Dos)",
-  "KNEE-BACK-RIGHT": "Genou D (Dos)",
-  "CALF-LEFT": "Mollet G",
-  "CALF-RIGHT": "Mollet D",
-  "FOOT-BACK-LEFT": "Pied G (Dos)",
-  "FOOT-BACK-RIGHT": "Pied D (Dos)",
+  'SHOULDER-BACK-LEFT': 'Épaule G (Dos)',
+  'SHOULDER-BACK-RIGHT': 'Épaule D (Dos)',
+  'BACK-UPPER': 'Dos supérieur',
+  'BACK-MIDDLE': 'Dos moyen',
+  'BACK-LOWER': 'Dos inférieur',
+  BUTT_LEFT: 'Fesse G',
+  BUTT_RIGHT: 'Fesse D',
+  'ARM-BACK-LEFT': 'Bras G (Dos)',
+  'ARM-BACK-RIGHT': 'Bras D (Dos)',
+  'FOREARM-BACK-LEFT': 'Avant-bras G (Dos)',
+  'FOREARM-BACK-RIGHT': 'Avant-bras D (Dos)',
+  'HAND-BACK-LEFT': 'Main G (Dos)',
+  'HAND-BACK-RIGHT': 'Main D (Dos)',
+  'THIGH-BACK-LEFT': 'Cuisse G (Dos)',
+  'THIGH-BACK-RIGHT': 'Cuisse D (Dos)',
+  'KNEE-BACK-LEFT': 'Genou G (Dos)',
+  'KNEE-BACK-RIGHT': 'Genou D (Dos)',
+  'CALF-LEFT': 'Mollet G',
+  'CALF-RIGHT': 'Mollet D',
+  'FOOT-BACK-LEFT': 'Pied G (Dos)',
+  'FOOT-BACK-RIGHT': 'Pied D (Dos)',
 } as const;
 
 export type BodyAreaCode = keyof typeof BODY_AREAS;
 
 export const EVOLUTION_TYPE_LABELS: Record<EvolutionType, string> = {
-  ASSESSMENT: "Évaluation",
-  TREATMENT: "Traitement",
-  PROGRESS: "Évolution",
-  COMPLICATION: "Complication",
-  HEALING: "Guérison",
+  ASSESSMENT: 'Évaluation',
+  TREATMENT: 'Traitement',
+  PROGRESS: 'Évolution',
+  COMPLICATION: 'Complication',
+  HEALING: 'Guérison',
 };
 
 export const SEVERITY_LABELS: Record<SeverityLevel, string> = {
-  MILD: "Légère",
-  MODERATE: "Modérée",
-  SEVERE: "Sévère",
-  CRITICAL: "Critique",
+  MILD: 'Légère',
+  MODERATE: 'Modérée',
+  SEVERE: 'Sévère',
+  CRITICAL: 'Critique',
 };
 
 export const STATUS_LABELS: Record<WoundStatus, string> = {
-  ACTIVE: "Actif",
-  HEALED: "Guéri",
-  INFECTED: "Infecté",
-  ARCHIVED: "Archivé",
+  ACTIVE: 'Actif',
+  HEALED: 'Guéri',
+  INFECTED: 'Infecté',
+  ARCHIVED: 'Archivé',
 };
 
 // ============================================================================
@@ -237,7 +232,7 @@ export interface BodyMapConfig {
   width: number; // SVG viewBox width
   height: number; // SVG viewBox height
   centerLine: number; // X coordinate for left/right detection
-  gender: "male" | "female";
+  gender: 'male' | 'female';
   view: BodyView;
 }
 
@@ -269,7 +264,7 @@ export interface AnatomicalLabel {
 /**
  * Navigation mode for body map
  */
-export type NavigationMode = "click" | "drag";
+export type NavigationMode = 'click' | 'drag';
 
 /**
  * Zoom configuration
@@ -342,11 +337,11 @@ export interface KeyboardShortcuts {
 }
 
 export const DEFAULT_KEYBOARD_SHORTCUTS: KeyboardShortcuts = {
-  zoomIn: "+",
-  zoomOut: "-",
-  resetZoom: "0",
-  toggleDrag: "d",
-  toggleClick: "c",
-  toggleMinimap: "m",
-  toggleLabels: "l",
+  zoomIn: '+',
+  zoomOut: '-',
+  resetZoom: '0',
+  toggleDrag: 'd',
+  toggleClick: 'c',
+  toggleMinimap: 'm',
+  toggleLabels: 'l',
 };

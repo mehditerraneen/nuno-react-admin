@@ -57,8 +57,9 @@ export const EditTriggersDialog = ({
 }: EditTriggersDialogProps) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
-  const [triggers, setTriggers] =
-    useState<CarePlanRevisionTrigger[]>(initialTriggers);
+  const [triggers, setTriggers] = useState<CarePlanRevisionTrigger[]>(
+    initialTriggers,
+  );
   const initialLocal = toLocalInputValue(initialRevisedOn);
   const [revisedOn, setRevisedOn] = useState<string>(initialLocal);
   const [busy, setBusy] = useState(false);

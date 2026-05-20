@@ -74,9 +74,9 @@ export const RevisionTriggerPicker = ({
   const [kind, setKind] = useState<string>("");
   const [q, setQ] = useState<string>("");
   const [debouncedQ, setDebouncedQ] = useState<string>("");
-  const [candidates, setCandidates] = useState<
-    CarePlanRevisionTriggerCandidate[]
-  >([]);
+  const [candidates, setCandidates] = useState<CarePlanRevisionTriggerCandidate[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -138,19 +138,16 @@ export const RevisionTriggerPicker = ({
 
   const filtered = useMemo(
     () =>
-      candidates.filter((c) => !alreadyPicked.has(`${c.kind}:${c.source_id}`)),
+      candidates.filter(
+        (c) => !alreadyPicked.has(`${c.kind}:${c.source_id}`),
+      ),
     [candidates, alreadyPicked],
   );
 
   return (
     <Box>
       {(existing.length > 0 || pending.length > 0) && (
-        <Stack
-          direction="row"
-          spacing={1}
-          flexWrap="wrap"
-          sx={{ mb: 2, gap: 1 }}
-        >
+        <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2, gap: 1 }}>
           {existing.map((t) => (
             <Tooltip
               key={`x-${t.id}`}
@@ -189,20 +186,15 @@ export const RevisionTriggerPicker = ({
         color="text.secondary"
         sx={{ display: "block", mb: 1 }}
       >
-        Vous pouvez ajouter <b>plusieurs motifs</b> — choisissez un type,
-        sélectionnez l'élément concerné, puis recommencez (chute + prescription
-        + plaie, etc.).
+        Vous pouvez ajouter <b>plusieurs motifs</b> — choisissez un type, sélectionnez
+        l'élément concerné, puis recommencez (chute + prescription + plaie, etc.).
         {(existing.length > 0 || pending.length > 0) &&
           ` ${existing.length + pending.length} motif${
             existing.length + pending.length > 1 ? "s" : ""
           } actuellement.`}
       </Typography>
 
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1}
-        alignItems="stretch"
-      >
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="stretch">
         <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel id="revision-trigger-kind-label">Type</InputLabel>
           <Select
@@ -239,10 +231,9 @@ export const RevisionTriggerPicker = ({
             a.kind === b.kind && a.source_id === b.source_id
           }
           renderOption={(props, option) => {
-            const { key, ...liProps } =
-              props as React.HTMLAttributes<HTMLLIElement> & {
-                key?: React.Key;
-              };
+            const { key, ...liProps } = props as React.HTMLAttributes<HTMLLIElement> & {
+              key?: React.Key;
+            };
             return (
               <Tooltip
                 key={key ?? `${option.kind}-${option.source_id}`}
@@ -280,9 +271,7 @@ export const RevisionTriggerPicker = ({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {loading ? (
-                      <CircularProgress color="inherit" size={16} />
-                    ) : null}
+                    {loading ? <CircularProgress color="inherit" size={16} /> : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -290,11 +279,7 @@ export const RevisionTriggerPicker = ({
             />
           )}
           noOptionsText={
-            !kind
-              ? "Sélectionner un type"
-              : loading
-                ? "Chargement…"
-                : "Aucun résultat"
+            !kind ? "Sélectionner un type" : loading ? "Chargement…" : "Aucun résultat"
           }
         />
       </Stack>

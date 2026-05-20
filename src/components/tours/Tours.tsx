@@ -356,16 +356,8 @@ const TourTimeline = () => {
   });
 
   const colors = [
-    "#1976d2",
-    "#388e3c",
-    "#f57c00",
-    "#7b1fa2",
-    "#c62828",
-    "#00838f",
-    "#4e342e",
-    "#283593",
-    "#558b2f",
-    "#ad1457",
+    "#1976d2", "#388e3c", "#f57c00", "#7b1fa2", "#c62828",
+    "#00838f", "#4e342e", "#283593", "#558b2f", "#ad1457",
   ];
 
   // Hour markers
@@ -375,65 +367,31 @@ const TourTimeline = () => {
   }
 
   // Stats
-  const totalCare = sorted.reduce(
-    (sum, e) => sum + (toMin(e.time_end) - toMin(e.time_start)),
-    0,
-  );
+  const totalCare = sorted.reduce((sum, e) => sum + (toMin(e.time_end) - toMin(e.time_start)), 0);
   const totalTravel = travelSegments.reduce(
     (sum: number, s: any) => sum + (s.duration_minutes || 0),
-    0,
+    0
   );
   const totalDist = travelSegments.reduce(
-    (sum: number, s: any) =>
-      sum + (s.distance_km ? parseFloat(s.distance_km) : 0),
-    0,
+    (sum: number, s: any) => sum + (s.distance_km ? parseFloat(s.distance_km) : 0),
+    0
   );
 
   return (
     <Box>
       {/* Header stats */}
       <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
-        <Chip
-          icon={<Schedule />}
-          label={`${tourStart} - ${tourEnd}`}
-          color="primary"
-        />
+        <Chip icon={<Schedule />} label={`${tourStart} - ${tourEnd}`} color="primary" />
         {record.break_duration && (
-          <Chip
-            icon={<Coffee />}
-            label={`${record.break_duration}min break`}
-            variant="outlined"
-          />
+          <Chip icon={<Coffee />} label={`${record.break_duration}min break`} variant="outlined" />
         )}
-        <Chip
-          label={`${sorted.length} events`}
-          color="info"
-          variant="outlined"
-        />
-        <Chip
-          label={`${totalCare}min care`}
-          color="success"
-          variant="outlined"
-        />
-        {totalTravel > 0 && (
-          <Chip
-            label={`${totalTravel}min travel`}
-            color="warning"
-            variant="outlined"
-          />
-        )}
-        {totalDist > 0 && (
-          <Chip
-            label={`${totalDist.toFixed(1)}km`}
-            color="secondary"
-            variant="outlined"
-          />
-        )}
+        <Chip label={`${sorted.length} events`} color="info" variant="outlined" />
+        <Chip label={`${totalCare}min care`} color="success" variant="outlined" />
+        {totalTravel > 0 && <Chip label={`${totalTravel}min travel`} color="warning" variant="outlined" />}
+        {totalDist > 0 && <Chip label={`${totalDist.toFixed(1)}km`} color="secondary" variant="outlined" />}
         <Chip
           label={record.optimization_status || "pending"}
-          color={
-            record.optimization_status === "optimized" ? "success" : "warning"
-          }
+          color={record.optimization_status === "optimized" ? "success" : "warning"}
           size="small"
         />
       </Box>
@@ -474,11 +432,7 @@ const TourTimeline = () => {
         let travelLeft = 0;
         let travelWidth = 0;
         const travelSeg = travelSegments.find(
-          (s: any) =>
-            s.from_event_id === evt.id ||
-            (nextEvt &&
-              s.to_event_id === nextEvt.id &&
-              s.from_event_id === evt.id),
+          (s: any) => s.from_event_id === evt.id || (nextEvt && s.to_event_id === nextEvt.id && s.from_event_id === evt.id)
         );
         if (nextEvt && travelSeg) {
           travelLeft = ((evtEnd - startMin) / totalMin) * 100;
@@ -512,8 +466,7 @@ const TourTimeline = () => {
                 variant="caption"
                 sx={{ fontSize: "0.6rem", color: "text.secondary" }}
               >
-                {evt.time_start?.slice(0, 5)} - {evt.time_end?.slice(0, 5)} (
-                {dur}min)
+                {evt.time_start?.slice(0, 5)} - {evt.time_end?.slice(0, 5)} ({dur}min)
               </Typography>
             </Box>
 
@@ -610,21 +563,12 @@ const TourTimeline = () => {
       {/* Notes section */}
       {sorted.length > 0 && (
         <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Notes
-          </Typography>
-          {sorted
-            .filter((e) => e.notes)
-            .map((e) => (
-              <Typography
-                key={e.id}
-                variant="caption"
-                display="block"
-                sx={{ mb: 0.5, color: "text.secondary" }}
-              >
-                <strong>{e.patient_name}</strong>: {e.notes}
-              </Typography>
-            ))}
+          <Typography variant="subtitle2" gutterBottom>Notes</Typography>
+          {sorted.filter((e) => e.notes).map((e) => (
+            <Typography key={e.id} variant="caption" display="block" sx={{ mb: 0.5, color: "text.secondary" }}>
+              <strong>{e.patient_name}</strong>: {e.notes}
+            </Typography>
+          ))}
         </Box>
       )}
     </Box>

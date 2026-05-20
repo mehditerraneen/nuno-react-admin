@@ -31,19 +31,13 @@ interface Props {
   onChanged: () => void;
 }
 
-const PRIORITY_COLOR: Record<
-  CarePlanObjectivePriority,
-  "error" | "warning" | "default"
-> = {
+const PRIORITY_COLOR: Record<CarePlanObjectivePriority, "error" | "warning" | "default"> = {
   high: "error",
   medium: "warning",
   low: "default",
 };
 
-const STATUS_COLOR: Record<
-  CarePlanObjectiveStatus,
-  "primary" | "success" | "warning" | "default"
-> = {
+const STATUS_COLOR: Record<CarePlanObjectiveStatus, "primary" | "success" | "warning" | "default"> = {
   active: "primary",
   achieved: "success",
   partially_achieved: "warning",
@@ -84,22 +78,16 @@ export const ObjectivesPanel = ({
       notify("Objectif supprimé", { type: "success" });
       onChanged();
     } catch (err) {
-      notify(`Erreur : ${err instanceof Error ? err.message : String(err)}`, {
-        type: "error",
-      });
+      notify(
+        `Erreur : ${err instanceof Error ? err.message : String(err)}`,
+        { type: "error" },
+      );
     }
   };
 
   return (
     <Paper sx={{ p: 2, mt: 2 }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 1.5,
-        }}
-      >
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <FlagIcon color="primary" fontSize="small" />
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -114,11 +102,7 @@ export const ObjectivesPanel = ({
       </Box>
 
       {objectives.length === 0 ? (
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ fontStyle: "italic" }}
-        >
+        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
           Aucun objectif défini. Les objectifs décrivent ce qu'on cherche à
           atteindre (prévenir les chutes, maintenir l'autonomie, etc.) et
           permettent d'évaluer si les actions du plan portent leurs fruits.
@@ -137,14 +121,7 @@ export const ObjectivesPanel = ({
             >
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
                 <Box sx={{ flex: 1 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      flexWrap: "wrap",
-                    }}
-                  >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                     <Typography variant="body1" sx={{ fontWeight: 600 }}>
                       {obj.title}
                     </Typography>

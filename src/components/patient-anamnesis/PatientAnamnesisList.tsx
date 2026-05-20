@@ -14,10 +14,7 @@ import { Box, Chip, LinearProgress, Tooltip } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 
-const FALL_RISK_COLOR: Record<
-  string,
-  "success" | "warning" | "error" | "default"
-> = {
+const FALL_RISK_COLOR: Record<string, "success" | "warning" | "error" | "default"> = {
   LOW: "success",
   MODERATE: "warning",
   HIGH: "error",
@@ -30,12 +27,7 @@ const FALL_RISK_LABEL: Record<string, string> = {
 };
 
 const filters = [
-  <SearchInput
-    key="search"
-    source="search"
-    alwaysOn
-    placeholder="Rechercher (nom, prénom, matricule)"
-  />,
+  <SearchInput key="search" source="search" alwaysOn placeholder="Rechercher (nom, prénom, matricule)" />,
   <SelectInput
     key="fall_risk_level"
     source="fall_risk_level"
@@ -96,10 +88,7 @@ export const PatientAnamnesisList = () => (
           return (
             <Tooltip title={`Score Morse : ${record.fall_risk_score ?? "—"}`}>
               <Chip
-                label={
-                  FALL_RISK_LABEL[record.fall_risk_level] ||
-                  record.fall_risk_level
-                }
+                label={FALL_RISK_LABEL[record.fall_risk_level] || record.fall_risk_level}
                 color={FALL_RISK_COLOR[record.fall_risk_level] || "default"}
                 size="small"
               />

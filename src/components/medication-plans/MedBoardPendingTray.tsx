@@ -19,10 +19,7 @@ import { useTranslate } from "react-admin";
 import type { Medication } from "../../types/medicationPlans";
 import type { StagedChange } from "./medBoardStagedChanges";
 
-const changeLabel = (
-  c: StagedChange,
-  medById: Map<number, Medication>,
-): string => {
+const changeLabel = (c: StagedChange, medById: Map<number, Medication>): string => {
   const med = medById.get(c.medicationId);
   const name =
     med?.medicine_abbreviated_name ||
@@ -130,9 +127,7 @@ export const MedBoardPendingTray: React.FC<MedBoardPendingTrayProps> = ({
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               {empty
                 ? translate("med_board.pending_empty")
-                : translate("med_board.pending_some", {
-                    count: changes.length,
-                  })}
+                : translate("med_board.pending_some", { count: changes.length })}
             </Typography>
             <IconButton size="small" onClick={() => setAnchorEl(null)}>
               <CloseIcon fontSize="small" />
@@ -144,10 +139,7 @@ export const MedBoardPendingTray: React.FC<MedBoardPendingTrayProps> = ({
               {translate("med_board.pending_hint")}
             </Typography>
           ) : (
-            <Stack
-              spacing={0.5}
-              sx={{ maxHeight: 320, overflow: "auto", mb: 1 }}
-            >
+            <Stack spacing={0.5} sx={{ maxHeight: 320, overflow: "auto", mb: 1 }}>
               {changes.map((c) => (
                 <Box
                   key={c.id}

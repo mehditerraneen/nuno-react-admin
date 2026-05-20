@@ -73,7 +73,10 @@ const actionIcons: Record<string, React.ReactNode> = {
   DELETE: <DeleteIcon fontSize="small" />,
 };
 
-const actionColors: Record<string, "success" | "primary" | "error" | "grey"> = {
+const actionColors: Record<
+  string,
+  "success" | "primary" | "error" | "grey"
+> = {
   CREATE: "success",
   UPDATE: "primary",
   DELETE: "error",

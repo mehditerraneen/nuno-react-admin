@@ -55,9 +55,7 @@ const DetailSummaryCard: React.FC<{
       backgroundColor: tone === "added" ? "success.light" : "error.light",
     }}
   >
-    <Box
-      sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
-    >
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
       <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
         {detail.name}
       </Typography>
@@ -85,16 +83,14 @@ const ChangesBlock: React.FC<{ changes: CarePlanDiffChanges }> = ({
   const translate = useTranslate();
   const rows: React.ReactNode[] = [];
 
-  const scalar = (field: keyof CarePlanDiffChanges, labelKey: string): void => {
-    const entry = changes[field] as
-      | { before: unknown; after: unknown }
-      | undefined;
+  const scalar = (
+    field: keyof CarePlanDiffChanges,
+    labelKey: string,
+  ): void => {
+    const entry = changes[field] as { before: unknown; after: unknown } | undefined;
     if (!entry) return;
     rows.push(
-      <Box
-        key={labelKey}
-        sx={{ display: "flex", gap: 2, flexWrap: "wrap", py: 0.5 }}
-      >
+      <Box key={labelKey} sx={{ display: "flex", gap: 2, flexWrap: "wrap", py: 0.5 }}>
         <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 160 }}>
           {translate(labelKey)}
         </Typography>
@@ -121,22 +117,10 @@ const ChangesBlock: React.FC<{ changes: CarePlanDiffChanges }> = ({
         </Typography>
         <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mt: 0.5 }}>
           {added.map((o) => (
-            <Chip
-              key={`+${o}`}
-              icon={<AddIcon />}
-              size="small"
-              color="success"
-              label={o}
-            />
+            <Chip key={`+${o}`} icon={<AddIcon />} size="small" color="success" label={o} />
           ))}
           {removed.map((o) => (
-            <Chip
-              key={`-${o}`}
-              icon={<RemoveIcon />}
-              size="small"
-              color="error"
-              label={o}
-            />
+            <Chip key={`-${o}`} icon={<RemoveIcon />} size="small" color="error" label={o} />
           ))}
         </Box>
       </Box>,
@@ -190,9 +174,7 @@ const ChangesBlock: React.FC<{ changes: CarePlanDiffChanges }> = ({
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
           {translate("care_plan_diff.field_actions")}
         </Typography>
-        <Box
-          sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 0.5 }}
-        >
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 0.5 }}>
           {added.map((a, i) => (
             <Chip
               key={`+a${i}`}
@@ -297,15 +279,7 @@ export const CarePlanDiffPanel: React.FC<CarePlanDiffPanelProps> = ({
         </Box>
       </AccordionSummary>
       <AccordionDetails>
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            mb: 2,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
+        <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center", flexWrap: "wrap" }}>
           <FormControl size="small" sx={{ minWidth: 240 }}>
             <InputLabel>{translate("care_plan_diff.compare_with")}</InputLabel>
             <Select
@@ -321,10 +295,7 @@ export const CarePlanDiffPanel: React.FC<CarePlanDiffPanelProps> = ({
                 {translate("care_plan_diff.title")} (auto)
               </MenuItem>
               {(siblingPlans || [])
-                .filter(
-                  (p) =>
-                    p.id !== carePlanId && p.plan_number !== currentPlanNumber,
-                )
+                .filter((p) => p.id !== carePlanId && p.plan_number !== currentPlanNumber)
                 .map((p) => (
                   <MenuItem key={p.id} value={Number(p.id)}>
                     Plan n°{p.plan_number} — {formatDate(p.plan_start_date)}
@@ -361,21 +332,13 @@ export const CarePlanDiffPanel: React.FC<CarePlanDiffPanelProps> = ({
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {diff.added.length > 0 && (
               <Box>
-                <Typography
-                  variant="subtitle2"
-                  color="success.main"
-                  gutterBottom
-                >
+                <Typography variant="subtitle2" color="success.main" gutterBottom>
                   {translate("care_plan_diff.added_header", {
                     count: diff.added.length,
                   })}
                 </Typography>
                 {diff.added.map((d) => (
-                  <DetailSummaryCard
-                    key={`add-${d.name}`}
-                    detail={d}
-                    tone="added"
-                  />
+                  <DetailSummaryCard key={`add-${d.name}`} detail={d} tone="added" />
                 ))}
               </Box>
             )}
@@ -388,22 +351,14 @@ export const CarePlanDiffPanel: React.FC<CarePlanDiffPanelProps> = ({
                   })}
                 </Typography>
                 {diff.removed.map((d) => (
-                  <DetailSummaryCard
-                    key={`rm-${d.name}`}
-                    detail={d}
-                    tone="removed"
-                  />
+                  <DetailSummaryCard key={`rm-${d.name}`} detail={d} tone="removed" />
                 ))}
               </Box>
             )}
 
             {diff.changed.length > 0 && (
               <Box>
-                <Typography
-                  variant="subtitle2"
-                  color="warning.main"
-                  gutterBottom
-                >
+                <Typography variant="subtitle2" color="warning.main" gutterBottom>
                   {translate("care_plan_diff.changed_header", {
                     count: diff.changed.length,
                   })}
@@ -420,10 +375,7 @@ export const CarePlanDiffPanel: React.FC<CarePlanDiffPanelProps> = ({
                       backgroundColor: "warning.light",
                     }}
                   >
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 600, mb: 1 }}
-                    >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                       {c.name}
                     </Typography>
                     <ChangesBlock changes={c.changes} />

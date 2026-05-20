@@ -68,8 +68,7 @@ export const projectMedications = (
   if (staged.length === 0) return original;
 
   const byId = new Map<number, Medication>();
-  for (const m of original)
-    byId.set(m.id, { ...m, schedule_rules: [...(m.schedule_rules ?? [])] });
+  for (const m of original) byId.set(m.id, { ...m, schedule_rules: [...(m.schedule_rules ?? [])] });
   const removedIds = new Set<number>();
 
   for (const c of staged) {
@@ -112,7 +111,8 @@ export const projectMedications = (
 export const changesForMedication = (
   staged: StagedChange[],
   medicationId: number,
-): StagedChange[] => staged.filter((c) => c.medicationId === medicationId);
+): StagedChange[] =>
+  staged.filter((c) => c.medicationId === medicationId);
 
 export interface UseStagedChangesApi {
   changes: StagedChange[];
@@ -120,7 +120,10 @@ export interface UseStagedChangesApi {
   archiveMedication: (medicationId: number) => void;
   updateMedication: (medicationId: number, patch: Partial<Medication>) => void;
   removeMedication: (medicationId: number) => void;
-  addRule: (medicationId: number, rule: Omit<ScheduleRule, "id">) => string;
+  addRule: (
+    medicationId: number,
+    rule: Omit<ScheduleRule, "id">,
+  ) => string;
   updateRule: (
     medicationId: number,
     ruleId: number,
@@ -139,8 +142,7 @@ export const useStagedChanges = (): UseStagedChangesApi => {
     setChanges((prev) => {
       // Replace any prior archive for this med
       const filtered = prev.filter(
-        (c) =>
-          !(c.kind === "archive_medication" && c.medicationId === medicationId),
+        (c) => !(c.kind === "archive_medication" && c.medicationId === medicationId),
       );
       return [
         ...filtered,

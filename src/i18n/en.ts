@@ -97,7 +97,7 @@ export const en = {
     generating_pdf: "Generating...",
     no_details: "No details found for this care plan.",
     no_details_hint:
-      '👆 Click "Add New Detail" above to start adding care plan details, occurrences, and long-term care items.',
+      "👆 Click \"Add New Detail\" above to start adding care plan details, occurrences, and long-term care items.",
     start_time: "Start Time",
     end_time: "End Time",
     care_actions: "Care Actions",
@@ -129,8 +129,7 @@ export const en = {
     dialog_hint:
       "Record a sign-off of this care plan (no changes required). An optional comment is recommended for audit.",
     comment: "Comment",
-    comment_placeholder:
-      "e.g. Plan reviewed during home visit — no change needed.",
+    comment_placeholder: "e.g. Plan reviewed during home visit — no change needed.",
     cancel: "Cancel",
     confirm: "Confirm revision",
     success: "Care plan marked as revised",
@@ -143,7 +142,8 @@ export const en = {
     history_title: "Revision history",
     history_empty: "No previous revisions.",
     delete_tooltip: "Delete this revision (admin only)",
-    delete_confirm: "Delete this revision? This action cannot be undone.",
+    delete_confirm:
+      "Delete this revision? This action cannot be undone.",
     delete_success: "Revision deleted",
     delete_error: "Could not delete revision",
   },
@@ -168,7 +168,8 @@ export const en = {
       "Lanes will populate with cards in the next iteration. Foundation is live: route, data loading, and pending-changes pill.",
     pending_hint:
       "Archive a card, or edit one from the drawer, and the change will appear here — staged until you apply.",
-    apply_not_wired: "Apply is not wired yet (coming in the next iteration).",
+    apply_not_wired:
+      "Apply is not wired yet (coming in the next iteration).",
     apply_success: "Changes applied successfully.",
     apply_error: "Some changes could not be applied",
     rx_legend: "Prescriptions",
@@ -405,8 +406,7 @@ export const en = {
     care_items_per_session: "Care Items/Session",
     care_package_per_week: "Care Package/Week",
     weekly_session_time: "Weekly Session Time",
-    breakdown_session_weekly:
-      "Care Items Breakdown (Session → Weekly Package):",
+    breakdown_session_weekly: "Care Items Breakdown (Session → Weekly Package):",
     session_mismatch:
       "Session time (%{session}/week) differs from care package (%{pkg}/week)",
     total_title: "Total Care Plan Summary",

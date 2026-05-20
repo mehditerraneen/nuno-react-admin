@@ -52,8 +52,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
 
   // Weekly total from weekly_package (the actual weekly budget)
   const careItemsWeeklyTotal = detail.longtermcareitemquantity_set.reduce(
-    (total, item) =>
-      total + (item.long_term_care_item.weekly_package || 0) * item.quantity,
+    (total, item) => total + (item.long_term_care_item.weekly_package || 0) * item.quantity,
     0,
   );
 
@@ -203,8 +202,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
               const sessionDur =
                 (item.long_term_care_item as any).session_duration ||
                 (item.long_term_care_item.weekly_package || 0) / 7;
-              const weeklyPkg =
-                (item.long_term_care_item.weekly_package || 0) * item.quantity;
+              const weeklyPkg = (item.long_term_care_item.weekly_package || 0) * item.quantity;
 
               if (sessionDur === 0 && weeklyPkg === 0) return null;
 
@@ -234,6 +232,7 @@ export const DurationSummary: React.FC<DurationSummaryProps> = ({ detail }) => {
             </Typography>
           </Box>
         )}
+
     </Paper>
   );
 };
@@ -250,13 +249,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
   const translate = useTranslate();
   const dataProvider = useDataProvider<any>();
   const [missingCodes, setMissingCodes] = useState<
-    Array<{
-      code: string;
-      description?: string;
-      number_of_care: number;
-      periodicity: string;
-      weekly_package?: number;
-    }>
+    Array<{ code: string; description?: string; number_of_care: number; periodicity: string; weekly_package?: number }>
   >([]);
 
   useEffect(() => {
@@ -295,23 +288,20 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
       detail.time_start,
       detail.time_end,
     );
-    const actualDays =
-      calculateActualDaysPerWeek(detail.params_occurrence) || 1;
+    const actualDays = calculateActualDaysPerWeek(detail.params_occurrence) || 1;
     return total + sessionDuration * actualDays;
   }, 0);
 
   // Per-code stats: weekly_package (counted once), session_duration, total weekly occurrences
-  const codeStats = new Map<
-    string,
-    { weeklyPkg: number; sessionDur: number; totalOccurrences: number }
-  >();
+  const codeStats = new Map<string, { weeklyPkg: number; sessionDur: number; totalOccurrences: number }>();
   details.forEach((detail) => {
-    const daysPerWeek =
-      calculateActualDaysPerWeek(detail.params_occurrence) || 1;
+    const daysPerWeek = calculateActualDaysPerWeek(detail.params_occurrence) || 1;
     detail.longtermcareitemquantity_set.forEach((item) => {
       const code = item.long_term_care_item.code;
       const wp = item.long_term_care_item.weekly_package || 0;
-      const sd = (item.long_term_care_item as any).session_duration || wp / 7;
+      const sd =
+        (item.long_term_care_item as any).session_duration ||
+        (wp / 7);
       const existing = codeStats.get(code);
       if (existing) {
         existing.totalOccurrences += item.quantity * daysPerWeek;
@@ -500,71 +490,51 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
               return (
                 <>
                   {details.flatMap((detail, detailIndex) => {
-                    const daysPerWeek =
-                      calculateActualDaysPerWeek(detail.params_occurrence) || 1;
-                    return detail.longtermcareitemquantity_set.map(
-                      (item, itemIndex) => {
-                        const code = item.long_term_care_item.code;
-                        const sessionDur =
-                          (item.long_term_care_item as any).session_duration ||
-                          (item.long_term_care_item.weekly_package || 0) / 7;
-                        const weeklyPkg =
-                          item.long_term_care_item.weekly_package || 0;
-                        const isDuplicate = seenCodes.has(code);
-                        seenCodes.add(code);
-                        totalSession += sessionDur * item.quantity;
-                        const stats = codeStats.get(code);
-                        const consumed = stats
-                          ? Math.round(
-                              stats.sessionDur * stats.totalOccurrences * 100,
-                            ) / 100
-                          : 0;
-                        return (
-                          <TableRow
-                            key={`${detailIndex}-${itemIndex}`}
-                            sx={{
-                              "&:nth-of-type(odd)": {
-                                backgroundColor: "action.hover",
-                              },
-                            }}
-                          >
-                            <TableCell>
-                              <Typography variant="caption">
-                                {detail.name} ({daysPerWeek}x/wk)
+                    const daysPerWeek = calculateActualDaysPerWeek(detail.params_occurrence) || 1;
+                    return detail.longtermcareitemquantity_set.map((item, itemIndex) => {
+                      const code = item.long_term_care_item.code;
+                      const sessionDur =
+                        (item.long_term_care_item as any).session_duration ||
+                        (item.long_term_care_item.weekly_package || 0) / 7;
+                      const weeklyPkg = item.long_term_care_item.weekly_package || 0;
+                      const isDuplicate = seenCodes.has(code);
+                      seenCodes.add(code);
+                      totalSession += sessionDur * item.quantity;
+                      const stats = codeStats.get(code);
+                      const consumed = stats
+                        ? Math.round(stats.sessionDur * stats.totalOccurrences * 100) / 100
+                        : 0;
+                      return (
+                        <TableRow
+                          key={`${detailIndex}-${itemIndex}`}
+                          sx={{ "&:nth-of-type(odd)": { backgroundColor: "action.hover" } }}
+                        >
+                          <TableCell>
+                            <Typography variant="caption">
+                              {detail.name} ({daysPerWeek}x/wk)
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip label={code} size="small" variant="outlined" />
+                          </TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell align="right">{Math.round(sessionDur * 100) / 100}</TableCell>
+                          <TableCell align="right">{weeklyPkg}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>
+                            {Math.round(sessionDur * item.quantity * 100) / 100}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>
+                            {isDuplicate ? (
+                              <Typography variant="caption" color="text.disabled">
+                                {translate("care_plan_summary.incl_above")}
                               </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={code}
-                                size="small"
-                                variant="outlined"
-                              />
-                            </TableCell>
-                            <TableCell>{item.quantity}</TableCell>
-                            <TableCell align="right">
-                              {Math.round(sessionDur * 100) / 100}
-                            </TableCell>
-                            <TableCell align="right">{weeklyPkg}</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 600 }}>
-                              {Math.round(sessionDur * item.quantity * 100) /
-                                100}
-                            </TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 600 }}>
-                              {isDuplicate ? (
-                                <Typography
-                                  variant="caption"
-                                  color="text.disabled"
-                                >
-                                  {translate("care_plan_summary.incl_above")}
-                                </Typography>
-                              ) : (
-                                consumed
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      },
-                    );
+                            ) : (
+                              consumed
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    });
                   })}
                   <TableRow sx={{ backgroundColor: "info.light" }}>
                     <TableCell colSpan={5} sx={{ fontWeight: 700 }}>
@@ -621,26 +591,12 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
               </TableHead>
               <TableBody>
                 {missingCodes.map((mc, index) => (
-                  <TableRow
-                    key={index}
-                    sx={{
-                      "&:nth-of-type(odd)": {
-                        backgroundColor: "warning.light",
-                      },
-                    }}
-                  >
+                  <TableRow key={index} sx={{ "&:nth-of-type(odd)": { backgroundColor: "warning.light" } }}>
                     <TableCell>
-                      <Chip
-                        label={mc.code}
-                        size="small"
-                        color="warning"
-                        variant="outlined"
-                      />
+                      <Chip label={mc.code} size="small" color="warning" variant="outlined" />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2">
-                        {mc.description || "—"}
-                      </Typography>
+                      <Typography variant="body2">{mc.description || "—"}</Typography>
                     </TableCell>
                     <TableCell align="center">
                       {mc.number_of_care}/
@@ -650,9 +606,7 @@ export const CarePlanDetailsSummary: React.FC<CarePlanDetailsSummaryProps> = ({
                           ? translate("care_plan_summary.freq_day")
                           : mc.periodicity}
                     </TableCell>
-                    <TableCell align="right">
-                      {mc.weekly_package || "—"}
-                    </TableCell>
+                    <TableCell align="right">{mc.weekly_package || "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

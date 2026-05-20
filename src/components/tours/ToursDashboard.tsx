@@ -281,9 +281,7 @@ export const ToursDashboard = () => {
                           {tour.total_distance_km && (
                             <Typography variant="body2">
                               Distance: {tour.total_distance_km} km
-                              {tour.total_travel_time_minutes
-                                ? ` • Travel: ${tour.total_travel_time_minutes}min`
-                                : ""}
+                              {tour.total_travel_time_minutes ? ` • Travel: ${tour.total_travel_time_minutes}min` : ""}
                             </Typography>
                           )}
                         </Box>

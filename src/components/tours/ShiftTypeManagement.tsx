@@ -81,9 +81,7 @@ const SegmentsInput = () => {
       .then((data) => {
         setActivityTypes(data.data || []);
       })
-      .catch(() =>
-        notify("Failed to load activity types", { type: "warning" }),
-      );
+      .catch(() => notify("Failed to load activity types", { type: "warning" }));
   }, [notify]);
 
   if (!isComposite) return null;
@@ -95,13 +93,7 @@ const SegmentsInput = () => {
       [
         ...segments,
         {
-          activity_type: activityTypes[0] || {
-            id: 0,
-            code: "",
-            name: "",
-            color_code: "#ccc",
-            is_paid: true,
-          },
+          activity_type: activityTypes[0] || { id: 0, code: "", name: "", color_code: "#ccc", is_paid: true },
           position: newPosition,
           start_time: "08:00",
           end_time: "12:00",
@@ -109,7 +101,7 @@ const SegmentsInput = () => {
           label: "",
         },
       ],
-      { shouldDirty: true },
+      { shouldDirty: true }
     );
   };
 
@@ -128,19 +120,9 @@ const SegmentsInput = () => {
 
   return (
     <Paper sx={{ p: 2, mt: 2, mb: 2 }}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="subtitle1">Segments</Typography>
-        <Button
-          startIcon={<AddIcon />}
-          onClick={addSegment}
-          size="small"
-          variant="outlined"
-        >
+        <Button startIcon={<AddIcon />} onClick={addSegment} size="small" variant="outlined">
           Add Segment
         </Button>
       </Box>
@@ -163,16 +145,11 @@ const SegmentsInput = () => {
               sx={{ minWidth: 200 }}
               options={activityTypes}
               getOptionLabel={(opt) => `${opt.code} - ${opt.name}`}
-              value={
-                activityTypes.find((at) => at.id === seg.activity_type?.id) ||
-                null
-              }
+              value={activityTypes.find((at) => at.id === seg.activity_type?.id) || null}
               onChange={(_, newVal) => {
                 if (newVal) updateSegment(index, "activity_type", newVal);
               }}
-              renderInput={(params) => (
-                <MuiTextField {...params} label="Activity Type" />
-              )}
+              renderInput={(params) => <MuiTextField {...params} label="Activity Type" />}
             />
 
             <MuiTextField
@@ -180,9 +157,7 @@ const SegmentsInput = () => {
               label="Start"
               type="time"
               value={seg.start_time || ""}
-              onChange={(e) =>
-                updateSegment(index, "start_time", e.target.value)
-              }
+              onChange={(e) => updateSegment(index, "start_time", e.target.value)}
               InputLabelProps={{ shrink: true }}
               sx={{ width: 130 }}
             />
@@ -209,18 +184,12 @@ const SegmentsInput = () => {
               <input
                 type="checkbox"
                 checked={seg.is_paid}
-                onChange={(e) =>
-                  updateSegment(index, "is_paid", e.target.checked)
-                }
+                onChange={(e) => updateSegment(index, "is_paid", e.target.checked)}
               />
               <Typography variant="caption">Paid</Typography>
             </Box>
 
-            <IconButton
-              size="small"
-              onClick={() => removeSegment(index)}
-              color="error"
-            >
+            <IconButton size="small" onClick={() => removeSegment(index)} color="error">
               <DeleteIcon fontSize="small" />
             </IconButton>
           </Box>
@@ -231,7 +200,10 @@ const SegmentsInput = () => {
 };
 
 export const ShiftTypeList = () => (
-  <List sort={{ field: "code", order: "ASC" }} filter={{ active_only: false }}>
+  <List
+    sort={{ field: "code", order: "ASC" }}
+    filter={{ active_only: false }}
+  >
     <Datagrid>
       <FunctionField
         source="code"
@@ -253,7 +225,11 @@ export const ShiftTypeList = () => (
         source="shift_category"
         label="Category"
         render={(record: any) => (
-          <Chip label={record.shift_category} size="small" variant="outlined" />
+          <Chip
+            label={record.shift_category}
+            size="small"
+            variant="outlined"
+          />
         )}
       />
       <FunctionField
@@ -275,11 +251,7 @@ export const ShiftTypeList = () => (
         label="Composite"
         render={(record: any) =>
           record.is_composite ? (
-            <Chip
-              label={`${record.segments?.length || 0} segments`}
-              size="small"
-              color="info"
-            />
+            <Chip label={`${record.segments?.length || 0} segments`} size="small" color="info" />
           ) : null
         }
       />
@@ -307,16 +279,8 @@ const ShiftTypeForm = ({ isEdit = false }: { isEdit?: boolean }) => (
       <TextInput source="color_code" type="color" defaultValue="#CCCCCC" />
     </Box>
     <Box display="flex" gap={2} sx={{ "& > *": { flex: 1 } }}>
-      <TextInput
-        source="start_time"
-        type="time"
-        InputLabelProps={{ shrink: true }}
-      />
-      <TextInput
-        source="end_time"
-        type="time"
-        InputLabelProps={{ shrink: true }}
-      />
+      <TextInput source="start_time" type="time" InputLabelProps={{ shrink: true }} />
+      <TextInput source="end_time" type="time" InputLabelProps={{ shrink: true }} />
     </Box>
     <Box display="flex" gap={2} sx={{ "& > *": { flex: 1 } }}>
       <NumberInput source="hours" validate={required()} step={0.5} />

@@ -79,27 +79,23 @@ const ScoreChip = ({ assessment }: { assessment: AssessmentBase }) => {
       />
     );
   }
-  const color = assessment.severity
-    ? SEVERITY_CHIP[assessment.severity]
-    : "default";
-  const text =
-    assessment.max_score != null
-      ? `${assessment.score} / ${assessment.max_score}`
-      : `${assessment.score}`;
+  const color = assessment.severity ? SEVERITY_CHIP[assessment.severity] : "default";
+  const text = assessment.max_score != null
+    ? `${assessment.score} / ${assessment.max_score}`
+    : `${assessment.score}`;
   return (
     <Tooltip title={assessment.severity_label || ""} arrow>
-      <Chip label={text} size="small" color={color} sx={{ fontWeight: 600 }} />
+      <Chip
+        label={text}
+        size="small"
+        color={color}
+        sx={{ fontWeight: 600 }}
+      />
     </Tooltip>
   );
 };
 
-const EditLink = ({
-  url,
-  label = "Modifier",
-}: {
-  url: string;
-  label?: string;
-}) => (
+const EditLink = ({ url, label = "Modifier" }: { url: string; label?: string }) => (
   <Button
     component="a"
     href={toAdminUrl(url)}
@@ -114,13 +110,7 @@ const EditLink = ({
   </Button>
 );
 
-const AddLink = ({
-  url,
-  label = "Ajouter",
-}: {
-  url: string;
-  label?: string;
-}) => (
+const AddLink = ({ url, label = "Ajouter" }: { url: string; label?: string }) => (
   <Button
     component="a"
     href={toAdminUrl(url)}
@@ -135,13 +125,7 @@ const AddLink = ({
   </Button>
 );
 
-const Row = ({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) => (
+const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <Box sx={{ display: "flex", gap: 1, alignItems: "baseline" }}>
     <Typography
       variant="caption"
@@ -182,7 +166,11 @@ const AssessmentBlock = ({
         </Typography>
         {data ? <ScoreChip assessment={data} /> : null}
         <Box sx={{ flex: 1 }} />
-        {data ? <EditLink url={data.admin_url} /> : <AddLink url={addUrl} />}
+        {data ? (
+          <EditLink url={data.admin_url} />
+        ) : (
+          <AddLink url={addUrl} />
+        )}
       </Box>
       {data ? (
         <Box sx={{ pl: 0.5 }}>
@@ -216,17 +204,14 @@ const AssessmentBlock = ({
   );
 };
 
-export const InitialAssessmentPanel = ({
-  carePlanId,
-  defaultOpen = false,
-}: Props) => {
+export const InitialAssessmentPanel = ({ carePlanId, defaultOpen = false }: Props) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const [data, setData] = useState<ActiveAssessmentsBundle | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(defaultOpen);
 
   useEffect(() => {
-    const cancelled = false;
+    let cancelled = false;
     setLoading(true);
     dataProvider
       .getCarePlanActiveAssessments(carePlanId)
@@ -259,33 +244,28 @@ export const InitialAssessmentPanel = ({
             Anamnèse
           </Typography>
           <Box sx={{ flex: 1 }} />
-          {a ? <EditLink url={a.admin_url} /> : <AddLink url={addUrl} />}
+          {a ? (
+            <EditLink url={a.admin_url} />
+          ) : (
+            <AddLink url={addUrl} />
+          )}
         </Box>
         {a ? (
           <Stack spacing={0.5}>
-            <Row label="Premier contact">
-              {formatDate(a.first_contact_date)}
-            </Row>
-            <Row label="Début du contrat">
-              {formatDate(a.contract_start_date)}
-            </Row>
+            <Row label="Premier contact">{formatDate(a.first_contact_date)}</Row>
+            <Row label="Début du contrat">{formatDate(a.contract_start_date)}</Row>
             {a.civil_status && <Row label="État civil">{a.civil_status}</Row>}
             {a.legal_protection_regimes && (
-              <Row label="Régime de protection">
-                {a.legal_protection_regimes}
-              </Row>
+              <Row label="Régime de protection">{a.legal_protection_regimes}</Row>
             )}
             {a.anticipated_directives && (
-              <Row label="Directives anticipées">
-                {a.anticipated_directives}
-              </Row>
+              <Row label="Directives anticipées">{a.anticipated_directives}</Row>
             )}
             {(a.spoken_languages || a.understood_languages) && (
               <Row label="Langues">
                 {[
                   a.spoken_languages && `parlées : ${a.spoken_languages}`,
-                  a.understood_languages &&
-                    `comprises : ${a.understood_languages}`,
+                  a.understood_languages && `comprises : ${a.understood_languages}`,
                 ]
                   .filter(Boolean)
                   .join(" — ")}
@@ -313,11 +293,7 @@ export const InitialAssessmentPanel = ({
 
   // At-a-glance severity chips shown in the panel header so the
   // clinician can spot concerning scores without expanding.
-  const summaryChips: {
-    key: string;
-    label: string;
-    data: AssessmentBase | null;
-  }[] = data
+  const summaryChips: { key: string; label: string; data: AssessmentBase | null }[] = data
     ? [
         { key: "mms", label: "MMS", data: data.mms },
         { key: "gds15", label: "GDS-15", data: data.gds15 },
@@ -351,13 +327,7 @@ export const InitialAssessmentPanel = ({
         </Box>
         {!loading && data && (
           <Box
-            sx={{
-              display: "flex",
-              gap: 0.75,
-              flexWrap: "wrap",
-              flex: 1,
-              justifyContent: "flex-end",
-            }}
+            sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", flex: 1, justifyContent: "flex-end" }}
             onClick={(e) => e.stopPropagation()}
           >
             {summaryChips.map(({ key, label, data: a }) => {
@@ -374,12 +344,11 @@ export const InitialAssessmentPanel = ({
                 );
               }
               const color = a.severity ? SEVERITY_CHIP[a.severity] : "default";
-              const text =
-                a.score === null
-                  ? `${label} ?`
-                  : a.max_score != null
-                    ? `${label} ${a.score}/${a.max_score}`
-                    : `${label} ${a.score}`;
+              const text = a.score === null
+                ? `${label} ?`
+                : a.max_score != null
+                  ? `${label} ${a.score}/${a.max_score}`
+                  : `${label} ${a.score}`;
               return (
                 <Tooltip key={key} title={a.severity_label || ""} arrow>
                   <Chip
@@ -419,9 +388,7 @@ export const InitialAssessmentPanel = ({
                   <Typography variant="caption" color="text.secondary">
                     Évalué le {formatDate(data.mms.examination_date)}
                     {data.mms.examiner ? ` — ${data.mms.examiner}` : ""}
-                    {data.mms.evaluation_impossible
-                      ? " (évaluation impossible)"
-                      : ""}
+                    {data.mms.evaluation_impossible ? " (évaluation impossible)" : ""}
                   </Typography>
                 )
               }
@@ -459,9 +426,7 @@ export const InitialAssessmentPanel = ({
                 data?.fall_risk?.assessment_date && (
                   <Typography variant="caption" color="text.secondary">
                     Évalué le {formatDate(data.fall_risk.assessment_date)}
-                    {data.fall_risk.risk_level
-                      ? ` — ${data.fall_risk.risk_level}`
-                      : ""}
+                    {data.fall_risk.risk_level ? ` — ${data.fall_risk.risk_level}` : ""}
                   </Typography>
                 )
               }
@@ -489,8 +454,7 @@ export const InitialAssessmentPanel = ({
                 data?.tinetti?.assessment_date && (
                   <Typography variant="caption" color="text.secondary">
                     Évalué le {formatDate(data.tinetti.assessment_date)}
-                    {data.tinetti.balance_score != null &&
-                    data.tinetti.gait_score != null
+                    {data.tinetti.balance_score != null && data.tinetti.gait_score != null
                       ? ` — équilibre ${data.tinetti.balance_score}/16 · marche ${data.tinetti.gait_score}/12`
                       : ""}
                   </Typography>
@@ -505,8 +469,7 @@ export const InitialAssessmentPanel = ({
                 data?.mif?.assessment_date && (
                   <Typography variant="caption" color="text.secondary">
                     Évalué le {formatDate(data.mif.assessment_date)}
-                    {data.mif.motor_score != null &&
-                    data.mif.cognitive_score != null
+                    {data.mif.motor_score != null && data.mif.cognitive_score != null
                       ? ` — moteur ${data.mif.motor_score}/91 · cognitif ${data.mif.cognitive_score}/35`
                       : ""}
                   </Typography>

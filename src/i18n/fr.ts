@@ -144,7 +144,8 @@ export const fr = {
     history_title: "Historique des révisions",
     history_empty: "Aucune révision antérieure.",
     delete_tooltip: "Supprimer cette révision (administrateur)",
-    delete_confirm: "Supprimer cette révision ? Cette action est irréversible.",
+    delete_confirm:
+      "Supprimer cette révision ? Cette action est irréversible.",
     delete_success: "Révision supprimée",
     delete_error: "Impossible de supprimer la révision",
   },

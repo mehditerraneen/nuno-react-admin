@@ -2,3446 +2,2605 @@
  * AG Grid Planning View
  * Full-featured planning with pinned employee column using AG Grid
  */
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  List,
-  Datagrid,
-  TextField,
-  NumberField,
-  SelectField,
-  Show,
-  Create,
-  Edit,
-  SimpleForm,
-  TextInput,
-  NumberInput,
-  SelectInput,
-  useDataProvider,
-  useNotify,
-  useRefresh,
-  Loading,
-  TopToolbar,
-  CreateButton,
-  Button,
-} from "react-admin";
+    List,
+    Datagrid,
+    TextField,
+    NumberField,
+    SelectField,
+    Show,
+    Create,
+    Edit,
+    SimpleForm,
+    TextInput,
+    NumberInput,
+    SelectInput,
+    useDataProvider,
+    useNotify,
+    useRefresh,
+    Loading,
+    TopToolbar,
+    CreateButton,
+    Button,
+} from 'react-admin';
 import {
-  Box,
-  Typography,
-  Chip,
-  Paper,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Alert,
-  Avatar,
-  TextField as MuiTextField,
-  Grid,
-  Fab,
-  Checkbox,
-  ToggleButtonGroup,
-  ToggleButton,
-  ListItemText,
-  OutlinedInput,
-  InputAdornment,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Collapse,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Button as MuiButton,
-  CircularProgress,
-  Autocomplete,
-} from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import AddIcon from "@mui/icons-material/Add";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HistoryIcon from "@mui/icons-material/History";
-import PsychologyIcon from "@mui/icons-material/Psychology";
-import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
-import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
-import StopCircleIcon from "@mui/icons-material/StopCircle";
-import RuleIcon from "@mui/icons-material/Rule";
-import GavelIcon from "@mui/icons-material/Gavel";
-import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
-import ReportProblemIcon from "@mui/icons-material/ReportProblem";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import EmailIcon from "@mui/icons-material/Email";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import CloseIcon from "@mui/icons-material/Close";
-import SaveIcon from "@mui/icons-material/Save";
-import EditIcon from "@mui/icons-material/Edit";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { AgGridReact } from "ag-grid-react";
+    Box,
+    Typography,
+    Chip,
+    Paper,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Tooltip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    IconButton,
+    Alert,
+    Avatar,
+    TextField as MuiTextField,
+    Grid,
+    Fab,
+    Checkbox,
+    ToggleButtonGroup,
+    ToggleButton,
+    ListItemText,
+    OutlinedInput,
+    InputAdornment,
+    Card,
+    CardContent,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Collapse,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Button as MuiButton,
+    CircularProgress,
+    Autocomplete,
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import AddIcon from '@mui/icons-material/Add';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HistoryIcon from '@mui/icons-material/History';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import StopCircleIcon from '@mui/icons-material/StopCircle';
+import RuleIcon from '@mui/icons-material/Rule';
+import GavelIcon from '@mui/icons-material/Gavel';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import EmailIcon from '@mui/icons-material/Email';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import CloseIcon from '@mui/icons-material/Close';
+import SaveIcon from '@mui/icons-material/Save';
+import EditIcon from '@mui/icons-material/Edit';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import { AgGridReact } from 'ag-grid-react';
+import { AllCommunityModule, ModuleRegistry, themeQuartz } from 'ag-grid-community';
+import { authenticatedFetch } from './dataProvider';
+import { Link as RouterLink } from 'react-router-dom';
+import { OptimizerAIChat } from './components/OptimizerAIChat';
+import ShiftHistoryPopover from './components/planning/ShiftHistoryPopover';
+import { WriteOnly } from './components/auth/WriteOnly';
+import { useIsReadOnly } from './hooks/useIsReadOnly';
 import {
-  AllCommunityModule,
-  ModuleRegistry,
-  themeQuartz,
-} from "ag-grid-community";
-import { authenticatedFetch } from "./dataProvider";
-import { Link as RouterLink } from "react-router-dom";
-import { OptimizerAIChat } from "./components/OptimizerAIChat";
-import ShiftHistoryPopover from "./components/planning/ShiftHistoryPopover";
-import { WriteOnly } from "./components/auth/WriteOnly";
-import { useIsReadOnly } from "./hooks/useIsReadOnly";
-import {
-  classifyShift,
-  computeTotalHours,
-  type ShiftBreakdownEntry,
-} from "./utils/planningHours";
+    classifyShift,
+    computeTotalHours,
+    type ShiftBreakdownEntry,
+} from './utils/planningHours';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const statusChoices = [
-  { id: "DRAFT", name: "Brouillon" },
-  { id: "PUBLISHED", name: "Publié" },
-  { id: "LOCKED", name: "Verrouillé" },
+    { id: 'DRAFT', name: 'Brouillon' },
+    { id: 'PUBLISHED', name: 'Publié' },
+    { id: 'LOCKED', name: 'Verrouillé' },
 ];
 
 // =============== LIST ===============
 const PlanningListActions = () => (
-  <TopToolbar>
-    <WriteOnly>
-      <CreateButton label="Créer un planning" />
-    </WriteOnly>
-  </TopToolbar>
+    <TopToolbar>
+        <WriteOnly>
+            <CreateButton label="Créer un planning" />
+        </WriteOnly>
+    </TopToolbar>
 );
 
 export const PlanningAgGridList = () => (
-  <List actions={<PlanningListActions />}>
-    <Datagrid rowClick="show">
-      <TextField source="month_name" label="Mois" />
-      <NumberField source="year" label="Année" />
-      <NumberField source="working_days" label="Jours ouvrés" />
-      <SelectField source="status" choices={statusChoices} label="Statut" />
-      <NumberField source="total_assignments" label="Affectations" />
-      <NumberField source="total_hours" label="Total heures" />
-    </Datagrid>
-  </List>
+    <List actions={<PlanningListActions />}>
+        <Datagrid rowClick="show">
+            <TextField source="month_name" label="Mois" />
+            <NumberField source="year" label="Année" />
+            <NumberField source="working_days" label="Jours ouvrés" />
+            <SelectField source="status" choices={statusChoices} label="Statut" />
+            <NumberField source="total_assignments" label="Affectations" />
+            <NumberField source="total_hours" label="Total heures" />
+        </Datagrid>
+    </List>
 );
 
 // =============== CREATE ===============
 export const PlanningAgGridCreate = () => {
-  const monthChoices = [
-    { id: "JANVIER", name: "Janvier", num: 1 },
-    { id: "FÉVRIER", name: "Février", num: 2 },
-    { id: "MARS", name: "Mars", num: 3 },
-    { id: "AVRIL", name: "Avril", num: 4 },
-    { id: "MAI", name: "Mai", num: 5 },
-    { id: "JUIN", name: "Juin", num: 6 },
-    { id: "JUILLET", name: "Juillet", num: 7 },
-    { id: "AOÛT", name: "Août", num: 8 },
-    { id: "SEPTEMBRE", name: "Septembre", num: 9 },
-    { id: "OCTOBRE", name: "Octobre", num: 10 },
-    { id: "NOVEMBRE", name: "Novembre", num: 11 },
-    { id: "DÉCEMBRE", name: "Décembre", num: 12 },
-  ];
+    const monthChoices = [
+        { id: 'JANVIER', name: 'Janvier', num: 1 },
+        { id: 'FÉVRIER', name: 'Février', num: 2 },
+        { id: 'MARS', name: 'Mars', num: 3 },
+        { id: 'AVRIL', name: 'Avril', num: 4 },
+        { id: 'MAI', name: 'Mai', num: 5 },
+        { id: 'JUIN', name: 'Juin', num: 6 },
+        { id: 'JUILLET', name: 'Juillet', num: 7 },
+        { id: 'AOÛT', name: 'Août', num: 8 },
+        { id: 'SEPTEMBRE', name: 'Septembre', num: 9 },
+        { id: 'OCTOBRE', name: 'Octobre', num: 10 },
+        { id: 'NOVEMBRE', name: 'Novembre', num: 11 },
+        { id: 'DÉCEMBRE', name: 'Décembre', num: 12 },
+    ];
 
-  return (
-    <Create>
-      <SimpleForm>
-        <NumberInput
-          source="year"
-          label="Année"
-          required
-          defaultValue={new Date().getFullYear()}
-        />
-        <SelectInput
-          source="month"
-          label="Mois (numéro)"
-          choices={monthChoices.map((m) => ({ id: m.num, name: m.name }))}
-          required
-        />
-      </SimpleForm>
-    </Create>
-  );
+    return (
+        <Create>
+            <SimpleForm>
+                <NumberInput source="year" label="Année" required defaultValue={new Date().getFullYear()} />
+                <SelectInput
+                    source="month"
+                    label="Mois (numéro)"
+                    choices={monthChoices.map(m => ({ id: m.num, name: m.name }))}
+                    required
+                />
+            </SimpleForm>
+        </Create>
+    );
 };
 
 // =============== EDIT ===============
 export const PlanningAgGridEdit = () => (
-  <Edit>
-    <SimpleForm>
-      <TextInput source="month_name" label="Mois" disabled />
-      <NumberInput source="year" label="Année" disabled />
-      <SelectInput source="status" choices={statusChoices} label="Statut" />
-    </SimpleForm>
-  </Edit>
+    <Edit>
+        <SimpleForm>
+            <TextInput source="month_name" label="Mois" disabled />
+            <NumberInput source="year" label="Année" disabled />
+            <SelectInput source="status" choices={statusChoices} label="Statut" />
+        </SimpleForm>
+    </Edit>
 );
 
 // =============== SOURCE INFO HELPER ===============
 const getSourceInfo = (source: string) => {
-  switch (source) {
-    case "OPTIMIZER":
-      return {
-        icon: "🤖",
-        label: "Généré automatiquement",
-        borderColor: "#2196F3",
-      };
-    case "MANUAL":
-      return { icon: "✏️", label: "Saisie manuelle", borderColor: "#4CAF50" };
-    case "IMPORT":
-      return { icon: "📥", label: "Importé", borderColor: "#FF9800" };
-    default:
-      return { icon: "", label: "", borderColor: "transparent" };
-  }
+    switch(source) {
+        case 'OPTIMIZER':
+            return { icon: '🤖', label: 'Généré automatiquement', borderColor: '#2196F3' };
+        case 'MANUAL':
+            return { icon: '✏️', label: 'Saisie manuelle', borderColor: '#4CAF50' };
+        case 'IMPORT':
+            return { icon: '📥', label: 'Importé', borderColor: '#FF9800' };
+        default:
+            return { icon: '', label: '', borderColor: 'transparent' };
+    }
 };
 
 // =============== DAY DETAIL VIEW (Timeline) ===============
 const DayDetailView = ({
-  day,
-  date,
-  employees,
-  shiftTypes,
-  planningId,
-  planning,
-  onClose,
-  onUpdate,
+    day,
+    date,
+    employees,
+    shiftTypes,
+    planningId,
+    planning,
+    onClose,
+    onUpdate
 }: {
-  day: number;
-  date: string;
-  employees: any[];
-  shiftTypes: any[];
-  planningId: number;
-  planning: any;
-  onClose: () => void;
-  onUpdate: () => void;
+    day: number;
+    date: string;
+    employees: any[];
+    shiftTypes: any[];
+    planningId: number;
+    planning: any;
+    onClose: () => void;
+    onUpdate: () => void;
 }) => {
-  const notify = useNotify();
-  const [editingEmployee, setEditingEmployee] = useState<number | null>(null);
-  const [selectedShift, setSelectedShift] = useState<number | null>(null);
+    const notify = useNotify();
+    const [editingEmployee, setEditingEmployee] = useState<number | null>(null);
+    const [selectedShift, setSelectedShift] = useState<number | null>(null);
 
-  const handleSaveShift = async (employeeId: number) => {
-    const shiftDate = `${planning.year}-${String(planning.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    if (!selectedShift) return;
+    const handleSaveShift = async (employeeId: number) => {
+        const shiftDate = `${planning.year}-${String(planning.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (!selectedShift) return;
 
-    try {
-      const shiftType = shiftTypes.find((st) => st.id === selectedShift);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+        try {
+            const shiftType = shiftTypes.find(st => st.id === selectedShift);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
 
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/assignments`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            employee_id: employeeId,
-            date: shiftDate,
-            shift_type_id: selectedShift,
-            shift_code: shiftType?.code || "",
-            hours: shiftType?.hours || 0,
-          }),
-        },
-      );
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    employee_id: employeeId,
+                    date: shiftDate,
+                    shift_type_id: selectedShift,
+                    shift_code: shiftType?.code || '',
+                    hours: shiftType?.hours || 0,
+                })
+            });
 
-      if (!response.ok) throw new Error("Failed to update shift");
+            if (!response.ok) throw new Error('Failed to update shift');
 
-      notify("Shift mis à jour", { type: "success" });
-      setEditingEmployee(null);
-      onUpdate();
-    } catch (error) {
-      console.error("Error updating shift:", error);
-      notify("Erreur lors de la mise à jour", { type: "error" });
-    }
-  };
-
-  const timeToMinutes = (timeStr: string) => {
-    if (!timeStr) return 0;
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    return hours * 60 + minutes;
-  };
-
-  const calculateCoverage = () => {
-    const coverage: { hour: number; count: number; employees: string[] }[] = [];
-
-    for (let hour = 0; hour < 24; hour++) {
-      const hourStart = hour * 60;
-      const hourEnd = (hour + 1) * 60;
-      const workingEmployees: string[] = [];
-
-      employees.forEach((emp) => {
-        const shift = emp.shifts?.[day];
-        if (!shift) return;
-
-        const shiftCode = shift.shift_code || "";
-        const nonWorkCodes = ["OFF", "CP6.4", "CP8", "CONG", "FORM"];
-        if (nonWorkCodes.includes(shiftCode)) return;
-
-        const shiftType = shiftTypes.find((st) => st.code === shiftCode);
-        if (!shiftType || !shiftType.start_time || !shiftType.end_time) return;
-
-        const startMin = timeToMinutes(shiftType.start_time);
-        let endMin = timeToMinutes(shiftType.end_time);
-
-        if (endMin <= startMin) endMin += 24 * 60;
-
-        if (startMin < hourEnd && endMin > hourStart) {
-          workingEmployees.push(emp.abbreviation);
+            notify('Shift mis à jour', { type: 'success' });
+            setEditingEmployee(null);
+            onUpdate();
+        } catch (error) {
+            console.error('Error updating shift:', error);
+            notify('Erreur lors de la mise à jour', { type: 'error' });
         }
-      });
+    };
 
-      coverage.push({
-        hour,
-        count: workingEmployees.length,
-        employees: workingEmployees,
-      });
-    }
+    const timeToMinutes = (timeStr: string) => {
+        if (!timeStr) return 0;
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 + minutes;
+    };
 
-    return coverage;
-  };
+    const calculateCoverage = () => {
+        const coverage: { hour: number; count: number; employees: string[] }[] = [];
 
-  const coverage = calculateCoverage();
-  const maxCoverage = Math.max(...coverage.map((c) => c.count), 1);
-  const peakHours = coverage.filter((c) => c.count === maxCoverage);
+        for (let hour = 0; hour < 24; hour++) {
+            const hourStart = hour * 60;
+            const hourEnd = (hour + 1) * 60;
+            const workingEmployees: string[] = [];
 
-  const workingEmployees = employees.filter((emp) => {
-    const shift = emp.shifts?.[day];
-    if (!shift) return false;
-    const shiftCode = shift.shift_code || "";
-    const nonWorkCodes = ["OFF", "CP6.4", "CP8", "CONG", "FORM"];
-    return shiftCode && !nonWorkCodes.includes(shiftCode);
-  });
+            employees.forEach(emp => {
+                const shift = emp.shifts?.[day];
+                if (!shift) return;
 
-  return (
-    <Dialog open={true} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">Vue détaillée - {date}</Typography>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Grid container spacing={3}>
-          {/* Stats Summary */}
-          <Grid item xs={12}>
-            <Card variant="outlined">
-              <CardContent>
-                <Grid container spacing={2}>
-                  <Grid item xs={4}>
-                    <Typography variant="caption" color="text.secondary">
-                      Personnel en service
-                    </Typography>
-                    <Typography variant="h4" color="primary">
-                      {workingEmployees.length}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Typography variant="caption" color="text.secondary">
-                      Couverture maximale
-                    </Typography>
-                    <Typography variant="h4" color="success.main">
-                      {maxCoverage} personnes
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Typography variant="caption" color="text.secondary">
-                      Heures de pointe
-                    </Typography>
-                    <Typography variant="h4" color="info.main">
-                      {peakHours.length > 0
-                        ? `${peakHours[0].hour}h-${peakHours[peakHours.length - 1].hour + 1}h`
-                        : "-"}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
+                const shiftCode = shift.shift_code || '';
+                const nonWorkCodes = ['OFF', 'CP6.4', 'CP8', 'CONG', 'FORM'];
+                if (nonWorkCodes.includes(shiftCode)) return;
 
-          {/* Coverage Chart */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" gutterBottom>
-              Couverture par heure
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "flex-end",
-                gap: 0.5,
-                height: 150,
-                mt: 2,
-              }}
-            >
-              {coverage.map((cov) => (
-                <Tooltip
-                  key={cov.hour}
-                  title={
-                    <Box>
-                      <Typography variant="caption" display="block">
-                        {cov.hour}h - {cov.hour + 1}h
-                      </Typography>
-                      <Typography variant="caption" display="block">
-                        {cov.count} personne{cov.count > 1 ? "s" : ""}
-                      </Typography>
-                      {cov.employees.length > 0 && (
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          sx={{ mt: 0.5 }}
-                        >
-                          {cov.employees.join(", ")}
-                        </Typography>
-                      )}
-                    </Box>
-                  }
-                >
-                  <Box
-                    sx={{
-                      flex: 1,
-                      height: `${(cov.count / maxCoverage) * 100}%`,
-                      bgcolor:
-                        cov.count === maxCoverage
-                          ? "success.main"
-                          : "primary.main",
-                      borderRadius: 1,
-                      minHeight: cov.count > 0 ? 10 : 0,
-                      cursor: "pointer",
-                      opacity: cov.count === 0 ? 0.2 : 1,
-                      transition: "all 0.2s",
-                      "&:hover": { opacity: 0.8 },
-                    }}
-                  />
-                </Tooltip>
-              ))}
-            </Box>
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                0h
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                6h
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                12h
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                18h
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                24h
-              </Typography>
-            </Box>
-          </Grid>
+                const shiftType = shiftTypes.find(st => st.code === shiftCode);
+                if (!shiftType || !shiftType.start_time || !shiftType.end_time) return;
 
-          {/* Timeline View */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" gutterBottom>
-              Planning chronologique
-            </Typography>
-            <TableContainer component={Paper} variant="outlined" sx={{ mt: 2 }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ minWidth: 100 }}>Employé</TableCell>
-                    <TableCell sx={{ minWidth: 500 }}>
-                      Horaire (0h → 24h)
-                    </TableCell>
-                    <TableCell sx={{ minWidth: 120 }}>Shift</TableCell>
-                    <TableCell sx={{ minWidth: 150 }}>Heures</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {workingEmployees.map((emp: any) => {
-                    const shift = emp.shifts[day];
-                    const shiftCode = shift.shift_code || "";
-                    const shiftType = shiftTypes.find(
-                      (st) => st.code === shiftCode,
-                    );
+                let startMin = timeToMinutes(shiftType.start_time);
+                let endMin = timeToMinutes(shiftType.end_time);
 
-                    if (
-                      !shiftType ||
-                      !shiftType.start_time ||
-                      !shiftType.end_time
-                    )
-                      return null;
+                if (endMin <= startMin) endMin += 24 * 60;
 
-                    const isEditing = editingEmployee === emp.employee_id;
+                if (startMin < hourEnd && endMin > hourStart) {
+                    workingEmployees.push(emp.abbreviation);
+                }
+            });
 
-                    const startMin = timeToMinutes(shiftType.start_time);
-                    let endMin = timeToMinutes(shiftType.end_time);
-                    if (endMin <= startMin) endMin += 24 * 60;
+            coverage.push({ hour, count: workingEmployees.length, employees: workingEmployees });
+        }
 
-                    const totalMinutes = 24 * 60;
-                    const startPercent = (startMin / totalMinutes) * 100;
-                    const widthPercent =
-                      ((endMin - startMin) / totalMinutes) * 100;
+        return coverage;
+    };
 
-                    return (
-                      <TableRow key={emp.employee_id}>
-                        <TableCell>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Avatar
-                              src={emp.avatar_url}
-                              sx={{
-                                width: 24,
-                                height: 24,
-                                bgcolor: emp.color_cell,
-                                color: emp.color_text,
-                                fontSize: "0.65rem",
-                              }}
-                            >
-                              {!emp.avatar_url && emp.abbreviation}
-                            </Avatar>
-                            <Typography variant="body2">
-                              {emp.abbreviation}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            sx={(theme) => ({
-                              position: "relative",
-                              height: 40,
-                              bgcolor:
-                                theme.palette.mode === "dark"
-                                  ? theme.palette.grey[800]
-                                  : theme.palette.grey[100],
-                              borderRadius: 1,
-                              overflow: "visible",
-                            })}
-                          >
-                            {[6, 12, 18].map((h) => (
-                              <Box
-                                key={h}
-                                sx={(theme) => ({
-                                  position: "absolute",
-                                  left: `${(h / 24) * 100}%`,
-                                  top: 0,
-                                  bottom: 0,
-                                  width: 1,
-                                  bgcolor:
-                                    theme.palette.mode === "dark"
-                                      ? theme.palette.grey[600]
-                                      : theme.palette.grey[300],
-                                  zIndex: 0,
-                                })}
-                              />
+    const coverage = calculateCoverage();
+    const maxCoverage = Math.max(...coverage.map(c => c.count), 1);
+    const peakHours = coverage.filter(c => c.count === maxCoverage);
+
+    const workingEmployees = employees.filter(emp => {
+        const shift = emp.shifts?.[day];
+        if (!shift) return false;
+        const shiftCode = shift.shift_code || '';
+        const nonWorkCodes = ['OFF', 'CP6.4', 'CP8', 'CONG', 'FORM'];
+        return shiftCode && !nonWorkCodes.includes(shiftCode);
+    });
+
+    return (
+        <Dialog open={true} onClose={onClose} maxWidth="lg" fullWidth>
+            <DialogTitle>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6">Vue détaillée - {date}</Typography>
+                    <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                </Box>
+            </DialogTitle>
+            <DialogContent>
+                <Grid container spacing={3}>
+                    {/* Stats Summary */}
+                    <Grid item xs={12}>
+                        <Card variant="outlined">
+                            <CardContent>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={4}>
+                                        <Typography variant="caption" color="text.secondary">Personnel en service</Typography>
+                                        <Typography variant="h4" color="primary">{workingEmployees.length}</Typography>
+                                    </Grid>
+                                    <Grid item xs={4}>
+                                        <Typography variant="caption" color="text.secondary">Couverture maximale</Typography>
+                                        <Typography variant="h4" color="success.main">{maxCoverage} personnes</Typography>
+                                    </Grid>
+                                    <Grid item xs={4}>
+                                        <Typography variant="caption" color="text.secondary">Heures de pointe</Typography>
+                                        <Typography variant="h4" color="info.main">
+                                            {peakHours.length > 0 ? `${peakHours[0].hour}h-${peakHours[peakHours.length - 1].hour + 1}h` : '-'}
+                                        </Typography>
+                                    </Grid>
+                                </Grid>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+
+                    {/* Coverage Chart */}
+                    <Grid item xs={12}>
+                        <Typography variant="subtitle2" gutterBottom>Couverture par heure</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.5, height: 150, mt: 2 }}>
+                            {coverage.map((cov) => (
+                                <Tooltip
+                                    key={cov.hour}
+                                    title={
+                                        <Box>
+                                            <Typography variant="caption" display="block">{cov.hour}h - {cov.hour + 1}h</Typography>
+                                            <Typography variant="caption" display="block">{cov.count} personne{cov.count > 1 ? 's' : ''}</Typography>
+                                            {cov.employees.length > 0 && (
+                                                <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>{cov.employees.join(', ')}</Typography>
+                                            )}
+                                        </Box>
+                                    }
+                                >
+                                    <Box
+                                        sx={{
+                                            flex: 1,
+                                            height: `${(cov.count / maxCoverage) * 100}%`,
+                                            bgcolor: cov.count === maxCoverage ? 'success.main' : 'primary.main',
+                                            borderRadius: 1,
+                                            minHeight: cov.count > 0 ? 10 : 0,
+                                            cursor: 'pointer',
+                                            opacity: cov.count === 0 ? 0.2 : 1,
+                                            transition: 'all 0.2s',
+                                            '&:hover': { opacity: 0.8 }
+                                        }}
+                                    />
+                                </Tooltip>
                             ))}
-                            <Tooltip
-                              title={`${shiftType.code}: ${shiftType.start_time} - ${shiftType.end_time} (${shiftType.hours}h)`}
-                            >
-                              <Box
-                                sx={{
-                                  position: "absolute",
-                                  left: `${startPercent}%`,
-                                  width: `${widthPercent}%`,
-                                  height: "100%",
-                                  bgcolor: shiftType.color_code || "#4A90E2",
-                                  borderRadius: 1,
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  color: "white",
-                                  fontWeight: "bold",
-                                  boxShadow: 2,
-                                  border: "2px solid rgba(255,255,255,0.8)",
-                                  cursor: "pointer",
-                                  zIndex: 10,
-                                  minWidth: widthPercent < 5 ? "60px" : "auto",
-                                  "&:hover": {
-                                    boxShadow: 4,
-                                    transform: "scaleY(1.1)",
-                                  },
-                                }}
-                              >
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    fontSize: "0.75rem",
-                                    fontWeight: "bold",
-                                    color: "white",
-                                  }}
-                                >
-                                  {shiftType.code}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    fontSize: "0.65rem",
-                                    opacity: 0.95,
-                                    color: "white",
-                                  }}
-                                >
-                                  {shiftType.start_time}-{shiftType.end_time}
-                                </Typography>
-                              </Box>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          {isEditing ? (
-                            <Select
-                              size="small"
-                              value={selectedShift || shiftType.id}
-                              onChange={(e) =>
-                                setSelectedShift(Number(e.target.value))
-                              }
-                              fullWidth
-                            >
-                              {shiftTypes
-                                .filter(
-                                  (st) =>
-                                    Math.abs(st.hours - emp.daily_hours) <=
-                                      1.5 ||
-                                    [
-                                      "OFF",
-                                      "CP6.4",
-                                      "CP8",
-                                      "CONG",
-                                      "FORM",
-                                    ].includes(st.code),
-                                )
-                                .map((st) => (
-                                  <MenuItem key={st.id} value={st.id}>
-                                    {st.code} ({st.hours}h)
-                                  </MenuItem>
-                                ))}
-                            </Select>
-                          ) : (
-                            <Chip
-                              label={shiftType.code}
-                              size="small"
-                              sx={{
-                                bgcolor: shiftType.color_code || "primary.main",
-                                color: "white",
-                                fontWeight: "bold",
-                              }}
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing ? (
-                            <Box display="flex" gap={0.5}>
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() => handleSaveShift(emp.employee_id)}
-                              >
-                                <SaveIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  setEditingEmployee(null);
-                                  setSelectedShift(null);
-                                }}
-                              >
-                                <CloseIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          ) : (
-                            <Box display="flex" alignItems="center" gap={0.5}>
-                              <Chip
-                                label={`${shiftType.hours}h`}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                              />
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  setEditingEmployee(emp.employee_id);
-                                  setSelectedShift(shiftType.id);
-                                }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <MuiButton onClick={onClose}>Fermer</MuiButton>
-      </DialogActions>
-    </Dialog>
-  );
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                            <Typography variant="caption" color="text.secondary">0h</Typography>
+                            <Typography variant="caption" color="text.secondary">6h</Typography>
+                            <Typography variant="caption" color="text.secondary">12h</Typography>
+                            <Typography variant="caption" color="text.secondary">18h</Typography>
+                            <Typography variant="caption" color="text.secondary">24h</Typography>
+                        </Box>
+                    </Grid>
+
+                    {/* Timeline View */}
+                    <Grid item xs={12}>
+                        <Typography variant="subtitle2" gutterBottom>Planning chronologique</Typography>
+                        <TableContainer component={Paper} variant="outlined" sx={{ mt: 2 }}>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell sx={{ minWidth: 100 }}>Employé</TableCell>
+                                        <TableCell sx={{ minWidth: 500 }}>Horaire (0h → 24h)</TableCell>
+                                        <TableCell sx={{ minWidth: 120 }}>Shift</TableCell>
+                                        <TableCell sx={{ minWidth: 150 }}>Heures</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {workingEmployees.map((emp: any) => {
+                                        const shift = emp.shifts[day];
+                                        const shiftCode = shift.shift_code || '';
+                                        const shiftType = shiftTypes.find(st => st.code === shiftCode);
+
+                                        if (!shiftType || !shiftType.start_time || !shiftType.end_time) return null;
+
+                                        const isEditing = editingEmployee === emp.employee_id;
+
+                                        let startMin = timeToMinutes(shiftType.start_time);
+                                        let endMin = timeToMinutes(shiftType.end_time);
+                                        if (endMin <= startMin) endMin += 24 * 60;
+
+                                        const totalMinutes = 24 * 60;
+                                        const startPercent = (startMin / totalMinutes) * 100;
+                                        const widthPercent = ((endMin - startMin) / totalMinutes) * 100;
+
+                                        return (
+                                            <TableRow key={emp.employee_id}>
+                                                <TableCell>
+                                                    <Box display="flex" alignItems="center" gap={1}>
+                                                        <Avatar
+                                                            src={emp.avatar_url}
+                                                            sx={{
+                                                                width: 24,
+                                                                height: 24,
+                                                                bgcolor: emp.color_cell,
+                                                                color: emp.color_text,
+                                                                fontSize: '0.65rem'
+                                                            }}
+                                                        >
+                                                            {!emp.avatar_url && emp.abbreviation}
+                                                        </Avatar>
+                                                        <Typography variant="body2">{emp.abbreviation}</Typography>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Box sx={(theme) => ({
+                                                        position: 'relative',
+                                                        height: 40,
+                                                        bgcolor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[100],
+                                                        borderRadius: 1,
+                                                        overflow: 'visible'
+                                                    })}>
+                                                        {[6, 12, 18].map(h => (
+                                                            <Box
+                                                                key={h}
+                                                                sx={(theme) => ({
+                                                                    position: 'absolute',
+                                                                    left: `${(h / 24) * 100}%`,
+                                                                    top: 0,
+                                                                    bottom: 0,
+                                                                    width: 1,
+                                                                    bgcolor: theme.palette.mode === 'dark' ? theme.palette.grey[600] : theme.palette.grey[300],
+                                                                    zIndex: 0,
+                                                                })}
+                                                            />
+                                                        ))}
+                                                        <Tooltip title={`${shiftType.code}: ${shiftType.start_time} - ${shiftType.end_time} (${shiftType.hours}h)`}>
+                                                            <Box
+                                                                sx={{
+                                                                    position: 'absolute',
+                                                                    left: `${startPercent}%`,
+                                                                    width: `${widthPercent}%`,
+                                                                    height: '100%',
+                                                                    bgcolor: shiftType.color_code || '#4A90E2',
+                                                                    borderRadius: 1,
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    color: 'white',
+                                                                    fontWeight: 'bold',
+                                                                    boxShadow: 2,
+                                                                    border: '2px solid rgba(255,255,255,0.8)',
+                                                                    cursor: 'pointer',
+                                                                    zIndex: 10,
+                                                                    minWidth: widthPercent < 5 ? '60px' : 'auto',
+                                                                    '&:hover': { boxShadow: 4, transform: 'scaleY(1.1)' }
+                                                                }}
+                                                            >
+                                                                <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'white' }}>
+                                                                    {shiftType.code}
+                                                                </Typography>
+                                                                <Typography variant="caption" sx={{ fontSize: '0.65rem', opacity: 0.95, color: 'white' }}>
+                                                                    {shiftType.start_time}-{shiftType.end_time}
+                                                                </Typography>
+                                                            </Box>
+                                                        </Tooltip>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {isEditing ? (
+                                                        <Select
+                                                            size="small"
+                                                            value={selectedShift || shiftType.id}
+                                                            onChange={(e) => setSelectedShift(Number(e.target.value))}
+                                                            fullWidth
+                                                        >
+                                                            {shiftTypes
+                                                                .filter(st => Math.abs(st.hours - emp.daily_hours) <= 1.5 || ['OFF', 'CP6.4', 'CP8', 'CONG', 'FORM'].includes(st.code))
+                                                                .map(st => (
+                                                                    <MenuItem key={st.id} value={st.id}>{st.code} ({st.hours}h)</MenuItem>
+                                                                ))
+                                                            }
+                                                        </Select>
+                                                    ) : (
+                                                        <Chip
+                                                            label={shiftType.code}
+                                                            size="small"
+                                                            sx={{ bgcolor: shiftType.color_code || 'primary.main', color: 'white', fontWeight: 'bold' }}
+                                                        />
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {isEditing ? (
+                                                        <Box display="flex" gap={0.5}>
+                                                            <IconButton size="small" color="primary" onClick={() => handleSaveShift(emp.employee_id)}>
+                                                                <SaveIcon fontSize="small" />
+                                                            </IconButton>
+                                                            <IconButton size="small" onClick={() => { setEditingEmployee(null); setSelectedShift(null); }}>
+                                                                <CloseIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Box>
+                                                    ) : (
+                                                        <Box display="flex" alignItems="center" gap={0.5}>
+                                                            <Chip label={`${shiftType.hours}h`} size="small" color="primary" variant="outlined" />
+                                                            <IconButton size="small" onClick={() => { setEditingEmployee(emp.employee_id); setSelectedShift(shiftType.id); }}>
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Box>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Grid>
+                </Grid>
+            </DialogContent>
+            <DialogActions>
+                <MuiButton onClick={onClose}>Fermer</MuiButton>
+            </DialogActions>
+        </Dialog>
+    );
 };
 
 // =============== AG GRID CALENDAR ===============
 const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
-  const dataProvider = useDataProvider();
-  const notify = useNotify();
-  const refresh = useRefresh();
-
-  // Data states
-  const [loading, setLoading] = useState(true);
-  const [calendarData, setCalendarData] = useState<any>(null);
-  const [shiftTypes, setShiftTypes] = useState<any[]>([]);
-  const [gridApi, setGridApi] = useState<any>(null);
-
-  // Dialog states
-  const [templateDialog, setTemplateDialog] = useState(false);
-  const [optimizeDialog, setOptimizeDialog] = useState(false);
-  const [createShiftDialog, setCreateShiftDialog] = useState(false);
-  const [csvImportDialog, setCsvImportDialog] = useState(false);
-  const [analysisDialog, setAnalysisDialog] = useState(false);
-  const [validationDialog, setValidationDialog] = useState(false);
-  const [dayDetailView, setDayDetailView] = useState<{
-    day: number;
-    date: string;
-  } | null>(null);
-  const [aiChatOpen, setAiChatOpen] = useState(false);
-
-  // Action states
-  const [generating, setGenerating] = useState(false);
-  const [optimizing, setOptimizing] = useState(false);
-  const [clearing, setClearing] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [validating, setValidating] = useState(false);
-  const [exportingPdf, setExportingPdf] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  // Form/data states
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState<
-    "CP-SAT" | "GA" | "HYBRID"
-  >("CP-SAT");
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [analysisData, setAnalysisData] = useState<any>(null);
-  const [validationResults, setValidationResults] = useState<any>(null);
-  const [optimizerFailureMessage, setOptimizerFailureMessage] = useState<
-    string | undefined
-  >(undefined);
-  const [expandedValidationRows, setExpandedValidationRows] = useState<
-    Set<number>
-  >(new Set());
-
-  // Batch optimization states
-  const [batchDialog, setBatchDialog] = useState(false);
-  const [batchCompareDialog, setBatchCompareDialog] = useState(false);
-  const [batchPreset, setBatchPreset] = useState<
-    "QUICK" | "STANDARD" | "EXHAUSTIVE"
-  >("QUICK");
-  const [batchStarting, setBatchStarting] = useState(false);
-  const [batchRuns, setBatchRuns] = useState<any[]>([]);
-  const [activeBatchRun, setActiveBatchRun] = useState<any>(null);
-  const [batchTopTrials, setBatchTopTrials] = useState<any[]>([]);
-  const [batchPreflight, setBatchPreflight] = useState<any | null>(null);
-  const [batchPreflightLoading, setBatchPreflightLoading] = useState(false);
-
-  // Rules & Audit dialog
-  const [rulesDialog, setRulesDialog] = useState(false);
-  const [rulesTab, setRulesTab] = useState<"catalogue" | "audit">("catalogue");
-  const [rulesCatalogue, setRulesCatalogue] = useState<any[] | null>(null);
-  const [rulesCatalogueLoading, setRulesCatalogueLoading] = useState(false);
-  const [auditResult, setAuditResult] = useState<any | null>(null);
-  const [auditLoading, setAuditLoading] = useState(false);
-  // Extra-employees dialog
-  const [extraEmpDialog, setExtraEmpDialog] = useState(false);
-  const [extraEmpList, setExtraEmpList] = useState<any[]>([]);
-  const [availableEmpList, setAvailableEmpList] = useState<any[]>([]);
-  const [extraEmpLoading, setExtraEmpLoading] = useState(false);
-  const [extraEmpSelected, setExtraEmpSelected] = useState<number[]>([]);
-  const [extraEmpSubmitting, setExtraEmpSubmitting] = useState(false);
-  const [batchPolling, setBatchPolling] = useState(false);
-  const [applyingTrial, setApplyingTrial] = useState<number | null>(null);
-
-  // New shift form
-  const [newShift, setNewShift] = useState({
-    code: "",
-    name: "",
-    start_time: "",
-    end_time: "",
-    break_minutes: 0,
-    hours: 8,
-    shift_category: "MORNING",
-    color_code: "#4A90E2",
-  });
-  const [shiftValidationError, setShiftValidationError] = useState<string>("");
-
-  // Filter states
-  const [filterVisibility, setFilterVisibility] = useState<
-    "all" | "visible" | "hidden"
-  >("all");
-  const [filterJobPositions, setFilterJobPositions] = useState<string[]>([]);
-  const [filterJobTypes, setFilterJobTypes] = useState<string[]>([]);
-  const [filterHoursStatus, setFilterHoursStatus] = useState<
-    "all" | "over_limit" | "under_50" | "ok"
-  >("all");
-  const [filterNameSearch, setFilterNameSearch] = useState("");
-  const [hiddenEmployees, setHiddenEmployees] = useState<Set<number>>(
-    new Set(),
-  );
-  const [togglingVisibility, setTogglingVisibility] = useState<number | null>(
-    null,
-  );
-  const [sendingEmail, setSendingEmail] = useState<number | null>(null);
-
-  // Hours-calc debug detail (hidden — enabled via ?debug=hours URL param or
-  // localStorage 'planning.debugHours' = '1'). When enabled, a small bug icon
-  // appears on each employee row; clicking it shows the per-shift breakdown
-  // (code, category, hours, included/excluded reason).
-  const debugHoursEnabled = useMemo(() => {
-    try {
-      if (typeof window === "undefined") return false;
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("debug") === "hours" || params.get("debug") === "1")
-        return true;
-      return window.localStorage.getItem("planning.debugHours") === "1";
-    } catch {
-      return false;
-    }
-  }, []);
-  const [debugHoursDialog, setDebugHoursDialog] = useState<{
-    employeeName: string;
-    totalHours: number;
-    maxMonthlyHours: number;
-    breakdown: ShiftBreakdownEntry[];
-  } | null>(null);
-
-  // Grouping state
-  const [groupBy, setGroupBy] = useState<
-    "none" | "job_position" | "job_type" | "alphabetical" | "hours"
-  >("none");
-
-  // Load data
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-
-      // Load calendar data
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/calendar`,
-      );
-      const data = await response.json();
-      setCalendarData(data);
-
-      // Load shift types using dataProvider
-      const shiftsRes = await dataProvider.getList("planning/shift-types", {
-        pagination: { page: 1, perPage: 100 },
-        sort: { field: "code", order: "ASC" },
-        filter: { active_only: true },
-      });
-      setShiftTypes(shiftsRes.data);
-
-      // Load audit history to know which cells have changes (only for validated plannings)
-      if (data?.planning?.status && data.planning.status !== "DRAFT") {
-        try {
-          // Use direct fetch instead of dataProvider to avoid parameter issues
-          const auditUrl = `${apiUrl}/planning/monthly-planning/${planningId}/audit-log`;
-          const auditResponse = await authenticatedFetch(auditUrl);
-
-          if (auditResponse.ok) {
-            const auditRes = await auditResponse.json();
-
-            if (auditRes?.changes && auditRes.changes.length > 0) {
-              const cellsSet = new Set<string>();
-              auditRes.changes.forEach((change: any) => {
-                // Create key from employeeId and date
-                const key = `${change.employee_id}-${change.date}`;
-                cellsSet.add(key);
-              });
-              setCellsWithHistory(cellsSet);
-            } else {
-              setCellsWithHistory(new Set());
-            }
-          } else {
-            console.warn("Audit API returned:", auditResponse.status);
-            setCellsWithHistory(new Set());
-          }
-        } catch (auditError) {
-          console.warn("Could not load audit history:", auditError);
-          // Don't fail the whole load if audit fails
-          setCellsWithHistory(new Set());
-        }
-      } else {
-        setCellsWithHistory(new Set());
-      }
-    } catch (error) {
-      console.error("Error loading data:", error);
-      notify("Erreur lors du chargement des données", { type: "error" });
-    } finally {
-      setLoading(false);
-    }
-  }, [planningId, dataProvider, notify]);
-
-  useEffect(() => {
-    loadData();
-    loadBatchRuns();
-  }, [loadData]);
-
-  // Load hidden employees
-  useEffect(() => {
-    const loadHiddenEmployees = async () => {
-      try {
-        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-        const response = await authenticatedFetch(
-          `${apiUrl}/planning/monthly-planning/${planningId}/hidden-employees`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setHiddenEmployees(new Set(data.hidden_employee_ids || []));
-        }
-      } catch (error) {
-        console.error("Error loading hidden employees:", error);
-      }
-    };
-    loadHiddenEmployees();
-  }, [planningId]);
-
-  // Helper function to update local state after shift change (avoids full reload)
-  const updateLocalShift = useCallback(
-    (
-      employeeId: number,
-      day: number,
-      shiftCode: string | null,
-      shiftType: any | null,
-    ) => {
-      setCalendarData((prevData: any) => {
-        if (!prevData?.employees) return prevData;
-
-        const updatedEmployees = prevData.employees.map((emp: any) => {
-          if (emp.employee_id !== employeeId) return emp;
-
-          const updatedShifts = { ...emp.shifts };
-          const existingShift = updatedShifts[day];
-          if (shiftCode && shiftType) {
-            const newShift: any = {
-              shift_code: shiftCode,
-              shift_category: shiftType.shift_category || "OTHER",
-              color: shiftType.color_code || "#ccc",
-              hours:
-                typeof shiftType.hours === "number"
-                  ? shiftType.hours
-                  : parseFloat(shiftType.hours) || 0,
-              source: "MANUAL",
-            };
-            // Preserve optimizer origin for diff display
-            if (existingShift?.optimizer_original) {
-              newShift.optimizer_original = existingShift.optimizer_original;
-              newShift.is_modified_from_optimizer =
-                shiftCode !== existingShift.optimizer_original.shift_code;
-            } else if (existingShift?.source === "OPTIMIZER") {
-              // First manual edit of an optimizer cell — capture the original
-              newShift.optimizer_original = {
-                shift_code: existingShift.shift_code,
-                hours: existingShift.hours,
-              };
-              newShift.is_modified_from_optimizer =
-                shiftCode !== existingShift.shift_code;
-            }
-            updatedShifts[day] = newShift;
-          } else {
-            // Delete shift
-            delete updatedShifts[day];
-          }
-
-          return {
-            ...emp,
-            shifts: updatedShifts,
-          };
-        });
-
-        return {
-          ...prevData,
-          employees: updatedEmployees,
-        };
-      });
-      // AG Grid with controlled rowData will auto-detect changes and re-render
-    },
-    [],
-  );
-
-  // Handle shift update (from AG Grid cell edit)
-  const handleShiftUpdate = useCallback(
-    async (employeeId: number, day: number, shiftCode: string) => {
-      try {
-        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-        const date = `${calendarData.planning.year}-${String(calendarData.planning.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-        const shiftType = shiftTypes.find((st) => st.code === shiftCode);
-
-        await authenticatedFetch(
-          `${apiUrl}/planning/monthly-planning/${planningId}/assignments`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              employee_id: employeeId,
-              date: date,
-              shift_type_id: shiftType?.id || null,
-              shift_code: shiftCode || null,
-              hours: shiftType?.hours || 0,
-              source: "MANUAL",
-            }),
-          },
-        );
-
-        // Update local state instead of full reload
-        updateLocalShift(employeeId, day, shiftCode, shiftType);
-        notify("Shift mis à jour", { type: "success" });
-      } catch (error) {
-        console.error("Error updating shift:", error);
-        notify("Erreur lors de la mise à jour", { type: "error" });
-        loadData();
-      }
-    },
-    [calendarData, planningId, shiftTypes, notify, loadData, updateLocalShift],
-  );
-
-  // Status change handler
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}`,
-        {
-          method: "PUT",
-          body: JSON.stringify({ status: newStatus }),
-        },
-      );
-      notify(
-        `Statut changé en ${newStatus === "DRAFT" ? "Brouillon" : newStatus === "PUBLISHED" ? "Publié" : "Verrouillé"}`,
-        { type: "success" },
-      );
-      loadData();
-    } catch (error) {
-      console.error("Error updating status:", error);
-      notify("Erreur lors du changement de statut", { type: "error" });
-    }
-  };
-
-  // Template generation
-  const handleGenerateTemplate = async (templateType: string) => {
-    try {
-      setGenerating(true);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await fetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/generate-template?template_type=${templateType}`,
-        { method: "POST" },
-      );
-      if (!response.ok) throw new Error("Failed to generate template");
-      notify(`Planning ${templateType} généré avec succès!`, {
-        type: "success",
-      });
-      setTemplateDialog(false);
-      loadData();
-      refresh();
-    } catch (error) {
-      console.error("Error generating template:", error);
-      notify("Erreur lors de la génération", { type: "error" });
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  // Optimization
-  const handleOptimizePlanning = async () => {
-    try {
-      setOptimizing(true);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const timeLimit = selectedAlgorithm === "HYBRID" ? 300 : 60;
-
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/optimize`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            min_daily_coverage: 4,
-            morning_coverage_ratio: 0.63,
-            time_limit_seconds: timeLimit,
-            preserve_existing: false,
-            algorithm: selectedAlgorithm,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Optimization failed");
-      }
-
-      const result = await response.json();
-      const algorithmBadge =
-        result.algorithm === "GA"
-          ? " 🧬 GA"
-          : result.algorithm === "HYBRID"
-            ? " 🔬 HYBRID"
-            : " 🤖 CP-SAT";
-
-      notify(
-        `✅ ${result.message} (${result.assignments_created} affectations en ${result.optimization_time.toFixed(1)}s)${algorithmBadge}`,
-        { type: "success" },
-      );
-
-      if (result.ai_summary) {
-        setOptimizerFailureMessage(result.ai_summary);
-        setAiChatOpen(true);
-      }
-
-      setOptimizeDialog(false);
-      loadData();
-      refresh();
-    } catch (error: any) {
-      console.error("Error optimizing planning:", error);
-      notify(`❌ ${error.message}`, { type: "error" });
-      setOptimizerFailureMessage(error.message);
-      setAiChatOpen(true);
-      setOptimizeDialog(false);
-    } finally {
-      setOptimizing(false);
-    }
-  };
-
-  // Clear optimizer shifts
-  const handleClearOptimizerShifts = async () => {
-    if (
-      !window.confirm(
-        "Êtes-vous sûr de vouloir effacer tous les shifts générés par l'optimiseur?",
-      )
-    )
-      return;
-
-    try {
-      setClearing(true);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await fetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/clear-optimizer-shifts`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Clear failed");
-      }
-
-      const result = await response.json();
-      notify(`✅ ${result.message}`, { type: "success" });
-      loadData();
-      refresh();
-    } catch (error: any) {
-      console.error("Error clearing optimizer shifts:", error);
-      notify(`❌ ${error.message}`, { type: "error" });
-    } finally {
-      setClearing(false);
-    }
-  };
-
-  // ============ Batch Optimization Handlers ============
-
-  const loadBatchRuns = async () => {
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize`,
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setBatchRuns(data.runs || []);
-        // Check for active run
-        const active = (data.runs || []).find(
-          (r: any) => r.status === "RUNNING" || r.status === "PENDING",
-        );
-        if (active) {
-          setActiveBatchRun(active);
-          startBatchPolling(active.id);
-        }
-      }
-    } catch (e) {
-      console.error("Error loading batch runs:", e);
-    }
-  };
-
-  const startBatchPolling = (runId: number) => {
-    if (batchPolling) return;
-    setBatchPolling(true);
-    const interval = setInterval(async () => {
-      try {
-        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-        const response = await authenticatedFetch(
-          `${apiUrl}/planning/batch-optimize/${runId}`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setActiveBatchRun(data);
-          setBatchTopTrials(data.top_trials || []);
-          // Update in runs list
-          setBatchRuns((prev) =>
-            prev.map((r) => (r.id === data.id ? { ...r, ...data } : r)),
-          );
-          if (
-            data.status === "COMPLETED" ||
-            data.status === "FAILED" ||
-            data.status === "CANCELLED"
-          ) {
-            clearInterval(interval);
-            setBatchPolling(false);
-            if (data.status === "COMPLETED") {
-              notify(
-                `Batch optimization terminée: ${data.completed_trials} essais, meilleur score: ${data.best_score?.toFixed(0)}`,
-                { type: "success" },
-              );
-            } else if (data.status === "FAILED") {
-              notify(`Batch optimization échouée: ${data.error_message}`, {
-                type: "error",
-              });
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Polling error:", e);
-        clearInterval(interval);
-        setBatchPolling(false);
-      }
-    }, 10000); // Poll every 10s
-  };
-
-  // Lazy-load the rules catalogue the first time the Rules dialog
-  // opens (catalogue is global, no planning context).
-  useEffect(() => {
-    if (!rulesDialog || rulesCatalogue !== null) return;
-    let cancelled = false;
-    setRulesCatalogueLoading(true);
-    const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-    authenticatedFetch(`${apiUrl}/planning/planning-rules`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
-        if (!cancelled) setRulesCatalogue(data?.rules || []);
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          notify(`Catalogue indisponible : ${e.message}`, { type: "warning" });
-          setRulesCatalogue([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setRulesCatalogueLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [rulesDialog, rulesCatalogue, notify]);
-
-  const runPlanningAudit = async () => {
-    if (!planningId) return;
-    setAuditLoading(true);
-    setAuditResult(null);
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const r = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/audit`,
-      );
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      setAuditResult(data);
-      const total = data?.summary?.total_violations ?? 0;
-      if (total === 0) {
-        notify("Audit OK : aucune violation détectée.", { type: "success" });
-      } else {
-        notify(`Audit terminé : ${total} violation(s) détectée(s).`, {
-          type: "warning",
-        });
-      }
-    } catch (e: any) {
-      notify(`Erreur audit : ${e.message}`, { type: "error" });
-    } finally {
-      setAuditLoading(false);
-    }
-  };
-
-  // Load extras + available employees when the dialog opens.
-  const reloadExtraEmployees = useCallback(async () => {
-    if (!planningId) return;
-    setExtraEmpLoading(true);
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const [extraR, availR] = await Promise.all([
-        authenticatedFetch(
-          `${apiUrl}/planning/monthly-planning/${planningId}/extra-employees`,
-        ),
-        authenticatedFetch(
-          `${apiUrl}/planning/monthly-planning/${planningId}/available-employees`,
-        ),
-      ]);
-      if (!extraR.ok) throw new Error(`extras HTTP ${extraR.status}`);
-      if (!availR.ok) throw new Error(`available HTTP ${availR.status}`);
-      const extras = await extraR.json();
-      const avail = await availR.json();
-      setExtraEmpList(extras.extra_employees || []);
-      setAvailableEmpList(avail.available_employees || []);
-    } catch (e: any) {
-      notify(`Erreur chargement employés : ${e.message}`, { type: "error" });
-    } finally {
-      setExtraEmpLoading(false);
-    }
-  }, [planningId, notify]);
-
-  useEffect(() => {
-    if (extraEmpDialog) {
-      setExtraEmpSelected([]);
-      reloadExtraEmployees();
-    }
-  }, [extraEmpDialog, reloadExtraEmployees]);
-
-  const submitExtraEmployees = async () => {
-    if (!planningId || extraEmpSelected.length === 0) return;
-    setExtraEmpSubmitting(true);
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const r = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/extra-employees`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ employee_ids: extraEmpSelected }),
-        },
-      );
-      if (!r.ok) {
-        const err = await r.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${r.status}`);
-      }
-      const data = await r.json();
-      notify(
-        `${data.added.length} employé(s) ajouté(s)` +
-          (data.skipped.length ? ` (${data.skipped.length} ignoré(s))` : ""),
-        { type: "success" },
-      );
-      await reloadExtraEmployees();
-      setExtraEmpSelected([]);
-      handleRefreshData();
-    } catch (e: any) {
-      notify(`Erreur ajout : ${e.message}`, { type: "error" });
-    } finally {
-      setExtraEmpSubmitting(false);
-    }
-  };
-
-  const removeExtraEmployee = async (employeeId: number) => {
-    if (!planningId) return;
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const r = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/extra-employees/${employeeId}`,
-        { method: "DELETE" },
-      );
-      if (!r.ok) {
-        const err = await r.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${r.status}`);
-      }
-      notify("Employé retiré du planning.", { type: "success" });
-      await reloadExtraEmployees();
-      handleRefreshData();
-    } catch (e: any) {
-      notify(`Erreur retrait : ${e.message}`, { type: "error" });
-    }
-  };
-
-  // Fetch the preflight (eligible employees + rules) when the start
-  // dialog opens. Refresh every time it opens so a recent contract
-  // edit is reflected without a page reload.
-  useEffect(() => {
-    if (!batchDialog || !planningId) return;
-    let cancelled = false;
-    setBatchPreflightLoading(true);
-    setBatchPreflight(null);
-    const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-    authenticatedFetch(
-      `${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize/preflight`,
-    )
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
-        if (!cancelled) setBatchPreflight(data);
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          notify(`Pré-vol indisponible : ${e.message}`, { type: "warning" });
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setBatchPreflightLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [batchDialog, planningId, notify]);
-
-  const handleStartBatch = async () => {
-    try {
-      setBatchStarting(true);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ preset: batchPreset }),
-        },
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to start batch");
-      }
-      const result = await response.json();
-      notify(`${result.message}`, { type: "success" });
-      setActiveBatchRun(result);
-      setBatchDialog(false);
-      startBatchPolling(result.id);
-      loadBatchRuns();
-    } catch (error: any) {
-      notify(`${error.message}`, { type: "error" });
-    } finally {
-      setBatchStarting(false);
-    }
-  };
-
-  const handleCancelBatch = async (runId: number, force: boolean = false) => {
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const qs = force ? "?force=true" : "";
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/batch-optimize/${runId}/cancel${qs}`,
-        { method: "POST" },
-      );
-      if (response.ok) {
-        const result = await response.json().catch(() => ({}));
-        if (force) {
-          notify("Batch optimization annulée (force).", { type: "info" });
-          setActiveBatchRun(null);
-          setBatchPolling(false);
-        } else {
-          notify(
-            result.message ??
-              "Annulation demandée — le runner sortira proprement à la prochaine borne d'essai.",
-            { type: "info" },
-          );
-          // Keep polling so the UI shows the transition to CANCELLED.
-        }
-        loadBatchRuns();
-      }
-    } catch (e: any) {
-      notify(`Erreur: ${e.message}`, { type: "error" });
-    }
-  };
-
-  const handleResumeBatch = async (runId: number) => {
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/batch-optimize/${runId}/resume`,
-        { method: "POST" },
-      );
-      if (response.ok) {
-        const result = await response.json().catch(() => ({}));
-        notify(
-          `Run #${runId} relancé — reprise au-delà de l'essai ${
-            result.completed_trials ?? "?"
-          }/${result.total_trials ?? "?"}.`,
-          { type: "success" },
-        );
-        setBatchPolling(true);
-        loadBatchRuns();
-      } else {
-        const error = await response.json().catch(() => ({}));
-        notify(
-          `Impossible de reprendre : ${error.detail ?? response.statusText}`,
-          { type: "error" },
-        );
-      }
-    } catch (e: any) {
-      notify(`Erreur: ${e.message}`, { type: "error" });
-    }
-  };
-
-  const handleApplyTrial = async (runId: number, trialId: number) => {
-    if (
-      !window.confirm(
-        "Appliquer cette solution? Les affectations non verrouillées seront remplacées.",
-      )
-    )
-      return;
-    try {
-      setApplyingTrial(trialId);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/batch-optimize/${runId}/trial/${trialId}/apply`,
-        {
-          method: "POST",
-        },
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to apply");
-      }
-      const result = await response.json();
-      notify(`${result.message}`, { type: "success" });
-      setBatchCompareDialog(false);
-      loadData();
-      refresh();
-    } catch (error: any) {
-      notify(`${error.message}`, { type: "error" });
-    } finally {
-      setApplyingTrial(null);
-    }
-  };
-
-  const handleOpenBatchCompare = async () => {
-    await loadBatchRuns();
-    // Load details for latest completed run
-    const completedRun =
-      batchRuns.find((r) => r.status === "COMPLETED") ||
-      (activeBatchRun?.status === "COMPLETED" ? activeBatchRun : null);
-    if (completedRun) {
-      try {
-        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-        const response = await authenticatedFetch(
-          `${apiUrl}/planning/batch-optimize/${completedRun.id}`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setActiveBatchRun(data);
-          setBatchTopTrials(data.top_trials || []);
-        }
-      } catch (e) {
-        /* ignore */
-      }
-    }
-    setBatchCompareDialog(true);
-  };
-
-  // CSV Import
-  const handleCsvImport = async () => {
-    if (!csvFile) {
-      notify("Veuillez sélectionner un fichier CSV", { type: "error" });
-      return;
-    }
-
-    try {
-      setImporting(true);
-      const text = await csvFile.text();
-      const lines = text.split("\n").filter((line) => line.trim());
-      if (lines.length < 2) throw new Error("CSV file is empty or invalid");
-
-      const headers = lines[0].split(",").map((h) => h.toLowerCase().trim());
-      const shifts = lines
-        .slice(1)
-        .map((line) => {
-          const values = line.split(",");
-          const row: any = {};
-          headers.forEach((header, index) => {
-            row[header] = values[index]?.trim();
-          });
-          return row;
-        })
-        .filter(
-          (row) =>
-            (row.employee_id || row.abbreviation) && row.date && row.shift_code,
-        );
-
-      if (shifts.length === 0) throw new Error("No valid shifts found in CSV");
-
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/import-csv`,
-        {
-          method: "POST",
-          body: JSON.stringify({ shifts }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Import failed");
-      }
-
-      const result = await response.json();
-      notify(`✅ ${result.imported_count} shifts importés avec succès!`, {
-        type: "success",
-      });
-      setCsvImportDialog(false);
-      setCsvFile(null);
-      loadData();
-    } catch (error: any) {
-      console.error("Error importing CSV:", error);
-      notify(`Erreur d'import: ${error.message}`, { type: "error" });
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  // Analysis
-  const handleAnalyzePlanning = async () => {
-    try {
-      setAnalyzing(true);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/compare-alternatives`,
-      );
-      if (!response.ok) throw new Error("Failed to analyze planning");
-      const data = await response.json();
-      setAnalysisData(data);
-      setAnalysisDialog(true);
-      notify("Analyse terminée", { type: "success" });
-    } catch (error: any) {
-      console.error("Error analyzing planning:", error);
-      notify(`Erreur d'analyse: ${error.message}`, { type: "error" });
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
-  // Validation
-  const handleValidatePlanning = async () => {
-    try {
-      setValidating(true);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/validate`,
-        { method: "POST" },
-      );
-      if (!response.ok) throw new Error("Échec de la validation");
-      const data = await response.json();
-      setValidationResults(data);
-      setValidationDialog(true);
-      notify("Validation terminée", { type: "success" });
-    } catch (error: any) {
-      console.error("Error validating planning:", error);
-      notify(`Erreur de validation: ${error.message}`, { type: "error" });
-    } finally {
-      setValidating(false);
-    }
-  };
-
-  // PDF Export
-  const handleExportPdf = async () => {
-    try {
-      setExportingPdf(true);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/pdf`,
-        { method: "GET" },
-      );
-      if (!response.ok) throw new Error("Échec de l'export PDF");
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `planning_${calendarData?.planning?.year || "unknown"}_${String(calendarData?.planning?.month || 0).padStart(2, "0")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      notify("PDF exporté avec succès", { type: "success" });
-    } catch (error: any) {
-      console.error("Error exporting PDF:", error);
-      notify(`Erreur d'export: ${error.message}`, { type: "error" });
-    } finally {
-      setExportingPdf(false);
-    }
-  };
-
-  // Refresh handler
-  const handleRefreshData = async () => {
-    try {
-      setRefreshing(true);
-      await loadData();
-      notify("Données actualisées", { type: "success" });
-    } catch (error: any) {
-      console.error("Error refreshing data:", error);
-      notify(`Erreur: ${error.message}`, { type: "error" });
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  // Toggle employee visibility
-  const handleToggleEmployeeVisibility = async (employeeId: number) => {
-    try {
-      setTogglingVisibility(employeeId);
-      const isCurrentlyHidden = hiddenEmployees.has(employeeId);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/employee/${employeeId}/visibility`,
-        {
-          method: "POST",
-          body: JSON.stringify({ hidden: !isCurrentlyHidden }),
-        },
-      );
-
-      if (!response.ok) throw new Error("Échec du changement de visibilité");
-
-      setHiddenEmployees((prev) => {
-        const newSet = new Set(prev);
-        if (isCurrentlyHidden) newSet.delete(employeeId);
-        else newSet.add(employeeId);
-        return newSet;
-      });
-
-      notify(isCurrentlyHidden ? "Employé affiché" : "Employé masqué", {
-        type: "info",
-      });
-    } catch (error: any) {
-      console.error("Error toggling visibility:", error);
-      notify(`Erreur: ${error.message}`, { type: "error" });
-    } finally {
-      setTogglingVisibility(null);
-    }
-  };
-
-  // Send planning email
-  const handleSendPlanningEmail = async (
-    employeeId: number,
-    employeeName: string,
-  ) => {
-    try {
-      setSendingEmail(employeeId);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/send-employee-planning/${employeeId}`,
-        { method: "POST" },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Échec de l'envoi");
-      }
-
-      const result = await response.json();
-      notify(`Planning envoyé à ${result.email}`, { type: "success" });
-    } catch (error: any) {
-      console.error("Error sending planning email:", error);
-      notify(`Erreur: ${error.message}`, { type: "error" });
-    } finally {
-      setSendingEmail(null);
-    }
-  };
-
-  // Create shift type
-  const calculateWorkedHours = (
-    startTime: string,
-    endTime: string,
-    breakMinutes: number,
-  ) => {
-    if (!startTime || !endTime) return null;
-    const [startHour, startMin] = startTime.split(":").map(Number);
-    const [endHour, endMin] = endTime.split(":").map(Number);
-    const startMinutes = startHour * 60 + startMin;
-    let endMinutes = endHour * 60 + endMin;
-    if (endMinutes <= startMinutes) endMinutes += 24 * 60;
-    const totalMinutes = endMinutes - startMinutes;
-    const workedHours = (totalMinutes - breakMinutes) / 60;
-    return Math.round(workedHours * 10) / 10;
-  };
-
-  const handleCreateShift = async () => {
-    if (
-      !newShift.code ||
-      !newShift.name ||
-      !newShift.start_time ||
-      !newShift.end_time
-    ) {
-      setShiftValidationError(
-        "Tous les champs obligatoires doivent être remplis",
-      );
-      return;
-    }
-
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/shift-types`,
-        {
-          method: "POST",
-          body: JSON.stringify({ ...newShift, is_active: true }),
-        },
-      );
-
-      if (!response.ok) throw new Error("Failed to create shift");
-
-      notify("Shift créé avec succès!", { type: "success" });
-      setCreateShiftDialog(false);
-      setShiftValidationError("");
-      setNewShift({
-        code: "",
-        name: "",
-        start_time: "",
-        end_time: "",
-        break_minutes: 0,
-        hours: 8,
-        shift_category: "MORNING",
-        color_code: "#4A90E2",
-      });
-      loadData();
-    } catch (error) {
-      console.error("Error creating shift:", error);
-      notify("Erreur lors de la création", { type: "error" });
-    }
-  };
-
-  // Generate row data from calendar
-  const rowData = useMemo(() => {
-    if (!calendarData?.employees) return [];
-
-    let filteredEmployees = calendarData.employees;
-
-    // Apply filters
-    filteredEmployees = filteredEmployees.filter((employee: any) => {
-      if (
-        filterVisibility === "visible" &&
-        hiddenEmployees.has(employee.employee_id)
-      )
-        return false;
-      if (
-        filterVisibility === "hidden" &&
-        !hiddenEmployees.has(employee.employee_id)
-      )
-        return false;
-      if (
-        filterJobPositions.length > 0 &&
-        !filterJobPositions.includes(employee.job_position)
-      )
-        return false;
-      if (
-        filterJobTypes.length > 0 &&
-        !filterJobTypes.includes(employee.job_type)
-      )
-        return false;
-      if (filterHoursStatus !== "all") {
-        const { total: empTotalHours } = computeTotalHours(employee.shifts);
-        const maxHours = employee.max_monthly_hours || 168;
-        const utilization = maxHours > 0 ? (empTotalHours / maxHours) * 100 : 0;
-        const isOverLimit = empTotalHours > maxHours;
-        if (filterHoursStatus === "over_limit" && !isOverLimit) return false;
-        if (filterHoursStatus === "under_50" && utilization >= 50) return false;
-        if (filterHoursStatus === "ok" && (isOverLimit || utilization < 50))
-          return false;
-      }
-      if (filterNameSearch.trim()) {
-        const search = filterNameSearch.toLowerCase().trim();
-        const matchesName = employee.name?.toLowerCase().includes(search);
-        const matchesAbbr = employee.abbreviation
-          ?.toLowerCase()
-          .includes(search);
-        if (!matchesName && !matchesAbbr) return false;
-      }
-      return true;
+    const dataProvider = useDataProvider();
+    const notify = useNotify();
+    const refresh = useRefresh();
+
+    // Data states
+    const [loading, setLoading] = useState(true);
+    const [calendarData, setCalendarData] = useState<any>(null);
+    const [shiftTypes, setShiftTypes] = useState<any[]>([]);
+    const [gridApi, setGridApi] = useState<any>(null);
+
+    // Dialog states
+    const [templateDialog, setTemplateDialog] = useState(false);
+    const [optimizeDialog, setOptimizeDialog] = useState(false);
+    const [createShiftDialog, setCreateShiftDialog] = useState(false);
+    const [csvImportDialog, setCsvImportDialog] = useState(false);
+    const [analysisDialog, setAnalysisDialog] = useState(false);
+    const [validationDialog, setValidationDialog] = useState(false);
+    const [dayDetailView, setDayDetailView] = useState<{ day: number; date: string } | null>(null);
+    const [aiChatOpen, setAiChatOpen] = useState(false);
+
+    // Action states
+    const [generating, setGenerating] = useState(false);
+    const [optimizing, setOptimizing] = useState(false);
+    const [clearing, setClearing] = useState(false);
+    const [importing, setImporting] = useState(false);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [validating, setValidating] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
+    // Form/data states
+    const [selectedAlgorithm, setSelectedAlgorithm] = useState<'CP-SAT' | 'GA' | 'HYBRID'>('CP-SAT');
+    const [csvFile, setCsvFile] = useState<File | null>(null);
+    const [analysisData, setAnalysisData] = useState<any>(null);
+    const [validationResults, setValidationResults] = useState<any>(null);
+    const [optimizerFailureMessage, setOptimizerFailureMessage] = useState<string | undefined>(undefined);
+    const [expandedValidationRows, setExpandedValidationRows] = useState<Set<number>>(new Set());
+
+    // Batch optimization states
+    const [batchDialog, setBatchDialog] = useState(false);
+    const [batchCompareDialog, setBatchCompareDialog] = useState(false);
+    const [batchPreset, setBatchPreset] = useState<'QUICK' | 'STANDARD' | 'EXHAUSTIVE'>('QUICK');
+    const [batchStarting, setBatchStarting] = useState(false);
+    const [batchRuns, setBatchRuns] = useState<any[]>([]);
+    const [activeBatchRun, setActiveBatchRun] = useState<any>(null);
+    const [batchTopTrials, setBatchTopTrials] = useState<any[]>([]);
+    const [batchPreflight, setBatchPreflight] = useState<any | null>(null);
+    const [batchPreflightLoading, setBatchPreflightLoading] = useState(false);
+
+    // Rules & Audit dialog
+    const [rulesDialog, setRulesDialog] = useState(false);
+    const [rulesTab, setRulesTab] = useState<'catalogue' | 'audit'>('catalogue');
+    const [rulesCatalogue, setRulesCatalogue] = useState<any[] | null>(null);
+    const [rulesCatalogueLoading, setRulesCatalogueLoading] = useState(false);
+    const [auditResult, setAuditResult] = useState<any | null>(null);
+    const [auditLoading, setAuditLoading] = useState(false);
+    // Extra-employees dialog
+    const [extraEmpDialog, setExtraEmpDialog] = useState(false);
+    const [extraEmpList, setExtraEmpList] = useState<any[]>([]);
+    const [availableEmpList, setAvailableEmpList] = useState<any[]>([]);
+    const [extraEmpLoading, setExtraEmpLoading] = useState(false);
+    const [extraEmpSelected, setExtraEmpSelected] = useState<number[]>([]);
+    const [extraEmpSubmitting, setExtraEmpSubmitting] = useState(false);
+    const [batchPolling, setBatchPolling] = useState(false);
+    const [applyingTrial, setApplyingTrial] = useState<number | null>(null);
+
+    // New shift form
+    const [newShift, setNewShift] = useState({
+        code: '', name: '', start_time: '', end_time: '',
+        break_minutes: 0, hours: 8, shift_category: 'MORNING', color_code: '#4A90E2'
     });
+    const [shiftValidationError, setShiftValidationError] = useState<string>('');
 
-    return filteredEmployees.map((emp: any) => {
-      // Calculate total hours from shifts
-      // Exclude OFF category and explicit non-work codes (DES*, REPOS).
-      // LEAVE (CP, CONG) still counts as paid hours.
-      const { total: calculatedTotalHours, breakdown: hoursBreakdown } =
-        computeTotalHours(emp.shifts);
+    // Filter states
+    const [filterVisibility, setFilterVisibility] = useState<'all' | 'visible' | 'hidden'>('all');
+    const [filterJobPositions, setFilterJobPositions] = useState<string[]>([]);
+    const [filterJobTypes, setFilterJobTypes] = useState<string[]>([]);
+    const [filterHoursStatus, setFilterHoursStatus] = useState<'all' | 'over_limit' | 'under_50' | 'ok'>('all');
+    const [filterNameSearch, setFilterNameSearch] = useState('');
+    const [hiddenEmployees, setHiddenEmployees] = useState<Set<number>>(new Set());
+    const [togglingVisibility, setTogglingVisibility] = useState<number | null>(null);
+    const [sendingEmail, setSendingEmail] = useState<number | null>(null);
 
-      const row: any = {
-        employee_id: emp.employee_id,
-        employee_name: emp.name,
-        employee_abbr: emp.abbreviation,
-        job_position: emp.job_position,
-        job_type: emp.job_type,
-        avatar_url: emp.avatar_url,
-        color_cell: emp.color_cell,
-        color_text: emp.color_text,
-        max_monthly_hours: emp.max_monthly_hours || 168,
-        hours_carryover: emp.hours_carryover || 0,
-        adjusted_max_monthly_hours:
-          emp.adjusted_max_monthly_hours || emp.max_monthly_hours || 168,
-        daily_hours: emp.daily_hours || 8,
-        hours_exceeded: calculatedTotalHours > (emp.max_monthly_hours || 168),
-        hours_over_limit: Math.max(
-          0,
-          calculatedTotalHours - (emp.max_monthly_hours || 168),
-        ),
-        consecutive_days_violation: emp.consecutive_days_violation,
-        max_consecutive_days: emp.max_consecutive_days,
-        evening_to_morning_violation: emp.evening_to_morning_violation,
-        evening_to_morning_violations: emp.evening_to_morning_violations || [],
-        is_inactive: emp.is_inactive || false,
-        is_hidden: hiddenEmployees.has(emp.employee_id),
-        total_hours: calculatedTotalHours, // Use calculated instead of backend value
-        hours_breakdown: hoursBreakdown, // For debug detail panel
-        shifts: emp.shifts || {},
-      };
-
-      // Add shift data for each day
-      if (emp.shifts) {
-        Object.entries(emp.shifts).forEach(([day, shift]: [string, any]) => {
-          row[`day_${day}`] = shift?.shift_code || "";
-          row[`day_${day}_color`] = shift?.color || "";
-          row[`day_${day}_hours`] = shift?.hours || 0;
-          row[`day_${day}_source`] = shift?.source || "";
-          // Optimizer diff tracking
-          if (shift?.is_modified_from_optimizer) {
-            row[`day_${day}_optimizer_original`] = shift.optimizer_original;
-          }
-        });
-      }
-
-      // Add previous week shifts (read-only context)
-      const previous_week = calendarData.previous_week;
-      if (previous_week?.shifts && previous_week.shifts[emp.employee_id]) {
-        Object.entries(previous_week.shifts[emp.employee_id]).forEach(
-          ([day, shift]: [string, any]) => {
-            row[`prev_day_${day}`] = shift || null;
-          },
-        );
-      }
-
-      return row;
-    });
-  }, [
-    calendarData,
-    hiddenEmployees,
-    filterVisibility,
-    filterJobPositions,
-    filterJobTypes,
-    filterHoursStatus,
-    filterNameSearch,
-  ]);
-
-  // State for editing shift - using dialog approach for reliability
-  const [editDialog, setEditDialog] = useState<{
-    open: boolean;
-    employeeId: number;
-    employeeName: string;
-    day: number;
-    currentShift: string;
-  } | null>(null);
-  const [editingShiftValue, setEditingShiftValue] = useState<string>("");
-  const [editComment, setEditComment] = useState<string>("");
-  const [editRequestedBy, setEditRequestedBy] = useState<
-    "EMPLOYEE" | "EMPLOYER" | "OTHER"
-  >("EMPLOYER");
-
-  // State for history popover
-  const [historyPopover, setHistoryPopover] = useState<{
-    anchorEl: HTMLElement | null;
-    employeeId: number;
-    employeeName: string;
-    date: string;
-  } | null>(null);
-
-  // Set of cells that have audit history (format: "employeeId-YYYY-MM-DD")
-  const [cellsWithHistory, setCellsWithHistory] = useState<Set<string>>(
-    new Set(),
-  );
-
-  // Force AG Grid to refresh cells when cellsWithHistory is populated
-  useEffect(() => {
-    if (gridApi && cellsWithHistory.size > 0) {
-      gridApi.refreshCells({ force: true });
-    }
-  }, [gridApi, cellsWithHistory]);
-
-  // Handle shift delete
-  const handleShiftDelete = async (
-    employeeId: number,
-    day: number,
-    comment?: string,
-    requestedBy?: string,
-  ) => {
-    const isPublished = calendarData?.planning?.status === "PUBLISHED";
-
-    // Require comment in PUBLISHED mode
-    if (isPublished && !comment?.trim()) {
-      notify("Un commentaire est requis pour modifier un planning publié", {
-        type: "warning",
-      });
-      return;
-    }
-
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const date = `${calendarData.planning.year}-${String(calendarData.planning.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-      // Include audit params in query string for DELETE
-      const params = new URLSearchParams();
-      if (comment) params.append("change_comment", comment);
-      if (requestedBy) params.append("requested_by", requestedBy);
-      const queryString = params.toString() ? `?${params.toString()}` : "";
-
-      const response = await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/assignments/${date}/${employeeId}${queryString}`,
-        { method: "DELETE" },
-      );
-      if (!response.ok) throw new Error("Failed to delete");
-
-      // Update local state instead of full reload
-      updateLocalShift(employeeId, day, null, null);
-
-      // Mark cell as having history if published
-      if (isPublished) {
-        setCellsWithHistory(
-          (prev) => new Set([...prev, `${employeeId}-${date}`]),
-        );
-      }
-
-      notify("Affectation supprimée", { type: "success" });
-    } catch (error) {
-      console.error("Error deleting shift:", error);
-      notify("Erreur lors de la suppression", { type: "error" });
-    }
-  };
-
-  // Handle shift save from edit mode
-  const handleShiftSave = async (
-    employeeId: number,
-    day: number,
-    shiftCode: string,
-    comment?: string,
-    requestedBy?: string,
-  ) => {
-    if (!shiftCode) return;
-
-    const isPublished = calendarData?.planning?.status === "PUBLISHED";
-
-    // Require comment in PUBLISHED mode
-    if (isPublished && !comment?.trim()) {
-      notify("Un commentaire est requis pour modifier un planning publié", {
-        type: "warning",
-      });
-      return;
-    }
-
-    try {
-      const shiftType = shiftTypes.find((st) => st.code === shiftCode);
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const date = `${calendarData.planning.year}-${String(calendarData.planning.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-      await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/assignments`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            employee_id: employeeId,
-            date: date,
-            shift_type_id: shiftType?.id || null,
-            shift_code: shiftCode,
-            hours: shiftType?.hours || 0,
-            source: "MANUAL",
-            // Audit fields for PUBLISHED mode
-            change_comment: comment || null,
-            requested_by: requestedBy || null,
-          }),
-        },
-      );
-
-      // Update local state instead of full reload
-      updateLocalShift(employeeId, day, shiftCode, shiftType);
-
-      // Mark cell as having history if published
-      if (isPublished) {
-        setCellsWithHistory(
-          (prev) => new Set([...prev, `${employeeId}-${date}`]),
-        );
-      }
-
-      notify("Shift mis à jour", { type: "success" });
-    } catch (error) {
-      console.error("Error updating shift:", error);
-      notify("Erreur lors de la mise à jour", { type: "error" });
-    }
-  };
-
-  // Handle drop
-  const handleShiftDrop = async (
-    employeeId: number,
-    day: number,
-    dragData: any,
-  ) => {
-    const isPublished = calendarData?.planning?.status === "PUBLISHED";
-
-    // In PUBLISHED mode, open edit dialog to require comment
-    if (isPublished) {
-      const employee = calendarData?.employees?.find(
-        (e: any) => e.employee_id === employeeId,
-      );
-      setEditingShiftValue(dragData.shift_code);
-      setEditComment("");
-      setEditRequestedBy("EMPLOYER");
-      setEditDialog({
-        open: true,
-        employeeId,
-        employeeName: employee?.name || "Employé",
-        day,
-        currentShift: "", // It's a new assignment from drag
-      });
-      notify("Veuillez ajouter un commentaire pour ce changement", {
-        type: "info",
-      });
-      return;
-    }
-
-    // In DRAFT mode, directly save
-    try {
-      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-      const date = `${calendarData.planning.year}-${String(calendarData.planning.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-      await authenticatedFetch(
-        `${apiUrl}/planning/monthly-planning/${planningId}/assignments`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            employee_id: employeeId,
-            date: date,
-            shift_type_id: dragData.shift_type_id,
-            shift_code: dragData.shift_code,
-            hours: dragData.hours,
-            source: "MANUAL",
-          }),
-        },
-      );
-
-      // Update local state instead of full reload
-      const shiftType = shiftTypes.find(
-        (st) => st.code === dragData.shift_code,
-      );
-      updateLocalShift(employeeId, day, dragData.shift_code, {
-        ...shiftType,
-        color_code: dragData.color || shiftType?.color_code,
-        hours: dragData.hours,
-      });
-
-      notify("✅ Shift copié", { type: "success" });
-    } catch (error) {
-      console.error("Error dropping shift:", error);
-      notify("Erreur lors de la copie", { type: "error" });
-    }
-  };
-
-  // Shift cell renderer with history icon and drag-drop
-  const ShiftCellRenderer = useCallback(
-    (params: any) => {
-      const shiftCode = params.value;
-      const field = params.colDef.field;
-      const day = parseInt(field.replace("day_", ""));
-      const employeeId = params.data.employee_id;
-      const employeeName = params.data.employee_name;
-      const colorField = field + "_color";
-      const sourceField = field + "_source";
-      const hoursField = field + "_hours";
-      const optimizerOriginalField = field + "_optimizer_original";
-      const color = params.data[colorField];
-      const source = params.data[sourceField];
-      const hours = params.data[hoursField] || 0;
-      const optimizerOriginal = params.data[optimizerOriginalField];
-      const sourceInfo = getSourceInfo(source);
-
-      const status = calendarData?.planning?.status;
-      const isEditable = status !== "LOCKED";
-      const isValidated = status && status !== "DRAFT";
-
-      // Format date for history
-      const dateStr = `${calendarData?.planning?.year}-${String(calendarData?.planning?.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-      // Check if this cell has history
-      const historyKey = `${employeeId}-${dateStr}`;
-      const hasHistory = cellsWithHistory.has(historyKey);
-
-      // Handle history icon click
-      const handleHistoryClick = (e: React.MouseEvent<HTMLElement>) => {
-        e.stopPropagation();
-        setHistoryPopover({
-          anchorEl: e.currentTarget,
-          employeeId,
-          employeeName,
-          date: dateStr,
-        });
-      };
-
-      // Handle delete
-      const handleDelete = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        // Open edit dialog for deletion (with comment if published)
-        setEditingShiftValue("");
-        setEditComment("");
-        setEditRequestedBy("EMPLOYER");
-        setEditDialog({
-          open: true,
-          employeeId,
-          employeeName,
-          day,
-          currentShift: shiftCode || "",
-        });
-      };
-
-      // Drag start handler
-      const handleDragStart = (e: React.DragEvent) => {
-        if (!shiftCode || !isEditable) {
-          e.preventDefault();
-          return;
-        }
-        const shiftType = shiftTypes.find((st) => st.code === shiftCode);
-        const dragData = {
-          shift_type_id: shiftType?.id,
-          shift_code: shiftCode,
-          hours: hours,
-          color: color,
-          source_employee_id: employeeId,
-          source_day: day,
-        };
-        e.dataTransfer.setData("text/plain", JSON.stringify(dragData));
-        e.dataTransfer.effectAllowed = "copy";
-      };
-
-      // Drop handler
-      const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        (e.currentTarget as HTMLElement).classList.remove("ag-cell-drag-over");
-
-        if (!isEditable) return;
-
+    // Hours-calc debug detail (hidden — enabled via ?debug=hours URL param or
+    // localStorage 'planning.debugHours' = '1'). When enabled, a small bug icon
+    // appears on each employee row; clicking it shows the per-shift breakdown
+    // (code, category, hours, included/excluded reason).
+    const debugHoursEnabled = useMemo(() => {
         try {
-          const data = e.dataTransfer.getData("text/plain");
-          if (data) {
-            const dragData = JSON.parse(data);
-            handleShiftDrop(employeeId, day, dragData);
-          }
-        } catch (error) {
-          console.error("Error handling drop:", error);
+            if (typeof window === 'undefined') return false;
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('debug') === 'hours' || params.get('debug') === '1') return true;
+            return window.localStorage.getItem('planning.debugHours') === '1';
+        } catch {
+            return false;
         }
-      };
+    }, []);
+    const [debugHoursDialog, setDebugHoursDialog] = useState<{
+        employeeName: string;
+        totalHours: number;
+        maxMonthlyHours: number;
+        breakdown: ShiftBreakdownEntry[];
+    } | null>(null);
 
-      const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "copy";
-        (e.currentTarget as HTMLElement).classList.add("ag-cell-drag-over");
-      };
+    // Grouping state
+    const [groupBy, setGroupBy] = useState<'none' | 'job_position' | 'job_type' | 'alphabetical' | 'hours'>('none');
 
-      const handleDragLeave = (e: React.DragEvent) => {
-        (e.currentTarget as HTMLElement).classList.remove("ag-cell-drag-over");
-      };
+    // Load data
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
 
-      return (
-        <Box
-          sx={{
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 0.5,
-            cursor: isEditable ? "pointer" : "default",
-            "&:hover": isEditable
-              ? { backgroundColor: "rgba(0,0,0,0.04)" }
-              : {},
-          }}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          {shiftCode ? (
-            <>
-              <Tooltip
-                title={
-                  optimizerOriginal
-                    ? `${shiftCode} (${hours}h) — modifié de ${optimizerOriginal.shift_code} (${optimizerOriginal.hours}h) proposé par l'optimiseur`
-                    : `${shiftCode} (${hours}h)${source ? " - " + sourceInfo.label : ""} | Glisser pour copier`
-                }
-              >
-                <div
-                  draggable={isEditable}
-                  onDragStart={handleDragStart}
-                  style={{
-                    cursor: isEditable ? "grab" : "default",
-                    position: "relative",
-                  }}
-                >
-                  <Chip
-                    label={
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        {optimizerOriginal && (
-                          <span
-                            style={{
-                              textDecoration: "line-through",
-                              opacity: 0.5,
-                              fontSize: "0.55rem",
-                              marginRight: 1,
-                            }}
-                          >
-                            {optimizerOriginal.shift_code}
-                          </span>
-                        )}
-                        <span>{shiftCode}</span>
-                        {sourceInfo.icon && (
-                          <span style={{ fontSize: "0.65rem" }}>
-                            {sourceInfo.icon}
-                          </span>
-                        )}
-                      </Box>
+            // Load calendar data
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/calendar`);
+            const data = await response.json();
+            setCalendarData(data);
+
+            // Load shift types using dataProvider
+            const shiftsRes = await dataProvider.getList('planning/shift-types', {
+                pagination: { page: 1, perPage: 100 },
+                sort: { field: 'code', order: 'ASC' },
+                filter: { active_only: true },
+            });
+            setShiftTypes(shiftsRes.data);
+
+            // Load audit history to know which cells have changes (only for validated plannings)
+            if (data?.planning?.status && data.planning.status !== 'DRAFT') {
+                try {
+                    // Use direct fetch instead of dataProvider to avoid parameter issues
+                    const auditUrl = `${apiUrl}/planning/monthly-planning/${planningId}/audit-log`;
+                    const auditResponse = await authenticatedFetch(auditUrl);
+
+                    if (auditResponse.ok) {
+                        const auditRes = await auditResponse.json();
+
+                        if (auditRes?.changes && auditRes.changes.length > 0) {
+                            const cellsSet = new Set<string>();
+                            auditRes.changes.forEach((change: any) => {
+                                // Create key from employeeId and date
+                                const key = `${change.employee_id}-${change.date}`;
+                                cellsSet.add(key);
+                            });
+                            setCellsWithHistory(cellsSet);
+                        } else {
+                            setCellsWithHistory(new Set());
+                        }
+                    } else {
+                        console.warn('Audit API returned:', auditResponse.status);
+                        setCellsWithHistory(new Set());
                     }
-                    size="small"
-                    onDelete={isEditable ? handleDelete : undefined}
-                    deleteIcon={<CloseIcon style={{ fontSize: 12 }} />}
-                    sx={{
-                      backgroundColor: color || "#e0e0e0",
-                      color: "#000",
-                      fontWeight: "bold",
-                      fontSize: "0.65rem",
-                      height: 22,
-                      borderLeft: source
-                        ? `3px solid ${sourceInfo.borderColor}`
-                        : undefined,
-                      // Orange dashed bottom border for optimizer-modified cells
-                      borderBottom: optimizerOriginal
-                        ? "2px dashed #FF9800"
-                        : undefined,
-                      "& .MuiChip-deleteIcon": { color: "rgba(0,0,0,0.5)" },
-                    }}
-                  />
-                </div>
-              </Tooltip>
-              {hasHistory && (
-                <Tooltip title="Voir l'historique des modifications">
-                  <IconButton
-                    size="small"
-                    onClick={handleHistoryClick}
-                    sx={{
-                      p: 0.25,
-                      opacity: 0.7,
-                      "&:hover": { opacity: 1 },
-                      color: "info.main",
-                    }}
-                  >
-                    <HistoryIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </>
-          ) : (
-            <>
-              <Typography
-                variant="caption"
-                color="text.disabled"
-                sx={{ fontSize: "1rem" }}
-              >
-                {isEditable ? "+" : ""}
-              </Typography>
-              {hasHistory && (
-                <Tooltip title="Voir l'historique des modifications">
-                  <IconButton
-                    size="small"
-                    onClick={handleHistoryClick}
-                    sx={{
-                      p: 0.25,
-                      opacity: 0.5,
-                      "&:hover": { opacity: 1 },
-                      color: "info.main",
-                    }}
-                  >
-                    <HistoryIcon sx={{ fontSize: 12 }} />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </>
-          )}
-        </Box>
-      );
-    },
-    [
-      calendarData,
-      shiftTypes,
-      cellsWithHistory,
-      handleShiftDrop,
-      setEditDialog,
-      setEditingShiftValue,
-      setEditComment,
-      setEditRequestedBy,
-      setHistoryPopover,
-    ],
-  );
-
-  // Handle AG Grid cell click - opens edit dialog
-  const onCellClicked = useCallback(
-    (event: any) => {
-      const field = event.colDef.field;
-      if (!field?.startsWith("day_")) return; // Only handle day columns
-
-      const status = calendarData?.planning?.status;
-      if (status === "LOCKED") {
-        notify("Planning verrouillé - modification impossible", {
-          type: "warning",
-        });
-        return;
-      }
-
-      const day = parseInt(field.replace("day_", ""));
-      const employeeId = event.data.employee_id;
-      const employeeName = event.data.employee_name;
-      const currentShift = event.value || "";
-
-      setEditingShiftValue(currentShift);
-      setEditComment("");
-      setEditRequestedBy("EMPLOYER");
-      setEditDialog({
-        open: true,
-        employeeId,
-        employeeName,
-        day,
-        currentShift,
-      });
-    },
-    [calendarData, notify],
-  );
-
-  // Employee cell renderer
-  const EmployeeCellRenderer = useCallback(
-    (params: any) => {
-      const data = params.data;
-      const {
-        employee_name,
-        employee_abbr,
-        job_position,
-        avatar_url,
-        color_cell,
-        color_text,
-        hours_exceeded,
-        consecutive_days_violation,
-        max_consecutive_days,
-        evening_to_morning_violation,
-        evening_to_morning_violations,
-        is_hidden,
-        is_inactive,
-        employee_id,
-      } = data;
-      // Ensure numeric values for toFixed()
-      const total_hours =
-        typeof data.total_hours === "number"
-          ? data.total_hours
-          : parseFloat(data.total_hours) || 0;
-      const max_monthly_hours =
-        typeof data.max_monthly_hours === "number"
-          ? data.max_monthly_hours
-          : parseFloat(data.max_monthly_hours) || 168;
-      const hours_carryover =
-        typeof data.hours_carryover === "number"
-          ? data.hours_carryover
-          : parseFloat(data.hours_carryover) || 0;
-      const adjusted_max_monthly_hours =
-        typeof data.adjusted_max_monthly_hours === "number"
-          ? data.adjusted_max_monthly_hours
-          : parseFloat(data.adjusted_max_monthly_hours) || max_monthly_hours;
-      const hours_over_limit =
-        typeof data.hours_over_limit === "number"
-          ? data.hours_over_limit
-          : parseFloat(data.hours_over_limit) || 0;
-      const hoursRatio =
-        max_monthly_hours > 0 ? total_hours / max_monthly_hours : 0;
-      const hasViolations =
-        hours_exceeded ||
-        consecutive_days_violation ||
-        evening_to_morning_violation;
-
-      return (
-        <Box
-          sx={{
-            py: 0.5,
-            opacity: is_hidden ? 0.4 : is_inactive ? 0.6 : 1,
-            filter: is_hidden ? "grayscale(80%)" : "none",
-            backgroundColor: is_inactive ? "rgba(0,0,0,0.05)" : "transparent",
-          }}
-        >
-          <Box display="flex" alignItems="flex-start" gap={0.5}>
-            {/* Action buttons */}
-            <Box display="flex" flexDirection="column" gap={0.15}>
-              <Tooltip
-                title={is_hidden ? "Afficher l'employé" : "Masquer l'employé"}
-              >
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleEmployeeVisibility(employee_id);
-                  }}
-                  disabled={togglingVisibility === employee_id}
-                  sx={{ padding: 0.15 }}
-                >
-                  {togglingVisibility === employee_id ? (
-                    <CircularProgress size={12} />
-                  ) : is_hidden ? (
-                    <VisibilityOffIcon sx={{ fontSize: 12 }} color="disabled" />
-                  ) : (
-                    <VisibilityIcon sx={{ fontSize: 12 }} />
-                  )}
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Envoyer planning par email">
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSendPlanningEmail(employee_id, employee_name);
-                  }}
-                  disabled={sendingEmail === employee_id}
-                  sx={{ padding: 0.15 }}
-                  color="primary"
-                >
-                  {sendingEmail === employee_id ? (
-                    <CircularProgress size={12} />
-                  ) : (
-                    <EmailIcon sx={{ fontSize: 12 }} />
-                  )}
-                </IconButton>
-              </Tooltip>
-              {debugHoursEnabled && (
-                <Tooltip title="Debug calcul heures (shifts inclus / exclus)">
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDebugHoursDialog({
-                        employeeName: `${employee_abbr} — ${employee_name}`,
-                        totalHours: total_hours,
-                        maxMonthlyHours: max_monthly_hours,
-                        breakdown: data.hours_breakdown || [],
-                      });
-                    }}
-                    sx={{ padding: 0.15 }}
-                    color="warning"
-                  >
-                    <AssessmentIcon sx={{ fontSize: 12 }} />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-
-            {/* Avatar */}
-            <Avatar
-              src={avatar_url}
-              sx={{
-                width: 26,
-                height: 26,
-                bgcolor: color_cell || "#FF0000",
-                color: color_text || "#FFFFFF",
-                fontSize: "0.65rem",
-                fontWeight: "bold",
-                flexShrink: 0,
-              }}
-            >
-              {!avatar_url && employee_abbr}
-            </Avatar>
-
-            {/* Info */}
-            <Box minWidth={0} flex={1}>
-              <Box display="flex" alignItems="center" gap={0.5}>
-                <Typography
-                  variant="body2"
-                  fontWeight="600"
-                  sx={{ lineHeight: 1.1, fontSize: "0.8rem" }}
-                >
-                  {employee_abbr}
-                </Typography>
-                <Chip
-                  label={
-                    job_position === "INFIRMIER"
-                      ? "Inf"
-                      : job_position === "AIDE_SOIGNANT"
-                        ? "AS"
-                        : "Stg"
-                  }
-                  size="small"
-                  color={
-                    job_position === "INFIRMIER"
-                      ? "primary"
-                      : job_position === "AIDE_SOIGNANT"
-                        ? "secondary"
-                        : "default"
-                  }
-                  sx={{
-                    fontSize: "0.5rem",
-                    height: 14,
-                    "& .MuiChip-label": { px: 0.5 },
-                  }}
-                />
-              </Box>
-              <Tooltip title={employee_name}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  noWrap
-                  sx={{
-                    display: "block",
-                    maxWidth: 110,
-                    fontSize: "0.65rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {employee_name}
-                </Typography>
-              </Tooltip>
-
-              {/* Hours display */}
-              <Tooltip
-                title={
-                  hours_carryover !== 0
-                    ? `Plafond mensuel: ${max_monthly_hours.toFixed(1)}h · Report mois précédent: ${hours_carryover > 0 ? "+" : ""}${hours_carryover.toFixed(1)}h (informatif, non contraignant)`
-                    : `Plafond mensuel: ${max_monthly_hours.toFixed(1)}h`
+                } catch (auditError) {
+                    console.warn('Could not load audit history:', auditError);
+                    // Don't fail the whole load if audit fails
+                    setCellsWithHistory(new Set());
                 }
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    display: "block",
-                    fontSize: "0.65rem",
-                    lineHeight: 1.2,
-                    color: hours_exceeded
-                      ? "error.main"
-                      : hoursRatio < 0.5
-                        ? "warning.main"
-                        : "text.secondary",
-                    fontWeight:
-                      hours_exceeded || hoursRatio < 0.5 ? "bold" : "normal",
-                  }}
-                >
-                  {total_hours?.toFixed(1) || 0}h /{" "}
-                  {max_monthly_hours?.toFixed(1) || 0}h
-                  {hours_carryover !== 0 && (
-                    <span style={{ color: "#1976d2", fontWeight: "normal" }}>
-                      {" "}
-                      ({hours_carryover > 0 ? "+" : ""}
-                      {hours_carryover.toFixed(1)}h report)
-                    </span>
-                  )}
-                  {hours_exceeded && hours_over_limit > 0 && (
-                    <span style={{ color: "#d32f2f" }}>
-                      {" "}
-                      (+{hours_over_limit?.toFixed(1)}h)
-                    </span>
-                  )}
-                </Typography>
-              </Tooltip>
+            } else {
+                setCellsWithHistory(new Set());
+            }
 
-              {/* Warning chips for violations */}
-              {hasViolations && (
-                <Box display="flex" flexWrap="wrap" gap={0.25} mt={0.25}>
-                  {hours_exceeded && (
-                    <Tooltip
-                      title={`Dépassement de ${hours_over_limit?.toFixed(1)}h sur le maximum mensuel`}
-                    >
-                      <Chip
-                        label={`⚠️ +${hours_over_limit?.toFixed(1)}h`}
-                        size="small"
-                        color="error"
-                        sx={{
-                          fontSize: "0.5rem",
-                          height: 14,
-                          "& .MuiChip-label": { px: 0.5 },
-                        }}
-                      />
-                    </Tooltip>
-                  )}
-                  {consecutive_days_violation && (
-                    <Tooltip
-                      title={`${max_consecutive_days} jours consécutifs - Loi: max 6 jours (44h repos)`}
-                    >
-                      <Chip
-                        label={`🚨 ${max_consecutive_days}j consec.`}
-                        size="small"
-                        color="warning"
-                        sx={{
-                          fontSize: "0.5rem",
-                          height: 14,
-                          "& .MuiChip-label": { px: 0.5 },
-                        }}
-                      />
-                    </Tooltip>
-                  )}
-                  {evening_to_morning_violation && (
-                    <Tooltip
-                      title={`Soir→Matin interdit: ${evening_to_morning_violations?.length || 1} violation(s)`}
-                    >
-                      <Chip
-                        label={`🔴 S→M (${evening_to_morning_violations?.length || 1})`}
-                        size="small"
-                        color="error"
-                        sx={{
-                          fontSize: "0.5rem",
-                          height: 14,
-                          "& .MuiChip-label": { px: 0.5 },
-                        }}
-                      />
-                    </Tooltip>
-                  )}
-                </Box>
-              )}
+        } catch (error) {
+            console.error('Error loading data:', error);
+            notify('Erreur lors du chargement des données', { type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    }, [planningId, dataProvider, notify]);
 
-              {/* Inactive indicator */}
-              {is_inactive && (
-                <Chip
-                  label="Absent"
-                  size="small"
-                  sx={{ fontSize: "0.5rem", height: 14, mt: 0.25 }}
-                />
-              )}
-            </Box>
-          </Box>
-        </Box>
-      );
-    },
-    [
-      togglingVisibility,
-      sendingEmail,
-      handleToggleEmployeeVisibility,
-      handleSendPlanningEmail,
-      debugHoursEnabled,
-    ],
-  );
+    useEffect(() => {
+        loadData();
+        loadBatchRuns();
+    }, [loadData]);
 
-  // Custom header component for day columns
-  const DayHeaderComponent = useCallback(
-    (props: any) => {
-      const { day, weekday, holiday, isToday, staffCount, planning } = props;
+    // Load hidden employees
+    useEffect(() => {
+        const loadHiddenEmployees = async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/hidden-employees`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setHiddenEmployees(new Set(data.hidden_employee_ids || []));
+                }
+            } catch (error) {
+                console.error('Error loading hidden employees:', error);
+            }
+        };
+        loadHiddenEmployees();
+    }, [planningId]);
 
-      return (
-        <Box
-          sx={{
-            textAlign: "center",
-            py: 0.5,
-            cursor: "pointer",
-          }}
-          onClick={() =>
-            setDayDetailView({
-              day,
-              date: `${weekday} ${day} ${planning.month_name} ${planning.year}`,
+    // Helper function to update local state after shift change (avoids full reload)
+    const updateLocalShift = useCallback((employeeId: number, day: number, shiftCode: string | null, shiftType: any | null) => {
+        setCalendarData((prevData: any) => {
+            if (!prevData?.employees) return prevData;
+
+            const updatedEmployees = prevData.employees.map((emp: any) => {
+                if (emp.employee_id !== employeeId) return emp;
+
+                const updatedShifts = { ...emp.shifts };
+                const existingShift = updatedShifts[day];
+                if (shiftCode && shiftType) {
+                    const newShift: any = {
+                        shift_code: shiftCode,
+                        shift_category: shiftType.shift_category || 'OTHER',
+                        color: shiftType.color_code || '#ccc',
+                        hours: typeof shiftType.hours === 'number' ? shiftType.hours : parseFloat(shiftType.hours) || 0,
+                        source: 'MANUAL',
+                    };
+                    // Preserve optimizer origin for diff display
+                    if (existingShift?.optimizer_original) {
+                        newShift.optimizer_original = existingShift.optimizer_original;
+                        newShift.is_modified_from_optimizer = shiftCode !== existingShift.optimizer_original.shift_code;
+                    } else if (existingShift?.source === 'OPTIMIZER') {
+                        // First manual edit of an optimizer cell — capture the original
+                        newShift.optimizer_original = {
+                            shift_code: existingShift.shift_code,
+                            hours: existingShift.hours,
+                        };
+                        newShift.is_modified_from_optimizer = shiftCode !== existingShift.shift_code;
+                    }
+                    updatedShifts[day] = newShift;
+                } else {
+                    // Delete shift
+                    delete updatedShifts[day];
+                }
+
+                return {
+                    ...emp,
+                    shifts: updatedShifts,
+                };
+            });
+
+            return {
+                ...prevData,
+                employees: updatedEmployees,
+            };
+        });
+        // AG Grid with controlled rowData will auto-detect changes and re-render
+    }, []);
+
+    // Handle shift update (from AG Grid cell edit)
+    const handleShiftUpdate = useCallback(async (employeeId: number, day: number, shiftCode: string) => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const date = `${calendarData.planning.year}-${String(calendarData.planning.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            const shiftType = shiftTypes.find(st => st.code === shiftCode);
+
+            await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    employee_id: employeeId,
+                    date: date,
+                    shift_type_id: shiftType?.id || null,
+                    shift_code: shiftCode || null,
+                    hours: shiftType?.hours || 0,
+                    source: 'MANUAL',
+                }),
+            });
+
+            // Update local state instead of full reload
+            updateLocalShift(employeeId, day, shiftCode, shiftType);
+            notify('Shift mis à jour', { type: 'success' });
+        } catch (error) {
+            console.error('Error updating shift:', error);
+            notify('Erreur lors de la mise à jour', { type: 'error' });
+            loadData();
+        }
+    }, [calendarData, planningId, shiftTypes, notify, loadData, updateLocalShift]);
+
+    // Status change handler
+    const handleStatusChange = async (newStatus: string) => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: newStatus }),
+            });
+            notify(`Statut changé en ${newStatus === 'DRAFT' ? 'Brouillon' : newStatus === 'PUBLISHED' ? 'Publié' : 'Verrouillé'}`, { type: 'success' });
+            loadData();
+        } catch (error) {
+            console.error('Error updating status:', error);
+            notify('Erreur lors du changement de statut', { type: 'error' });
+        }
+    };
+
+    // Template generation
+    const handleGenerateTemplate = async (templateType: string) => {
+        try {
+            setGenerating(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/generate-template?template_type=${templateType}`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to generate template');
+            notify(`Planning ${templateType} généré avec succès!`, { type: 'success' });
+            setTemplateDialog(false);
+            loadData();
+            refresh();
+        } catch (error) {
+            console.error('Error generating template:', error);
+            notify('Erreur lors de la génération', { type: 'error' });
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    // Optimization
+    const handleOptimizePlanning = async () => {
+        try {
+            setOptimizing(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const timeLimit = selectedAlgorithm === 'HYBRID' ? 300 : 60;
+
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/optimize`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    min_daily_coverage: 4,
+                    morning_coverage_ratio: 0.63,
+                    time_limit_seconds: timeLimit,
+                    preserve_existing: false,
+                    algorithm: selectedAlgorithm
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Optimization failed');
+            }
+
+            const result = await response.json();
+            const algorithmBadge = result.algorithm === 'GA' ? ' 🧬 GA' : result.algorithm === 'HYBRID' ? ' 🔬 HYBRID' : ' 🤖 CP-SAT';
+
+            notify(`✅ ${result.message} (${result.assignments_created} affectations en ${result.optimization_time.toFixed(1)}s)${algorithmBadge}`, { type: 'success' });
+
+            if (result.ai_summary) {
+                setOptimizerFailureMessage(result.ai_summary);
+                setAiChatOpen(true);
+            }
+
+            setOptimizeDialog(false);
+            loadData();
+            refresh();
+        } catch (error: any) {
+            console.error('Error optimizing planning:', error);
+            notify(`❌ ${error.message}`, { type: 'error' });
+            setOptimizerFailureMessage(error.message);
+            setAiChatOpen(true);
+            setOptimizeDialog(false);
+        } finally {
+            setOptimizing(false);
+        }
+    };
+
+    // Clear optimizer shifts
+    const handleClearOptimizerShifts = async () => {
+        if (!window.confirm('Êtes-vous sûr de vouloir effacer tous les shifts générés par l\'optimiseur?')) return;
+
+        try {
+            setClearing(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await fetch(`${apiUrl}/planning/monthly-planning/${planningId}/clear-optimizer-shifts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Clear failed');
+            }
+
+            const result = await response.json();
+            notify(`✅ ${result.message}`, { type: 'success' });
+            loadData();
+            refresh();
+        } catch (error: any) {
+            console.error('Error clearing optimizer shifts:', error);
+            notify(`❌ ${error.message}`, { type: 'error' });
+        } finally {
+            setClearing(false);
+        }
+    };
+
+    // ============ Batch Optimization Handlers ============
+
+    const loadBatchRuns = async () => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize`);
+            if (response.ok) {
+                const data = await response.json();
+                setBatchRuns(data.runs || []);
+                // Check for active run
+                const active = (data.runs || []).find((r: any) => r.status === 'RUNNING' || r.status === 'PENDING');
+                if (active) {
+                    setActiveBatchRun(active);
+                    startBatchPolling(active.id);
+                }
+            }
+        } catch (e) {
+            console.error('Error loading batch runs:', e);
+        }
+    };
+
+    const startBatchPolling = (runId: number) => {
+        if (batchPolling) return;
+        setBatchPolling(true);
+        const interval = setInterval(async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${runId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setActiveBatchRun(data);
+                    setBatchTopTrials(data.top_trials || []);
+                    // Update in runs list
+                    setBatchRuns(prev => prev.map(r => r.id === data.id ? { ...r, ...data } : r));
+                    if (data.status === 'COMPLETED' || data.status === 'FAILED' || data.status === 'CANCELLED') {
+                        clearInterval(interval);
+                        setBatchPolling(false);
+                        if (data.status === 'COMPLETED') {
+                            notify(`Batch optimization terminée: ${data.completed_trials} essais, meilleur score: ${data.best_score?.toFixed(0)}`, { type: 'success' });
+                        } else if (data.status === 'FAILED') {
+                            notify(`Batch optimization échouée: ${data.error_message}`, { type: 'error' });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Polling error:', e);
+                clearInterval(interval);
+                setBatchPolling(false);
+            }
+        }, 10000); // Poll every 10s
+    };
+
+    // Lazy-load the rules catalogue the first time the Rules dialog
+    // opens (catalogue is global, no planning context).
+    useEffect(() => {
+        if (!rulesDialog || rulesCatalogue !== null) return;
+        let cancelled = false;
+        setRulesCatalogueLoading(true);
+        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+        authenticatedFetch(`${apiUrl}/planning/planning-rules`)
+            .then(async (r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
             })
-          }
-        >
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            gap={0.5}
-          >
-            <Typography variant="caption" sx={{ fontSize: "0.65rem" }}>
-              {weekday}
-            </Typography>
-            <ZoomInIcon sx={{ fontSize: 12, opacity: 0.6 }} />
-          </Box>
-          <Typography
-            variant="body2"
-            fontWeight="bold"
-            sx={{ fontSize: "0.8rem" }}
-          >
-            {day}
-            {holiday ? " 🇱🇺" : ""}
-          </Typography>
-          {holiday && (
-            <Typography
-              variant="caption"
-              sx={{ fontSize: "0.5rem", fontStyle: "italic", display: "block" }}
-            >
-              {holiday.substring(0, 10)}
-            </Typography>
-          )}
-          <Box sx={{ fontSize: "0.55rem", lineHeight: 1.1, mt: 0.25 }}>
-            <Typography
-              variant="caption"
-              sx={{
-                color: "primary.main",
-                fontWeight: "bold",
-                fontSize: "0.6rem",
-              }}
-            >
-              Total: {staffCount.total_soignant || 0}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                display: "block",
-                fontSize: "0.5rem",
-                color: "text.secondary",
-              }}
-            >
-              👨‍⚕️{staffCount.infirmier || 0} 🤝{staffCount.aide_soignant || 0} 🎓
-              {staffCount.stagiaire || 0}
-            </Typography>
-          </Box>
-        </Box>
-      );
-    },
-    [setDayDetailView],
-  );
+            .then((data) => {
+                if (!cancelled) setRulesCatalogue(data?.rules || []);
+            })
+            .catch((e) => {
+                if (!cancelled) {
+                    notify(`Catalogue indisponible : ${e.message}`, { type: 'warning' });
+                    setRulesCatalogue([]);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setRulesCatalogueLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [rulesDialog, rulesCatalogue, notify]);
 
-  // Column definitions
-  // Previous week cell renderer (read-only, grayed out)
-  const PrevWeekCellRenderer = useCallback((params: any) => {
-    const field = params.colDef.field;
-    const shiftData = params.data[field];
-    const shiftCode = shiftData?.shift_code || "";
-    const color = shiftData?.color || "#e0e0e0";
+    const runPlanningAudit = async () => {
+        if (!planningId) return;
+        setAuditLoading(true);
+        setAuditResult(null);
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const r = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/audit`,
+            );
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const data = await r.json();
+            setAuditResult(data);
+            const total = data?.summary?.total_violations ?? 0;
+            if (total === 0) {
+                notify('Audit OK : aucune violation détectée.', { type: 'success' });
+            } else {
+                notify(
+                    `Audit terminé : ${total} violation(s) détectée(s).`,
+                    { type: 'warning' },
+                );
+            }
+        } catch (e: any) {
+            notify(`Erreur audit : ${e.message}`, { type: 'error' });
+        } finally {
+            setAuditLoading(false);
+        }
+    };
 
-    if (!shiftCode) {
-      return (
-        <Box
-          sx={{
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: 0.5,
-          }}
-        >
-          <Typography variant="caption" color="text.disabled">
-            -
-          </Typography>
-        </Box>
-      );
+    // Load extras + available employees when the dialog opens.
+    const reloadExtraEmployees = useCallback(async () => {
+        if (!planningId) return;
+        setExtraEmpLoading(true);
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const [extraR, availR] = await Promise.all([
+                authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/extra-employees`),
+                authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/available-employees`),
+            ]);
+            if (!extraR.ok) throw new Error(`extras HTTP ${extraR.status}`);
+            if (!availR.ok) throw new Error(`available HTTP ${availR.status}`);
+            const extras = await extraR.json();
+            const avail = await availR.json();
+            setExtraEmpList(extras.extra_employees || []);
+            setAvailableEmpList(avail.available_employees || []);
+        } catch (e: any) {
+            notify(`Erreur chargement employés : ${e.message}`, { type: 'error' });
+        } finally {
+            setExtraEmpLoading(false);
+        }
+    }, [planningId, notify]);
+
+    useEffect(() => {
+        if (extraEmpDialog) {
+            setExtraEmpSelected([]);
+            reloadExtraEmployees();
+        }
+    }, [extraEmpDialog, reloadExtraEmployees]);
+
+    const submitExtraEmployees = async () => {
+        if (!planningId || extraEmpSelected.length === 0) return;
+        setExtraEmpSubmitting(true);
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const r = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/extra-employees`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employee_ids: extraEmpSelected }),
+                },
+            );
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                throw new Error(err.detail || `HTTP ${r.status}`);
+            }
+            const data = await r.json();
+            notify(
+                `${data.added.length} employé(s) ajouté(s)` +
+                    (data.skipped.length ? ` (${data.skipped.length} ignoré(s))` : ''),
+                { type: 'success' },
+            );
+            await reloadExtraEmployees();
+            setExtraEmpSelected([]);
+            handleRefreshData();
+        } catch (e: any) {
+            notify(`Erreur ajout : ${e.message}`, { type: 'error' });
+        } finally {
+            setExtraEmpSubmitting(false);
+        }
+    };
+
+    const removeExtraEmployee = async (employeeId: number) => {
+        if (!planningId) return;
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const r = await authenticatedFetch(
+                `${apiUrl}/planning/monthly-planning/${planningId}/extra-employees/${employeeId}`,
+                { method: 'DELETE' },
+            );
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                throw new Error(err.detail || `HTTP ${r.status}`);
+            }
+            notify('Employé retiré du planning.', { type: 'success' });
+            await reloadExtraEmployees();
+            handleRefreshData();
+        } catch (e: any) {
+            notify(`Erreur retrait : ${e.message}`, { type: 'error' });
+        }
+    };
+
+    // Fetch the preflight (eligible employees + rules) when the start
+    // dialog opens. Refresh every time it opens so a recent contract
+    // edit is reflected without a page reload.
+    useEffect(() => {
+        if (!batchDialog || !planningId) return;
+        let cancelled = false;
+        setBatchPreflightLoading(true);
+        setBatchPreflight(null);
+        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+        authenticatedFetch(
+            `${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize/preflight`,
+        )
+            .then(async (r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then((data) => {
+                if (!cancelled) setBatchPreflight(data);
+            })
+            .catch((e) => {
+                if (!cancelled) {
+                    notify(`Pré-vol indisponible : ${e.message}`, { type: 'warning' });
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setBatchPreflightLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [batchDialog, planningId, notify]);
+
+    const handleStartBatch = async () => {
+        try {
+            setBatchStarting(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/batch-optimize`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preset: batchPreset }),
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to start batch');
+            }
+            const result = await response.json();
+            notify(`${result.message}`, { type: 'success' });
+            setActiveBatchRun(result);
+            setBatchDialog(false);
+            startBatchPolling(result.id);
+            loadBatchRuns();
+        } catch (error: any) {
+            notify(`${error.message}`, { type: 'error' });
+        } finally {
+            setBatchStarting(false);
+        }
+    };
+
+    const handleCancelBatch = async (runId: number, force: boolean = false) => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const qs = force ? '?force=true' : '';
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/batch-optimize/${runId}/cancel${qs}`,
+                { method: 'POST' },
+            );
+            if (response.ok) {
+                const result = await response.json().catch(() => ({}));
+                if (force) {
+                    notify('Batch optimization annulée (force).', { type: 'info' });
+                    setActiveBatchRun(null);
+                    setBatchPolling(false);
+                } else {
+                    notify(
+                        result.message ??
+                            "Annulation demandée — le runner sortira proprement à la prochaine borne d'essai.",
+                        { type: 'info' },
+                    );
+                    // Keep polling so the UI shows the transition to CANCELLED.
+                }
+                loadBatchRuns();
+            }
+        } catch (e: any) {
+            notify(`Erreur: ${e.message}`, { type: 'error' });
+        }
+    };
+
+    const handleResumeBatch = async (runId: number) => {
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(
+                `${apiUrl}/planning/batch-optimize/${runId}/resume`,
+                { method: 'POST' },
+            );
+            if (response.ok) {
+                const result = await response.json().catch(() => ({}));
+                notify(
+                    `Run #${runId} relancé — reprise au-delà de l'essai ${
+                        result.completed_trials ?? '?'
+                    }/${result.total_trials ?? '?'}.`,
+                    { type: 'success' },
+                );
+                setBatchPolling(true);
+                loadBatchRuns();
+            } else {
+                const error = await response.json().catch(() => ({}));
+                notify(
+                    `Impossible de reprendre : ${error.detail ?? response.statusText}`,
+                    { type: 'error' },
+                );
+            }
+        } catch (e: any) {
+            notify(`Erreur: ${e.message}`, { type: 'error' });
+        }
+    };
+
+    const handleApplyTrial = async (runId: number, trialId: number) => {
+        if (!window.confirm('Appliquer cette solution? Les affectations non verrouillées seront remplacées.')) return;
+        try {
+            setApplyingTrial(trialId);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${runId}/trial/${trialId}/apply`, {
+                method: 'POST',
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to apply');
+            }
+            const result = await response.json();
+            notify(`${result.message}`, { type: 'success' });
+            setBatchCompareDialog(false);
+            loadData();
+            refresh();
+        } catch (error: any) {
+            notify(`${error.message}`, { type: 'error' });
+        } finally {
+            setApplyingTrial(null);
+        }
+    };
+
+    const handleOpenBatchCompare = async () => {
+        await loadBatchRuns();
+        // Load details for latest completed run
+        const completedRun = batchRuns.find(r => r.status === 'COMPLETED') || (activeBatchRun?.status === 'COMPLETED' ? activeBatchRun : null);
+        if (completedRun) {
+            try {
+                const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${completedRun.id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setActiveBatchRun(data);
+                    setBatchTopTrials(data.top_trials || []);
+                }
+            } catch (e) { /* ignore */ }
+        }
+        setBatchCompareDialog(true);
+    };
+
+    // CSV Import
+    const handleCsvImport = async () => {
+        if (!csvFile) {
+            notify('Veuillez sélectionner un fichier CSV', { type: 'error' });
+            return;
+        }
+
+        try {
+            setImporting(true);
+            const text = await csvFile.text();
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length < 2) throw new Error('CSV file is empty or invalid');
+
+            const headers = lines[0].split(',').map(h => h.toLowerCase().trim());
+            const shifts = lines.slice(1).map(line => {
+                const values = line.split(',');
+                const row: any = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index]?.trim();
+                });
+                return row;
+            }).filter(row => (row.employee_id || row.abbreviation) && row.date && row.shift_code);
+
+            if (shifts.length === 0) throw new Error('No valid shifts found in CSV');
+
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/import-csv`, {
+                method: 'POST',
+                body: JSON.stringify({ shifts })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Import failed');
+            }
+
+            const result = await response.json();
+            notify(`✅ ${result.imported_count} shifts importés avec succès!`, { type: 'success' });
+            setCsvImportDialog(false);
+            setCsvFile(null);
+            loadData();
+        } catch (error: any) {
+            console.error('Error importing CSV:', error);
+            notify(`Erreur d'import: ${error.message}`, { type: 'error' });
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    // Analysis
+    const handleAnalyzePlanning = async () => {
+        try {
+            setAnalyzing(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/compare-alternatives`);
+            if (!response.ok) throw new Error('Failed to analyze planning');
+            const data = await response.json();
+            setAnalysisData(data);
+            setAnalysisDialog(true);
+            notify('Analyse terminée', { type: 'success' });
+        } catch (error: any) {
+            console.error('Error analyzing planning:', error);
+            notify(`Erreur d'analyse: ${error.message}`, { type: 'error' });
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
+    // Validation
+    const handleValidatePlanning = async () => {
+        try {
+            setValidating(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/validate`, { method: 'POST' });
+            if (!response.ok) throw new Error('Échec de la validation');
+            const data = await response.json();
+            setValidationResults(data);
+            setValidationDialog(true);
+            notify('Validation terminée', { type: 'success' });
+        } catch (error: any) {
+            console.error('Error validating planning:', error);
+            notify(`Erreur de validation: ${error.message}`, { type: 'error' });
+        } finally {
+            setValidating(false);
+        }
+    };
+
+    // PDF Export
+    const handleExportPdf = async () => {
+        try {
+            setExportingPdf(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/pdf`, { method: 'GET' });
+            if (!response.ok) throw new Error('Échec de l\'export PDF');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `planning_${calendarData?.planning?.year || 'unknown'}_${String(calendarData?.planning?.month || 0).padStart(2, '0')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            notify('PDF exporté avec succès', { type: 'success' });
+        } catch (error: any) {
+            console.error('Error exporting PDF:', error);
+            notify(`Erreur d'export: ${error.message}`, { type: 'error' });
+        } finally {
+            setExportingPdf(false);
+        }
+    };
+
+    // Refresh handler
+    const handleRefreshData = async () => {
+        try {
+            setRefreshing(true);
+            await loadData();
+            notify('Données actualisées', { type: 'success' });
+        } catch (error: any) {
+            console.error('Error refreshing data:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    // Toggle employee visibility
+    const handleToggleEmployeeVisibility = async (employeeId: number) => {
+        try {
+            setTogglingVisibility(employeeId);
+            const isCurrentlyHidden = hiddenEmployees.has(employeeId);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/employee/${employeeId}/visibility`, {
+                method: 'POST',
+                body: JSON.stringify({ hidden: !isCurrentlyHidden })
+            });
+
+            if (!response.ok) throw new Error('Échec du changement de visibilité');
+
+            setHiddenEmployees((prev) => {
+                const newSet = new Set(prev);
+                if (isCurrentlyHidden) newSet.delete(employeeId);
+                else newSet.add(employeeId);
+                return newSet;
+            });
+
+            notify(isCurrentlyHidden ? 'Employé affiché' : 'Employé masqué', { type: 'info' });
+        } catch (error: any) {
+            console.error('Error toggling visibility:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+        } finally {
+            setTogglingVisibility(null);
+        }
+    };
+
+    // Send planning email
+    const handleSendPlanningEmail = async (employeeId: number, employeeName: string) => {
+        try {
+            setSendingEmail(employeeId);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/send-employee-planning/${employeeId}`, { method: 'POST' });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Échec de l\'envoi');
+            }
+
+            const result = await response.json();
+            notify(`Planning envoyé à ${result.email}`, { type: 'success' });
+        } catch (error: any) {
+            console.error('Error sending planning email:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+        } finally {
+            setSendingEmail(null);
+        }
+    };
+
+    // Create shift type
+    const calculateWorkedHours = (startTime: string, endTime: string, breakMinutes: number) => {
+        if (!startTime || !endTime) return null;
+        const [startHour, startMin] = startTime.split(':').map(Number);
+        const [endHour, endMin] = endTime.split(':').map(Number);
+        let startMinutes = startHour * 60 + startMin;
+        let endMinutes = endHour * 60 + endMin;
+        if (endMinutes <= startMinutes) endMinutes += 24 * 60;
+        const totalMinutes = endMinutes - startMinutes;
+        const workedHours = (totalMinutes - breakMinutes) / 60;
+        return Math.round(workedHours * 10) / 10;
+    };
+
+    const handleCreateShift = async () => {
+        if (!newShift.code || !newShift.name || !newShift.start_time || !newShift.end_time) {
+            setShiftValidationError('Tous les champs obligatoires doivent être remplis');
+            return;
+        }
+
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const response = await authenticatedFetch(`${apiUrl}/planning/shift-types`, {
+                method: 'POST',
+                body: JSON.stringify({ ...newShift, is_active: true })
+            });
+
+            if (!response.ok) throw new Error('Failed to create shift');
+
+            notify('Shift créé avec succès!', { type: 'success' });
+            setCreateShiftDialog(false);
+            setShiftValidationError('');
+            setNewShift({ code: '', name: '', start_time: '', end_time: '', break_minutes: 0, hours: 8, shift_category: 'MORNING', color_code: '#4A90E2' });
+            loadData();
+        } catch (error) {
+            console.error('Error creating shift:', error);
+            notify('Erreur lors de la création', { type: 'error' });
+        }
+    };
+
+    // Generate row data from calendar
+    const rowData = useMemo(() => {
+        if (!calendarData?.employees) return [];
+
+        let filteredEmployees = calendarData.employees;
+
+        // Apply filters
+        filteredEmployees = filteredEmployees.filter((employee: any) => {
+            if (filterVisibility === 'visible' && hiddenEmployees.has(employee.employee_id)) return false;
+            if (filterVisibility === 'hidden' && !hiddenEmployees.has(employee.employee_id)) return false;
+            if (filterJobPositions.length > 0 && !filterJobPositions.includes(employee.job_position)) return false;
+            if (filterJobTypes.length > 0 && !filterJobTypes.includes(employee.job_type)) return false;
+            if (filterHoursStatus !== 'all') {
+                const { total: empTotalHours } = computeTotalHours(employee.shifts);
+                const maxHours = employee.max_monthly_hours || 168;
+                const utilization = maxHours > 0 ? (empTotalHours / maxHours) * 100 : 0;
+                const isOverLimit = empTotalHours > maxHours;
+                if (filterHoursStatus === 'over_limit' && !isOverLimit) return false;
+                if (filterHoursStatus === 'under_50' && utilization >= 50) return false;
+                if (filterHoursStatus === 'ok' && (isOverLimit || utilization < 50)) return false;
+            }
+            if (filterNameSearch.trim()) {
+                const search = filterNameSearch.toLowerCase().trim();
+                const matchesName = employee.name?.toLowerCase().includes(search);
+                const matchesAbbr = employee.abbreviation?.toLowerCase().includes(search);
+                if (!matchesName && !matchesAbbr) return false;
+            }
+            return true;
+        });
+
+        return filteredEmployees.map((emp: any) => {
+            // Calculate total hours from shifts
+            // Exclude OFF category and explicit non-work codes (DES*, REPOS).
+            // LEAVE (CP, CONG) still counts as paid hours.
+            const { total: calculatedTotalHours, breakdown: hoursBreakdown } = computeTotalHours(emp.shifts);
+
+            const row: any = {
+                employee_id: emp.employee_id,
+                employee_name: emp.name,
+                employee_abbr: emp.abbreviation,
+                job_position: emp.job_position,
+                job_type: emp.job_type,
+                avatar_url: emp.avatar_url,
+                color_cell: emp.color_cell,
+                color_text: emp.color_text,
+                max_monthly_hours: emp.max_monthly_hours || 168,
+                hours_carryover: emp.hours_carryover || 0,
+                adjusted_max_monthly_hours: emp.adjusted_max_monthly_hours || emp.max_monthly_hours || 168,
+                daily_hours: emp.daily_hours || 8,
+                hours_exceeded: calculatedTotalHours > (emp.max_monthly_hours || 168),
+                hours_over_limit: Math.max(0, calculatedTotalHours - (emp.max_monthly_hours || 168)),
+                consecutive_days_violation: emp.consecutive_days_violation,
+                max_consecutive_days: emp.max_consecutive_days,
+                evening_to_morning_violation: emp.evening_to_morning_violation,
+                evening_to_morning_violations: emp.evening_to_morning_violations || [],
+                is_inactive: emp.is_inactive || false,
+                is_hidden: hiddenEmployees.has(emp.employee_id),
+                total_hours: calculatedTotalHours, // Use calculated instead of backend value
+                hours_breakdown: hoursBreakdown, // For debug detail panel
+                shifts: emp.shifts || {},
+            };
+
+            // Add shift data for each day
+            if (emp.shifts) {
+                Object.entries(emp.shifts).forEach(([day, shift]: [string, any]) => {
+                    row[`day_${day}`] = shift?.shift_code || '';
+                    row[`day_${day}_color`] = shift?.color || '';
+                    row[`day_${day}_hours`] = shift?.hours || 0;
+                    row[`day_${day}_source`] = shift?.source || '';
+                    // Optimizer diff tracking
+                    if (shift?.is_modified_from_optimizer) {
+                        row[`day_${day}_optimizer_original`] = shift.optimizer_original;
+                    }
+                });
+            }
+
+            // Add previous week shifts (read-only context)
+            const previous_week = calendarData.previous_week;
+            if (previous_week?.shifts && previous_week.shifts[emp.employee_id]) {
+                Object.entries(previous_week.shifts[emp.employee_id]).forEach(([day, shift]: [string, any]) => {
+                    row[`prev_day_${day}`] = shift || null;
+                });
+            }
+
+            return row;
+        });
+    }, [calendarData, hiddenEmployees, filterVisibility, filterJobPositions, filterJobTypes, filterHoursStatus, filterNameSearch]);
+
+    // State for editing shift - using dialog approach for reliability
+    const [editDialog, setEditDialog] = useState<{ open: boolean; employeeId: number; employeeName: string; day: number; currentShift: string } | null>(null);
+    const [editingShiftValue, setEditingShiftValue] = useState<string>('');
+    const [editComment, setEditComment] = useState<string>('');
+    const [editRequestedBy, setEditRequestedBy] = useState<'EMPLOYEE' | 'EMPLOYER' | 'OTHER'>('EMPLOYER');
+
+    // State for history popover
+    const [historyPopover, setHistoryPopover] = useState<{
+        anchorEl: HTMLElement | null;
+        employeeId: number;
+        employeeName: string;
+        date: string;
+    } | null>(null);
+
+    // Set of cells that have audit history (format: "employeeId-YYYY-MM-DD")
+    const [cellsWithHistory, setCellsWithHistory] = useState<Set<string>>(new Set());
+
+    // Force AG Grid to refresh cells when cellsWithHistory is populated
+    useEffect(() => {
+        if (gridApi && cellsWithHistory.size > 0) {
+            gridApi.refreshCells({ force: true });
+        }
+    }, [gridApi, cellsWithHistory]);
+
+    // Handle shift delete
+    const handleShiftDelete = async (employeeId: number, day: number, comment?: string, requestedBy?: string) => {
+        const isPublished = calendarData?.planning?.status === 'PUBLISHED';
+
+        // Require comment in PUBLISHED mode
+        if (isPublished && !comment?.trim()) {
+            notify('Un commentaire est requis pour modifier un planning publié', { type: 'warning' });
+            return;
+        }
+
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const date = `${calendarData.planning.year}-${String(calendarData.planning.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            // Include audit params in query string for DELETE
+            const params = new URLSearchParams();
+            if (comment) params.append('change_comment', comment);
+            if (requestedBy) params.append('requested_by', requestedBy);
+            const queryString = params.toString() ? `?${params.toString()}` : '';
+
+            const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments/${date}/${employeeId}${queryString}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Failed to delete');
+
+            // Update local state instead of full reload
+            updateLocalShift(employeeId, day, null, null);
+
+            // Mark cell as having history if published
+            if (isPublished) {
+                setCellsWithHistory(prev => new Set([...prev, `${employeeId}-${date}`]));
+            }
+
+            notify('Affectation supprimée', { type: 'success' });
+        } catch (error) {
+            console.error('Error deleting shift:', error);
+            notify('Erreur lors de la suppression', { type: 'error' });
+        }
+    };
+
+    // Handle shift save from edit mode
+    const handleShiftSave = async (employeeId: number, day: number, shiftCode: string, comment?: string, requestedBy?: string) => {
+        if (!shiftCode) return;
+
+        const isPublished = calendarData?.planning?.status === 'PUBLISHED';
+
+        // Require comment in PUBLISHED mode
+        if (isPublished && !comment?.trim()) {
+            notify('Un commentaire est requis pour modifier un planning publié', { type: 'warning' });
+            return;
+        }
+
+        try {
+            const shiftType = shiftTypes.find(st => st.code === shiftCode);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const date = `${calendarData.planning.year}-${String(calendarData.planning.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    employee_id: employeeId,
+                    date: date,
+                    shift_type_id: shiftType?.id || null,
+                    shift_code: shiftCode,
+                    hours: shiftType?.hours || 0,
+                    source: 'MANUAL',
+                    // Audit fields for PUBLISHED mode
+                    change_comment: comment || null,
+                    requested_by: requestedBy || null,
+                }),
+            });
+
+            // Update local state instead of full reload
+            updateLocalShift(employeeId, day, shiftCode, shiftType);
+
+            // Mark cell as having history if published
+            if (isPublished) {
+                setCellsWithHistory(prev => new Set([...prev, `${employeeId}-${date}`]));
+            }
+
+            notify('Shift mis à jour', { type: 'success' });
+        } catch (error) {
+            console.error('Error updating shift:', error);
+            notify('Erreur lors de la mise à jour', { type: 'error' });
+        }
+    };
+
+    // Handle drop
+    const handleShiftDrop = async (employeeId: number, day: number, dragData: any) => {
+        const isPublished = calendarData?.planning?.status === 'PUBLISHED';
+
+        // In PUBLISHED mode, open edit dialog to require comment
+        if (isPublished) {
+            const employee = calendarData?.employees?.find((e: any) => e.employee_id === employeeId);
+            setEditingShiftValue(dragData.shift_code);
+            setEditComment('');
+            setEditRequestedBy('EMPLOYER');
+            setEditDialog({
+                open: true,
+                employeeId,
+                employeeName: employee?.name || 'Employé',
+                day,
+                currentShift: '', // It's a new assignment from drag
+            });
+            notify('Veuillez ajouter un commentaire pour ce changement', { type: 'info' });
+            return;
+        }
+
+        // In DRAFT mode, directly save
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const date = `${calendarData.planning.year}-${String(calendarData.planning.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    employee_id: employeeId,
+                    date: date,
+                    shift_type_id: dragData.shift_type_id,
+                    shift_code: dragData.shift_code,
+                    hours: dragData.hours,
+                    source: 'MANUAL',
+                }),
+            });
+
+            // Update local state instead of full reload
+            const shiftType = shiftTypes.find(st => st.code === dragData.shift_code);
+            updateLocalShift(employeeId, day, dragData.shift_code, {
+                ...shiftType,
+                color_code: dragData.color || shiftType?.color_code,
+                hours: dragData.hours,
+            });
+
+            notify('✅ Shift copié', { type: 'success' });
+        } catch (error) {
+            console.error('Error dropping shift:', error);
+            notify('Erreur lors de la copie', { type: 'error' });
+        }
+    };
+
+    // Shift cell renderer with history icon and drag-drop
+    const ShiftCellRenderer = useCallback((params: any) => {
+        const shiftCode = params.value;
+        const field = params.colDef.field;
+        const day = parseInt(field.replace('day_', ''));
+        const employeeId = params.data.employee_id;
+        const employeeName = params.data.employee_name;
+        const colorField = field + '_color';
+        const sourceField = field + '_source';
+        const hoursField = field + '_hours';
+        const optimizerOriginalField = field + '_optimizer_original';
+        const color = params.data[colorField];
+        const source = params.data[sourceField];
+        const hours = params.data[hoursField] || 0;
+        const optimizerOriginal = params.data[optimizerOriginalField];
+        const sourceInfo = getSourceInfo(source);
+
+        const status = calendarData?.planning?.status;
+        const isEditable = status !== 'LOCKED';
+        const isValidated = status && status !== 'DRAFT';
+
+        // Format date for history
+        const dateStr = `${calendarData?.planning?.year}-${String(calendarData?.planning?.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // Check if this cell has history
+        const historyKey = `${employeeId}-${dateStr}`;
+        const hasHistory = cellsWithHistory.has(historyKey);
+
+        // Handle history icon click
+        const handleHistoryClick = (e: React.MouseEvent<HTMLElement>) => {
+            e.stopPropagation();
+            setHistoryPopover({
+                anchorEl: e.currentTarget,
+                employeeId,
+                employeeName,
+                date: dateStr,
+            });
+        };
+
+        // Handle delete
+        const handleDelete = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            // Open edit dialog for deletion (with comment if published)
+            setEditingShiftValue('');
+            setEditComment('');
+            setEditRequestedBy('EMPLOYER');
+            setEditDialog({
+                open: true,
+                employeeId,
+                employeeName,
+                day,
+                currentShift: shiftCode || '',
+            });
+        };
+
+        // Drag start handler
+        const handleDragStart = (e: React.DragEvent) => {
+            if (!shiftCode || !isEditable) {
+                e.preventDefault();
+                return;
+            }
+            const shiftType = shiftTypes.find(st => st.code === shiftCode);
+            const dragData = {
+                shift_type_id: shiftType?.id,
+                shift_code: shiftCode,
+                hours: hours,
+                color: color,
+                source_employee_id: employeeId,
+                source_day: day,
+            };
+            e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+            e.dataTransfer.effectAllowed = 'copy';
+        };
+
+        // Drop handler
+        const handleDrop = (e: React.DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            (e.currentTarget as HTMLElement).classList.remove('ag-cell-drag-over');
+
+            if (!isEditable) return;
+
+            try {
+                const data = e.dataTransfer.getData('text/plain');
+                if (data) {
+                    const dragData = JSON.parse(data);
+                    handleShiftDrop(employeeId, day, dragData);
+                }
+            } catch (error) {
+                console.error('Error handling drop:', error);
+            }
+        };
+
+        const handleDragOver = (e: React.DragEvent) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            (e.currentTarget as HTMLElement).classList.add('ag-cell-drag-over');
+        };
+
+        const handleDragLeave = (e: React.DragEvent) => {
+            (e.currentTarget as HTMLElement).classList.remove('ag-cell-drag-over');
+        };
+
+        return (
+            <Box
+                sx={{
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    cursor: isEditable ? 'pointer' : 'default',
+                    '&:hover': isEditable ? { backgroundColor: 'rgba(0,0,0,0.04)' } : {},
+                }}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
+                {shiftCode ? (
+                    <>
+                        <Tooltip title={
+                            optimizerOriginal
+                                ? `${shiftCode} (${hours}h) — modifié de ${optimizerOriginal.shift_code} (${optimizerOriginal.hours}h) proposé par l'optimiseur`
+                                : `${shiftCode} (${hours}h)${source ? ' - ' + sourceInfo.label : ''} | Glisser pour copier`
+                        }>
+                            <div
+                                draggable={isEditable}
+                                onDragStart={handleDragStart}
+                                style={{ cursor: isEditable ? 'grab' : 'default', position: 'relative' }}
+                            >
+                                <Chip
+                                    label={
+                                        <Box display="flex" alignItems="center" gap={0.5}>
+                                            {optimizerOriginal && (
+                                                <span style={{
+                                                    textDecoration: 'line-through',
+                                                    opacity: 0.5,
+                                                    fontSize: '0.55rem',
+                                                    marginRight: 1,
+                                                }}>{optimizerOriginal.shift_code}</span>
+                                            )}
+                                            <span>{shiftCode}</span>
+                                            {sourceInfo.icon && <span style={{ fontSize: '0.65rem' }}>{sourceInfo.icon}</span>}
+                                        </Box>
+                                    }
+                                    size="small"
+                                    onDelete={isEditable ? handleDelete : undefined}
+                                    deleteIcon={<CloseIcon style={{ fontSize: 12 }} />}
+                                    sx={{
+                                        backgroundColor: color || '#e0e0e0',
+                                        color: '#000',
+                                        fontWeight: 'bold',
+                                        fontSize: '0.65rem',
+                                        height: 22,
+                                        borderLeft: source ? `3px solid ${sourceInfo.borderColor}` : undefined,
+                                        // Orange dashed bottom border for optimizer-modified cells
+                                        borderBottom: optimizerOriginal ? '2px dashed #FF9800' : undefined,
+                                        '& .MuiChip-deleteIcon': { color: 'rgba(0,0,0,0.5)' },
+                                    }}
+                                />
+                            </div>
+                        </Tooltip>
+                        {hasHistory && (
+                            <Tooltip title="Voir l'historique des modifications">
+                                <IconButton
+                                    size="small"
+                                    onClick={handleHistoryClick}
+                                    sx={{ p: 0.25, opacity: 0.7, '&:hover': { opacity: 1 }, color: 'info.main' }}
+                                >
+                                    <HistoryIcon sx={{ fontSize: 14 }} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <Typography variant="caption" color="text.disabled" sx={{ fontSize: '1rem' }}>
+                            {isEditable ? '+' : ''}
+                        </Typography>
+                        {hasHistory && (
+                            <Tooltip title="Voir l'historique des modifications">
+                                <IconButton
+                                    size="small"
+                                    onClick={handleHistoryClick}
+                                    sx={{ p: 0.25, opacity: 0.5, '&:hover': { opacity: 1 }, color: 'info.main' }}
+                                >
+                                    <HistoryIcon sx={{ fontSize: 12 }} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </>
+                )}
+            </Box>
+        );
+    }, [calendarData, shiftTypes, cellsWithHistory, handleShiftDrop, setEditDialog, setEditingShiftValue, setEditComment, setEditRequestedBy, setHistoryPopover]);
+
+    // Handle AG Grid cell click - opens edit dialog
+    const onCellClicked = useCallback((event: any) => {
+        const field = event.colDef.field;
+        if (!field?.startsWith('day_')) return; // Only handle day columns
+
+        const status = calendarData?.planning?.status;
+        if (status === 'LOCKED') {
+            notify('Planning verrouillé - modification impossible', { type: 'warning' });
+            return;
+        }
+
+        const day = parseInt(field.replace('day_', ''));
+        const employeeId = event.data.employee_id;
+        const employeeName = event.data.employee_name;
+        const currentShift = event.value || '';
+
+        setEditingShiftValue(currentShift);
+        setEditComment('');
+        setEditRequestedBy('EMPLOYER');
+        setEditDialog({
+            open: true,
+            employeeId,
+            employeeName,
+            day,
+            currentShift,
+        });
+    }, [calendarData, notify]);
+
+    // Employee cell renderer
+    const EmployeeCellRenderer = useCallback((params: any) => {
+        const data = params.data;
+        const {
+            employee_name, employee_abbr, job_position,
+            avatar_url, color_cell, color_text, hours_exceeded,
+            consecutive_days_violation, max_consecutive_days, evening_to_morning_violation,
+            evening_to_morning_violations, is_hidden, is_inactive, employee_id
+        } = data;
+        // Ensure numeric values for toFixed()
+        const total_hours = typeof data.total_hours === 'number' ? data.total_hours : parseFloat(data.total_hours) || 0;
+        const max_monthly_hours = typeof data.max_monthly_hours === 'number' ? data.max_monthly_hours : parseFloat(data.max_monthly_hours) || 168;
+        const hours_carryover = typeof data.hours_carryover === 'number' ? data.hours_carryover : parseFloat(data.hours_carryover) || 0;
+        const adjusted_max_monthly_hours = typeof data.adjusted_max_monthly_hours === 'number' ? data.adjusted_max_monthly_hours : parseFloat(data.adjusted_max_monthly_hours) || max_monthly_hours;
+        const hours_over_limit = typeof data.hours_over_limit === 'number' ? data.hours_over_limit : parseFloat(data.hours_over_limit) || 0;
+        const hoursRatio = max_monthly_hours > 0 ? total_hours / max_monthly_hours : 0;
+        const hasViolations = hours_exceeded || consecutive_days_violation || evening_to_morning_violation;
+
+        return (
+            <Box sx={{
+                py: 0.5,
+                opacity: is_hidden ? 0.4 : is_inactive ? 0.6 : 1,
+                filter: is_hidden ? 'grayscale(80%)' : 'none',
+                backgroundColor: is_inactive ? 'rgba(0,0,0,0.05)' : 'transparent',
+            }}>
+                <Box display="flex" alignItems="flex-start" gap={0.5}>
+                    {/* Action buttons */}
+                    <Box display="flex" flexDirection="column" gap={0.15}>
+                        <Tooltip title={is_hidden ? "Afficher l'employé" : "Masquer l'employé"}>
+                            <IconButton
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); handleToggleEmployeeVisibility(employee_id); }}
+                                disabled={togglingVisibility === employee_id}
+                                sx={{ padding: 0.15 }}
+                            >
+                                {togglingVisibility === employee_id ? (
+                                    <CircularProgress size={12} />
+                                ) : is_hidden ? (
+                                    <VisibilityOffIcon sx={{ fontSize: 12 }} color="disabled" />
+                                ) : (
+                                    <VisibilityIcon sx={{ fontSize: 12 }} />
+                                )}
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Envoyer planning par email">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); handleSendPlanningEmail(employee_id, employee_name); }}
+                                disabled={sendingEmail === employee_id}
+                                sx={{ padding: 0.15 }}
+                                color="primary"
+                            >
+                                {sendingEmail === employee_id ? (
+                                    <CircularProgress size={12} />
+                                ) : (
+                                    <EmailIcon sx={{ fontSize: 12 }} />
+                                )}
+                            </IconButton>
+                        </Tooltip>
+                        {debugHoursEnabled && (
+                            <Tooltip title="Debug calcul heures (shifts inclus / exclus)">
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDebugHoursDialog({
+                                            employeeName: `${employee_abbr} — ${employee_name}`,
+                                            totalHours: total_hours,
+                                            maxMonthlyHours: max_monthly_hours,
+                                            breakdown: data.hours_breakdown || [],
+                                        });
+                                    }}
+                                    sx={{ padding: 0.15 }}
+                                    color="warning"
+                                >
+                                    <AssessmentIcon sx={{ fontSize: 12 }} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </Box>
+
+                    {/* Avatar */}
+                    <Avatar
+                        src={avatar_url}
+                        sx={{
+                            width: 26,
+                            height: 26,
+                            bgcolor: color_cell || '#FF0000',
+                            color: color_text || '#FFFFFF',
+                            fontSize: '0.65rem',
+                            fontWeight: 'bold',
+                            flexShrink: 0,
+                        }}
+                    >
+                        {!avatar_url && employee_abbr}
+                    </Avatar>
+
+                    {/* Info */}
+                    <Box minWidth={0} flex={1}>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                            <Typography variant="body2" fontWeight="600" sx={{ lineHeight: 1.1, fontSize: '0.8rem' }}>
+                                {employee_abbr}
+                            </Typography>
+                            <Chip
+                                label={job_position === 'INFIRMIER' ? 'Inf' : job_position === 'AIDE_SOIGNANT' ? 'AS' : 'Stg'}
+                                size="small"
+                                color={job_position === 'INFIRMIER' ? 'primary' : job_position === 'AIDE_SOIGNANT' ? 'secondary' : 'default'}
+                                sx={{ fontSize: '0.5rem', height: 14, '& .MuiChip-label': { px: 0.5 } }}
+                            />
+                        </Box>
+                        <Tooltip title={employee_name}>
+                            <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', maxWidth: 110, fontSize: '0.65rem', lineHeight: 1.1 }}>
+                                {employee_name}
+                            </Typography>
+                        </Tooltip>
+
+                        {/* Hours display */}
+                        <Tooltip title={hours_carryover !== 0
+                            ? `Plafond mensuel: ${max_monthly_hours.toFixed(1)}h · Report mois précédent: ${hours_carryover > 0 ? '+' : ''}${hours_carryover.toFixed(1)}h (informatif, non contraignant)`
+                            : `Plafond mensuel: ${max_monthly_hours.toFixed(1)}h`}>
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    display: 'block',
+                                    fontSize: '0.65rem',
+                                    lineHeight: 1.2,
+                                    color: hours_exceeded ? 'error.main' : hoursRatio < 0.5 ? 'warning.main' : 'text.secondary',
+                                    fontWeight: hours_exceeded || hoursRatio < 0.5 ? 'bold' : 'normal',
+                                }}
+                            >
+                                {total_hours?.toFixed(1) || 0}h / {max_monthly_hours?.toFixed(1) || 0}h
+                                {hours_carryover !== 0 && (
+                                    <span style={{ color: '#1976d2', fontWeight: 'normal' }}> ({hours_carryover > 0 ? '+' : ''}{hours_carryover.toFixed(1)}h report)</span>
+                                )}
+                                {hours_exceeded && hours_over_limit > 0 && (
+                                    <span style={{ color: '#d32f2f' }}> (+{hours_over_limit?.toFixed(1)}h)</span>
+                                )}
+                            </Typography>
+                        </Tooltip>
+
+                        {/* Warning chips for violations */}
+                        {hasViolations && (
+                            <Box display="flex" flexWrap="wrap" gap={0.25} mt={0.25}>
+                                {hours_exceeded && (
+                                    <Tooltip title={`Dépassement de ${hours_over_limit?.toFixed(1)}h sur le maximum mensuel`}>
+                                        <Chip
+                                            label={`⚠️ +${hours_over_limit?.toFixed(1)}h`}
+                                            size="small"
+                                            color="error"
+                                            sx={{ fontSize: '0.5rem', height: 14, '& .MuiChip-label': { px: 0.5 } }}
+                                        />
+                                    </Tooltip>
+                                )}
+                                {consecutive_days_violation && (
+                                    <Tooltip title={`${max_consecutive_days} jours consécutifs - Loi: max 6 jours (44h repos)`}>
+                                        <Chip
+                                            label={`🚨 ${max_consecutive_days}j consec.`}
+                                            size="small"
+                                            color="warning"
+                                            sx={{ fontSize: '0.5rem', height: 14, '& .MuiChip-label': { px: 0.5 } }}
+                                        />
+                                    </Tooltip>
+                                )}
+                                {evening_to_morning_violation && (
+                                    <Tooltip title={`Soir→Matin interdit: ${evening_to_morning_violations?.length || 1} violation(s)`}>
+                                        <Chip
+                                            label={`🔴 S→M (${evening_to_morning_violations?.length || 1})`}
+                                            size="small"
+                                            color="error"
+                                            sx={{ fontSize: '0.5rem', height: 14, '& .MuiChip-label': { px: 0.5 } }}
+                                        />
+                                    </Tooltip>
+                                )}
+                            </Box>
+                        )}
+
+                        {/* Inactive indicator */}
+                        {is_inactive && (
+                            <Chip label="Absent" size="small" sx={{ fontSize: '0.5rem', height: 14, mt: 0.25 }} />
+                        )}
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }, [togglingVisibility, sendingEmail, handleToggleEmployeeVisibility, handleSendPlanningEmail, debugHoursEnabled]);
+
+    // Custom header component for day columns
+    const DayHeaderComponent = useCallback((props: any) => {
+        const { day, weekday, holiday, isToday, staffCount, planning } = props;
+
+        return (
+            <Box
+                sx={{
+                    textAlign: 'center',
+                    py: 0.5,
+                    cursor: 'pointer',
+                }}
+                onClick={() => setDayDetailView({
+                    day,
+                    date: `${weekday} ${day} ${planning.month_name} ${planning.year}`
+                })}
+            >
+                <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                    <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>{weekday}</Typography>
+                    <ZoomInIcon sx={{ fontSize: 12, opacity: 0.6 }} />
+                </Box>
+                <Typography variant="body2" fontWeight="bold" sx={{ fontSize: '0.8rem' }}>
+                    {day}{holiday ? ' 🇱🇺' : ''}
+                </Typography>
+                {holiday && (
+                    <Typography variant="caption" sx={{ fontSize: '0.5rem', fontStyle: 'italic', display: 'block' }}>
+                        {holiday.substring(0, 10)}
+                    </Typography>
+                )}
+                <Box sx={{ fontSize: '0.55rem', lineHeight: 1.1, mt: 0.25 }}>
+                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 'bold', fontSize: '0.6rem' }}>
+                        Total: {staffCount.total_soignant || 0}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontSize: '0.5rem', color: 'text.secondary' }}>
+                        👨‍⚕️{staffCount.infirmier || 0} 🤝{staffCount.aide_soignant || 0} 🎓{staffCount.stagiaire || 0}
+                    </Typography>
+                </Box>
+            </Box>
+        );
+    }, [setDayDetailView]);
+
+    // Column definitions
+    // Previous week cell renderer (read-only, grayed out)
+    const PrevWeekCellRenderer = useCallback((params: any) => {
+        const field = params.colDef.field;
+        const shiftData = params.data[field];
+        const shiftCode = shiftData?.shift_code || '';
+        const color = shiftData?.color || '#e0e0e0';
+
+        if (!shiftCode) {
+            return (
+                <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+                    <Typography variant="caption" color="text.disabled">-</Typography>
+                </Box>
+            );
+        }
+
+        return (
+            <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7 }}>
+                <Chip
+                    label={shiftCode}
+                    size="small"
+                    sx={{
+                        backgroundColor: color,
+                        color: '#000',
+                        fontWeight: 'bold',
+                        fontSize: '0.6rem',
+                        height: 20,
+                        opacity: 0.8,
+                    }}
+                />
+            </Box>
+        );
+    }, []);
+
+    const columnDefs = useMemo(() => {
+        if (!calendarData?.planning || !Array.isArray(shiftTypes)) return [];
+
+        const planning = calendarData.planning;
+        const holidays = calendarData.luxembourg_holidays || {};
+        const daily_staff_count = calendarData.daily_staff_count || {};
+        const previous_week = calendarData.previous_week;
+
+        const daysInMonth = new Date(planning.year, planning.month, 0).getDate();
+        const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+        const cols: any[] = [
+            {
+                field: 'employee_name',
+                headerName: 'Employé',
+                pinned: 'left',
+                width: 210,
+                cellRenderer: EmployeeCellRenderer,
+                sortable: true,
+                filter: true,
+            },
+        ];
+
+        // Add previous week columns (read-only context for rule checking)
+        if (previous_week?.days && previous_week.days.length > 0) {
+            previous_week.days.forEach((prevDay: number, index: number) => {
+                const prevDate = new Date(previous_week.year, previous_week.month - 1, prevDay);
+                const weekday = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][prevDate.getDay()];
+                const isLastPrevDay = index === previous_week.days.length - 1;
+
+                cols.push({
+                    field: `prev_day_${prevDay}`,
+                    headerName: `${weekday} ${prevDay}/${previous_week.month}`,
+                    width: 75,
+                    cellRenderer: PrevWeekCellRenderer,
+                    valueFormatter: (params: any) => params.value?.shift_code || '', // Prevent AG Grid "object" warning
+                    editable: false,
+                    headerClass: 'ag-header-prev-week',
+                    cellStyle: () => ({
+                        backgroundColor: '#f0f0f0',
+                        borderRight: isLastPrevDay ? '3px solid #9e9e9e' : undefined,
+                        padding: '2px',
+                    }),
+                });
+            });
+        }
+
+        // Add day columns
+        days.forEach((day: number) => {
+            const date = new Date(planning.year, planning.month - 1, day);
+            const weekday = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][date.getDay()];
+            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            const holiday = holidays[day];
+            const isToday = new Date().toDateString() === date.toDateString();
+            const staffCount = daily_staff_count[day] || { total_soignant: 0, infirmier: 0, aide_soignant: 0, stagiaire: 0 };
+
+            cols.push({
+                field: `day_${day}`,
+                headerName: `${weekday} ${day}`,
+                headerComponent: () => (
+                    <DayHeaderComponent
+                        day={day}
+                        weekday={weekday}
+                        holiday={holiday}
+                        isToday={isToday}
+                        staffCount={staffCount}
+                        planning={planning}
+                    />
+                ),
+                width: 90,
+                cellRenderer: ShiftCellRenderer,
+                editable: false, // We handle editing ourselves
+                headerClass: isToday ? 'ag-header-today' : isWeekend ? 'ag-header-weekend' : holiday ? 'ag-header-holiday' : '',
+                cellStyle: () => ({
+                    backgroundColor: isToday ? '#BBDEFB' : isWeekend ? '#f5f5f5' : holiday ? '#E1BEE7' : 'transparent',
+                    padding: '2px',
+                }),
+            });
+        });
+
+        return cols;
+    }, [calendarData, shiftTypes, EmployeeCellRenderer, ShiftCellRenderer, DayHeaderComponent]);
+
+    const defaultColDef = useMemo(() => ({
+        sortable: false,
+        resizable: true,
+    }), []);
+
+    // Handle cell value change
+    const onCellValueChanged = useCallback((event: any) => {
+        const field = event.colDef.field;
+        const day = parseInt(field.replace('day_', ''));
+        const employeeId = event.data.employee_id;
+        const newValue = event.newValue;
+
+        handleShiftUpdate(employeeId, day, newValue);
+    }, [handleShiftUpdate]);
+
+    const onGridReady = useCallback((params: any) => {
+        setGridApi(params.api);
+    }, []);
+
+    if (loading) {
+        return <Loading />;
     }
+
+    if (!calendarData) {
+        return <Typography>Aucune donnée disponible</Typography>;
+    }
+
+    const { planning, employees: rawEmployees, daily_staff_count } = calendarData;
+    const isDraft = planning?.status === 'DRAFT';
+
+    // Extract unique job positions and types for filters
+    const uniqueJobPositions = [...new Set(rawEmployees.map((e: any) => e.job_position).filter(Boolean))].sort() as string[];
+    const uniqueJobTypes = [...new Set(rawEmployees.map((e: any) => e.job_type).filter(Boolean))].sort() as string[];
+
+    const hasActiveFilters = filterVisibility !== 'all' || filterJobPositions.length > 0 || filterJobTypes.length > 0 || filterHoursStatus !== 'all' || filterNameSearch.trim() !== '';
+
+    const clearAllFilters = () => {
+        setFilterVisibility('all');
+        setFilterJobPositions([]);
+        setFilterJobTypes([]);
+        setFilterHoursStatus('all');
+        setFilterNameSearch('');
+    };
+
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case 'DRAFT': return { color: 'default' as const, label: 'Brouillon', icon: '📝' };
+            case 'PUBLISHED': return { color: 'success' as const, label: 'Publié', icon: '✅' };
+            case 'LOCKED': return { color: 'error' as const, label: 'Verrouillé', icon: '🔒' };
+            default: return { color: 'default' as const, label: status, icon: '' };
+        }
+    };
 
     return (
-      <Box
-        sx={{
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: 0.7,
-        }}
-      >
-        <Chip
-          label={shiftCode}
-          size="small"
-          sx={{
-            backgroundColor: color,
-            color: "#000",
-            fontWeight: "bold",
-            fontSize: "0.6rem",
-            height: 20,
-            opacity: 0.8,
-          }}
-        />
-      </Box>
-    );
-  }, []);
+        <Box>
+            {/* Header */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                    <Box display="flex" alignItems="center" gap={2}>
+                        <Typography variant="h5">{planning.month_name} {planning.year}</Typography>
+                        <FormControl size="small" sx={{ minWidth: 150 }}>
+                            <Select
+                                value={planning.status}
+                                onChange={(e) => handleStatusChange(e.target.value)}
+                                renderValue={(value) => (
+                                    <Chip label={`${getStatusConfig(value).icon} ${getStatusConfig(value).label}`} color={getStatusConfig(value).color} size="small" sx={{ fontWeight: 'bold' }} />
+                                )}
+                                sx={{ '& .MuiOutlinedInput-notchedOutline': { border: 'none' } }}
+                            >
+                                <MenuItem value="DRAFT">📝 Brouillon</MenuItem>
+                                <MenuItem value="PUBLISHED">✅ Publié</MenuItem>
+                                <MenuItem value="LOCKED">🔒 Verrouillé</MenuItem>
+                            </Select>
+                        </FormControl>
+                        {planning.status !== 'DRAFT' && (
+                            <Chip icon={<HistoryIcon />} label="Suivi actif" color="info" size="small" variant="outlined" />
+                        )}
+                        {planning.last_optimized_at && (() => {
+                            const d = new Date(planning.last_optimized_at);
+                            const dateStr = d.toLocaleDateString('fr-FR');
+                            const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                            const score = planning.last_optimization_score;
+                            const duration = planning.last_optimization_duration;
+                            const algo = planning.last_optimization_algorithm || 'CP-SAT';
+                            const trialNumber = planning.last_optimization_trial_number;
+                            const trialLabel = trialNumber != null ? ` · #${trialNumber}` : '';
+                            const scoreLabel = (score !== null && score !== undefined)
+                                ? ` · score ${Math.round(score).toLocaleString('fr-FR')}`
+                                : '';
+                            const tooltipParts = [`Algorithme : ${algo}`];
+                            if (trialNumber != null) tooltipParts.push(`Essai n° ${trialNumber}`);
+                            if (score !== null && score !== undefined) tooltipParts.push(`Score : ${Math.round(score).toLocaleString('fr-FR')}`);
+                            if (duration) tooltipParts.push(`Durée : ${duration.toFixed(1)} s`);
+                            const tooltip = tooltipParts.join(' · ');
+                            return (
+                                <Tooltip title={tooltip}>
+                                    <Chip
+                                        icon={<AutoAwesomeIcon />}
+                                        label={`Optimisé ${dateStr} ${timeStr}${trialLabel}${scoreLabel}`}
+                                        color="success"
+                                        size="small"
+                                        variant="outlined"
+                                    />
+                                </Tooltip>
+                            );
+                        })()}
+                    </Box>
+                    <Box display="flex" gap={1} flexWrap="wrap">
+                        <Button startIcon={<AddIcon />} onClick={() => setCreateShiftDialog(true)} color="secondary" variant="outlined" label="Créer shift" />
+                        <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
+                            <span>
+                                <Button startIcon={<AutoFixHighIcon />} onClick={() => setTemplateDialog(true)} disabled={!isDraft} label="Générer" />
+                            </span>
+                        </Tooltip>
+                        <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
+                            <span>
+                                <Button startIcon={<AutoAwesomeIcon />} onClick={() => setOptimizeDialog(true)} color="success" variant="contained" disabled={!isDraft} label="Optimiser" />
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Voir les règles d'optimisation et auditer le planning">
+                            <span>
+                                <Button
+                                    startIcon={<RuleIcon />}
+                                    onClick={() => {
+                                        setRulesTab('catalogue');
+                                        setRulesDialog(true);
+                                    }}
+                                    color="info"
+                                    variant="outlined"
+                                    label="Règles & Audit"
+                                />
+                            </span>
+                        </Tooltip>
+                        <Tooltip title={activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) ? `Batch en cours: ${activeBatchRun.progress_percent}%` : !isDraft ? "Mode Brouillon requis" : "Optimisation batch (overnight)"}>
+                            <span>
+                                <Button
+                                    startIcon={batchPolling ? <CircularProgress size={16} /> : <RocketLaunchIcon />}
+                                    onClick={() => {
+                                        if (activeBatchRun && activeBatchRun.status === 'COMPLETED') {
+                                            handleOpenBatchCompare();
+                                        } else if (activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status)) {
+                                            handleOpenBatchCompare();
+                                        } else {
+                                            loadBatchRuns();
+                                            setBatchDialog(true);
+                                        }
+                                    }}
+                                    color="secondary"
+                                    variant={batchPolling ? "contained" : "outlined"}
+                                    disabled={!isDraft && !batchPolling}
+                                    label={batchPolling ? `Batch ${activeBatchRun?.progress_percent || 0}%` : "Batch"}
+                                />
+                            </span>
+                        </Tooltip>
+                        <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
+                            <span>
+                                <Button startIcon={<DeleteSweepIcon />} onClick={handleClearOptimizerShifts} color="warning" variant="outlined" disabled={!isDraft || clearing} label={clearing ? "..." : "Effacer auto"} />
+                            </span>
+                        </Tooltip>
+                        <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
+                            <span>
+                                <Button startIcon={<UploadFileIcon />} onClick={() => setCsvImportDialog(true)} disabled={!isDraft} label="CSV" />
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Ajouter manuellement un ou plusieurs employés au planning (autorisé même validé)">
+                            <span>
+                                <Button
+                                    startIcon={<PersonAddIcon />}
+                                    onClick={() => setExtraEmpDialog(true)}
+                                    color="info"
+                                    variant="outlined"
+                                    label={
+                                        extraEmpList.length
+                                            ? `+ Employé (${extraEmpList.length})`
+                                            : '+ Employé'
+                                    }
+                                />
+                            </span>
+                        </Tooltip>
+                        <Button startIcon={<AssessmentIcon />} onClick={handleAnalyzePlanning} disabled={analyzing} label={analyzing ? "..." : "Analyser"} />
+                        <Button startIcon={exportingPdf ? <CircularProgress size={16} /> : <PictureAsPdfIcon />} onClick={handleExportPdf} color="error" variant="outlined" disabled={exportingPdf} label="PDF" />
+                        {planning.status !== 'DRAFT' && (
+                            <Button startIcon={<HistoryIcon />} component={RouterLink} to={`/planning/${planningId}/audit-log`} label="Historique" />
+                        )}
+                        <Button startIcon={validating ? <CircularProgress size={16} /> : <CheckCircleIcon />} onClick={handleValidatePlanning} color="primary" variant="contained" disabled={validating} label={validating ? "..." : "Valider"} />
+                        <IconButton onClick={handleRefreshData} disabled={refreshing || loading} color="primary">
+                            {refreshing ? <CircularProgress size={24} /> : <RefreshIcon />}
+                        </IconButton>
+                    </Box>
+                </Box>
+            </Paper>
 
-  const columnDefs = useMemo(() => {
-    if (!calendarData?.planning || !Array.isArray(shiftTypes)) return [];
-
-    const planning = calendarData.planning;
-    const holidays = calendarData.luxembourg_holidays || {};
-    const daily_staff_count = calendarData.daily_staff_count || {};
-    const previous_week = calendarData.previous_week;
-
-    const daysInMonth = new Date(planning.year, planning.month, 0).getDate();
-    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-    const cols: any[] = [
-      {
-        field: "employee_name",
-        headerName: "Employé",
-        pinned: "left",
-        width: 210,
-        cellRenderer: EmployeeCellRenderer,
-        sortable: true,
-        filter: true,
-      },
-    ];
-
-    // Add previous week columns (read-only context for rule checking)
-    if (previous_week?.days && previous_week.days.length > 0) {
-      previous_week.days.forEach((prevDay: number, index: number) => {
-        const prevDate = new Date(
-          previous_week.year,
-          previous_week.month - 1,
-          prevDay,
-        );
-        const weekday = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"][
-          prevDate.getDay()
-        ];
-        const isLastPrevDay = index === previous_week.days.length - 1;
-
-        cols.push({
-          field: `prev_day_${prevDay}`,
-          headerName: `${weekday} ${prevDay}/${previous_week.month}`,
-          width: 75,
-          cellRenderer: PrevWeekCellRenderer,
-          valueFormatter: (params: any) => params.value?.shift_code || "", // Prevent AG Grid "object" warning
-          editable: false,
-          headerClass: "ag-header-prev-week",
-          cellStyle: () => ({
-            backgroundColor: "#f0f0f0",
-            borderRight: isLastPrevDay ? "3px solid #9e9e9e" : undefined,
-            padding: "2px",
-          }),
-        });
-      });
-    }
-
-    // Add day columns
-    days.forEach((day: number) => {
-      const date = new Date(planning.year, planning.month - 1, day);
-      const weekday = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"][
-        date.getDay()
-      ];
-      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-      const holiday = holidays[day];
-      const isToday = new Date().toDateString() === date.toDateString();
-      const staffCount = daily_staff_count[day] || {
-        total_soignant: 0,
-        infirmier: 0,
-        aide_soignant: 0,
-        stagiaire: 0,
-      };
-
-      cols.push({
-        field: `day_${day}`,
-        headerName: `${weekday} ${day}`,
-        headerComponent: () => (
-          <DayHeaderComponent
-            day={day}
-            weekday={weekday}
-            holiday={holiday}
-            isToday={isToday}
-            staffCount={staffCount}
-            planning={planning}
-          />
-        ),
-        width: 90,
-        cellRenderer: ShiftCellRenderer,
-        editable: false, // We handle editing ourselves
-        headerClass: isToday
-          ? "ag-header-today"
-          : isWeekend
-            ? "ag-header-weekend"
-            : holiday
-              ? "ag-header-holiday"
-              : "",
-        cellStyle: () => ({
-          backgroundColor: isToday
-            ? "#BBDEFB"
-            : isWeekend
-              ? "#f5f5f5"
-              : holiday
-                ? "#E1BEE7"
-                : "transparent",
-          padding: "2px",
-        }),
-      });
-    });
-
-    return cols;
-  }, [
-    calendarData,
-    shiftTypes,
-    EmployeeCellRenderer,
-    ShiftCellRenderer,
-    DayHeaderComponent,
-  ]);
-
-  const defaultColDef = useMemo(
-    () => ({
-      sortable: false,
-      resizable: true,
-    }),
-    [],
-  );
-
-  // Handle cell value change
-  const onCellValueChanged = useCallback(
-    (event: any) => {
-      const field = event.colDef.field;
-      const day = parseInt(field.replace("day_", ""));
-      const employeeId = event.data.employee_id;
-      const newValue = event.newValue;
-
-      handleShiftUpdate(employeeId, day, newValue);
-    },
-    [handleShiftUpdate],
-  );
-
-  const onGridReady = useCallback((params: any) => {
-    setGridApi(params.api);
-  }, []);
-
-  if (loading) {
-    return <Loading />;
-  }
-
-  if (!calendarData) {
-    return <Typography>Aucune donnée disponible</Typography>;
-  }
-
-  const { planning, employees: rawEmployees, daily_staff_count } = calendarData;
-  const isDraft = planning?.status === "DRAFT";
-
-  // Extract unique job positions and types for filters
-  const uniqueJobPositions = [
-    ...new Set(rawEmployees.map((e: any) => e.job_position).filter(Boolean)),
-  ].sort() as string[];
-  const uniqueJobTypes = [
-    ...new Set(rawEmployees.map((e: any) => e.job_type).filter(Boolean)),
-  ].sort() as string[];
-
-  const hasActiveFilters =
-    filterVisibility !== "all" ||
-    filterJobPositions.length > 0 ||
-    filterJobTypes.length > 0 ||
-    filterHoursStatus !== "all" ||
-    filterNameSearch.trim() !== "";
-
-  const clearAllFilters = () => {
-    setFilterVisibility("all");
-    setFilterJobPositions([]);
-    setFilterJobTypes([]);
-    setFilterHoursStatus("all");
-    setFilterNameSearch("");
-  };
-
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case "DRAFT":
-        return { color: "default" as const, label: "Brouillon", icon: "📝" };
-      case "PUBLISHED":
-        return { color: "success" as const, label: "Publié", icon: "✅" };
-      case "LOCKED":
-        return { color: "error" as const, label: "Verrouillé", icon: "🔒" };
-      default:
-        return { color: "default" as const, label: status, icon: "" };
-    }
-  };
-
-  return (
-    <Box>
-      {/* Header */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          flexWrap="wrap"
-          gap={1}
-        >
-          <Box display="flex" alignItems="center" gap={2}>
-            <Typography variant="h5">
-              {planning.month_name} {planning.year}
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <Select
-                value={planning.status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                renderValue={(value) => (
-                  <Chip
-                    label={`${getStatusConfig(value).icon} ${getStatusConfig(value).label}`}
-                    color={getStatusConfig(value).color}
-                    size="small"
-                    sx={{ fontWeight: "bold" }}
-                  />
-                )}
-                sx={{
-                  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                }}
-              >
-                <MenuItem value="DRAFT">📝 Brouillon</MenuItem>
-                <MenuItem value="PUBLISHED">✅ Publié</MenuItem>
-                <MenuItem value="LOCKED">🔒 Verrouillé</MenuItem>
-              </Select>
-            </FormControl>
-            {planning.status !== "DRAFT" && (
-              <Chip
-                icon={<HistoryIcon />}
-                label="Suivi actif"
-                color="info"
-                size="small"
-                variant="outlined"
-              />
-            )}
-            {planning.last_optimized_at &&
-              (() => {
-                const d = new Date(planning.last_optimized_at);
-                const dateStr = d.toLocaleDateString("fr-FR");
-                const timeStr = d.toLocaleTimeString("fr-FR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-                const score = planning.last_optimization_score;
-                const duration = planning.last_optimization_duration;
-                const algo = planning.last_optimization_algorithm || "CP-SAT";
-                const trialNumber = planning.last_optimization_trial_number;
-                const trialLabel =
-                  trialNumber != null ? ` · #${trialNumber}` : "";
-                const scoreLabel =
-                  score !== null && score !== undefined
-                    ? ` · score ${Math.round(score).toLocaleString("fr-FR")}`
-                    : "";
-                const tooltipParts = [`Algorithme : ${algo}`];
-                if (trialNumber != null)
-                  tooltipParts.push(`Essai n° ${trialNumber}`);
-                if (score !== null && score !== undefined)
-                  tooltipParts.push(
-                    `Score : ${Math.round(score).toLocaleString("fr-FR")}`,
-                  );
-                if (duration)
-                  tooltipParts.push(`Durée : ${duration.toFixed(1)} s`);
-                const tooltip = tooltipParts.join(" · ");
-                return (
-                  <Tooltip title={tooltip}>
-                    <Chip
-                      icon={<AutoAwesomeIcon />}
-                      label={`Optimisé ${dateStr} ${timeStr}${trialLabel}${scoreLabel}`}
-                      color="success"
-                      size="small"
-                      variant="outlined"
+            {/* Filter Row */}
+            <Paper variant="outlined" sx={{ p: 1, mb: 1, display: 'inline-block' }}>
+                <Box display="flex" alignItems="center" gap={1} flexWrap="nowrap">
+                    <FilterListIcon color="action" fontSize="small" />
+                    <FormControl size="small" variant="outlined" sx={{ width: 110 }}>
+                        <InputLabel>Visibilité</InputLabel>
+                        <Select value={filterVisibility} label="Visibilité" onChange={(e) => setFilterVisibility(e.target.value as any)}>
+                            <MenuItem value="all">Tous</MenuItem>
+                            <MenuItem value="visible">Visibles</MenuItem>
+                            <MenuItem value="hidden">Masqués</MenuItem>
+                        </Select>
+                    </FormControl>
+                    {uniqueJobPositions.length > 0 && (
+                        <FormControl size="small" variant="outlined" sx={{ width: 130 }}>
+                            <InputLabel>Poste</InputLabel>
+                            <Select
+                                multiple
+                                value={filterJobPositions}
+                                onChange={(e) => setFilterJobPositions(e.target.value as string[])}
+                                input={<OutlinedInput label="Poste" />}
+                                renderValue={(selected) => selected.length === 0 ? '' : `${selected.length} sél.`}
+                            >
+                                {uniqueJobPositions.map((position) => (
+                                    <MenuItem key={position} value={position}>
+                                        <Checkbox checked={filterJobPositions.includes(position)} size="small" />
+                                        <ListItemText primary={position} />
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
+                    {uniqueJobTypes.length > 0 && (
+                        <FormControl size="small" variant="outlined" sx={{ width: 120 }}>
+                            <InputLabel>Type</InputLabel>
+                            <Select
+                                multiple
+                                value={filterJobTypes}
+                                onChange={(e) => setFilterJobTypes(e.target.value as string[])}
+                                input={<OutlinedInput label="Type" />}
+                                renderValue={(selected) => selected.length === 0 ? '' : `${selected.length} sél.`}
+                            >
+                                {uniqueJobTypes.map((type) => (
+                                    <MenuItem key={type} value={type}>
+                                        <Checkbox checked={filterJobTypes.includes(type)} size="small" />
+                                        <ListItemText primary={type} />
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
+                    <FormControl size="small" variant="outlined" sx={{ width: 120 }}>
+                        <InputLabel>Heures</InputLabel>
+                        <Select value={filterHoursStatus} label="Heures" onChange={(e) => setFilterHoursStatus(e.target.value as any)}>
+                            <MenuItem value="all">Tous</MenuItem>
+                            <MenuItem value="over_limit">Dépassement</MenuItem>
+                            <MenuItem value="under_50">&lt; 50%</MenuItem>
+                            <MenuItem value="ok">OK</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <MuiTextField
+                        size="small"
+                        placeholder="Nom..."
+                        value={filterNameSearch}
+                        onChange={(e) => setFilterNameSearch(e.target.value)}
+                        sx={{ width: 130 }}
+                        InputProps={{
+                            startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
+                            endAdornment: filterNameSearch && (
+                                <InputAdornment position="end">
+                                    <IconButton size="small" onClick={() => setFilterNameSearch('')} sx={{ p: 0.25 }}>
+                                        <ClearIcon fontSize="small" />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
                     />
-                  </Tooltip>
-                );
-              })()}
-          </Box>
-          <Box display="flex" gap={1} flexWrap="wrap">
-            <Button
-              startIcon={<AddIcon />}
-              onClick={() => setCreateShiftDialog(true)}
-              color="secondary"
-              variant="outlined"
-              label="Créer shift"
-            />
-            <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
-              <span>
-                <Button
-                  startIcon={<AutoFixHighIcon />}
-                  onClick={() => setTemplateDialog(true)}
-                  disabled={!isDraft}
-                  label="Générer"
-                />
-              </span>
-            </Tooltip>
-            <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
-              <span>
-                <Button
-                  startIcon={<AutoAwesomeIcon />}
-                  onClick={() => setOptimizeDialog(true)}
-                  color="success"
-                  variant="contained"
-                  disabled={!isDraft}
-                  label="Optimiser"
-                />
-              </span>
-            </Tooltip>
-            <Tooltip title="Voir les règles d'optimisation et auditer le planning">
-              <span>
-                <Button
-                  startIcon={<RuleIcon />}
-                  onClick={() => {
-                    setRulesTab("catalogue");
-                    setRulesDialog(true);
-                  }}
-                  color="info"
-                  variant="outlined"
-                  label="Règles & Audit"
-                />
-              </span>
-            </Tooltip>
-            <Tooltip
-              title={
-                activeBatchRun &&
-                ["RUNNING", "PENDING"].includes(activeBatchRun.status)
-                  ? `Batch en cours: ${activeBatchRun.progress_percent}%`
-                  : !isDraft
-                    ? "Mode Brouillon requis"
-                    : "Optimisation batch (overnight)"
-              }
-            >
-              <span>
-                <Button
-                  startIcon={
-                    batchPolling ? (
-                      <CircularProgress size={16} />
-                    ) : (
-                      <RocketLaunchIcon />
-                    )
-                  }
-                  onClick={() => {
-                    if (
-                      activeBatchRun &&
-                      activeBatchRun.status === "COMPLETED"
-                    ) {
-                      handleOpenBatchCompare();
-                    } else if (
-                      activeBatchRun &&
-                      ["RUNNING", "PENDING"].includes(activeBatchRun.status)
-                    ) {
-                      handleOpenBatchCompare();
-                    } else {
-                      loadBatchRuns();
-                      setBatchDialog(true);
-                    }
-                  }}
-                  color="secondary"
-                  variant={batchPolling ? "contained" : "outlined"}
-                  disabled={!isDraft && !batchPolling}
-                  label={
-                    batchPolling
-                      ? `Batch ${activeBatchRun?.progress_percent || 0}%`
-                      : "Batch"
-                  }
-                />
-              </span>
-            </Tooltip>
-            <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
-              <span>
-                <Button
-                  startIcon={<DeleteSweepIcon />}
-                  onClick={handleClearOptimizerShifts}
-                  color="warning"
-                  variant="outlined"
-                  disabled={!isDraft || clearing}
-                  label={clearing ? "..." : "Effacer auto"}
-                />
-              </span>
-            </Tooltip>
-            <Tooltip title={!isDraft ? "Mode Brouillon requis" : ""}>
-              <span>
-                <Button
-                  startIcon={<UploadFileIcon />}
-                  onClick={() => setCsvImportDialog(true)}
-                  disabled={!isDraft}
-                  label="CSV"
-                />
-              </span>
-            </Tooltip>
-            <Tooltip title="Ajouter manuellement un ou plusieurs employés au planning (autorisé même validé)">
-              <span>
-                <Button
-                  startIcon={<PersonAddIcon />}
-                  onClick={() => setExtraEmpDialog(true)}
-                  color="info"
-                  variant="outlined"
-                  label={
-                    extraEmpList.length
-                      ? `+ Employé (${extraEmpList.length})`
-                      : "+ Employé"
-                  }
-                />
-              </span>
-            </Tooltip>
-            <Button
-              startIcon={<AssessmentIcon />}
-              onClick={handleAnalyzePlanning}
-              disabled={analyzing}
-              label={analyzing ? "..." : "Analyser"}
-            />
-            <Button
-              startIcon={
-                exportingPdf ? (
-                  <CircularProgress size={16} />
-                ) : (
-                  <PictureAsPdfIcon />
-                )
-              }
-              onClick={handleExportPdf}
-              color="error"
-              variant="outlined"
-              disabled={exportingPdf}
-              label="PDF"
-            />
-            {planning.status !== "DRAFT" && (
-              <Button
-                startIcon={<HistoryIcon />}
-                component={RouterLink}
-                to={`/planning/${planningId}/audit-log`}
-                label="Historique"
-              />
-            )}
-            <Button
-              startIcon={
-                validating ? (
-                  <CircularProgress size={16} />
-                ) : (
-                  <CheckCircleIcon />
-                )
-              }
-              onClick={handleValidatePlanning}
-              color="primary"
-              variant="contained"
-              disabled={validating}
-              label={validating ? "..." : "Valider"}
-            />
-            <IconButton
-              onClick={handleRefreshData}
-              disabled={refreshing || loading}
-              color="primary"
-            >
-              {refreshing ? <CircularProgress size={24} /> : <RefreshIcon />}
-            </IconButton>
-          </Box>
-        </Box>
-      </Paper>
+                    {hasActiveFilters && (
+                        <>
+                            <Chip label={`${rowData.length}/${rawEmployees.length}`} size="small" color="primary" variant="outlined" />
+                            <Tooltip title="Effacer filtres">
+                                <IconButton size="small" onClick={clearAllFilters} color="error" sx={{ p: 0.25 }}>
+                                    <ClearIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </>
+                    )}
+                </Box>
+            </Paper>
 
-      {/* Filter Row */}
-      <Paper variant="outlined" sx={{ p: 1, mb: 1, display: "inline-block" }}>
-        <Box display="flex" alignItems="center" gap={1} flexWrap="nowrap">
-          <FilterListIcon color="action" fontSize="small" />
-          <FormControl size="small" variant="outlined" sx={{ width: 110 }}>
-            <InputLabel>Visibilité</InputLabel>
-            <Select
-              value={filterVisibility}
-              label="Visibilité"
-              onChange={(e) => setFilterVisibility(e.target.value as any)}
-            >
-              <MenuItem value="all">Tous</MenuItem>
-              <MenuItem value="visible">Visibles</MenuItem>
-              <MenuItem value="hidden">Masqués</MenuItem>
-            </Select>
-          </FormControl>
-          {uniqueJobPositions.length > 0 && (
-            <FormControl size="small" variant="outlined" sx={{ width: 130 }}>
-              <InputLabel>Poste</InputLabel>
-              <Select
-                multiple
-                value={filterJobPositions}
-                onChange={(e) =>
-                  setFilterJobPositions(e.target.value as string[])
-                }
-                input={<OutlinedInput label="Poste" />}
-                renderValue={(selected) =>
-                  selected.length === 0 ? "" : `${selected.length} sél.`
-                }
-              >
-                {uniqueJobPositions.map((position) => (
-                  <MenuItem key={position} value={position}>
-                    <Checkbox
-                      checked={filterJobPositions.includes(position)}
-                      size="small"
-                    />
-                    <ListItemText primary={position} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-          {uniqueJobTypes.length > 0 && (
-            <FormControl size="small" variant="outlined" sx={{ width: 120 }}>
-              <InputLabel>Type</InputLabel>
-              <Select
-                multiple
-                value={filterJobTypes}
-                onChange={(e) => setFilterJobTypes(e.target.value as string[])}
-                input={<OutlinedInput label="Type" />}
-                renderValue={(selected) =>
-                  selected.length === 0 ? "" : `${selected.length} sél.`
-                }
-              >
-                {uniqueJobTypes.map((type) => (
-                  <MenuItem key={type} value={type}>
-                    <Checkbox
-                      checked={filterJobTypes.includes(type)}
-                      size="small"
-                    />
-                    <ListItemText primary={type} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-          <FormControl size="small" variant="outlined" sx={{ width: 120 }}>
-            <InputLabel>Heures</InputLabel>
-            <Select
-              value={filterHoursStatus}
-              label="Heures"
-              onChange={(e) => setFilterHoursStatus(e.target.value as any)}
-            >
-              <MenuItem value="all">Tous</MenuItem>
-              <MenuItem value="over_limit">Dépassement</MenuItem>
-              <MenuItem value="under_50">&lt; 50%</MenuItem>
-              <MenuItem value="ok">OK</MenuItem>
-            </Select>
-          </FormControl>
-          <MuiTextField
-            size="small"
-            placeholder="Nom..."
-            value={filterNameSearch}
-            onChange={(e) => setFilterNameSearch(e.target.value)}
-            sx={{ width: 130 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-              endAdornment: filterNameSearch && (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => setFilterNameSearch("")}
-                    sx={{ p: 0.25 }}
-                  >
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          {hasActiveFilters && (
-            <>
-              <Chip
-                label={`${rowData.length}/${rawEmployees.length}`}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-              <Tooltip title="Effacer filtres">
-                <IconButton
-                  size="small"
-                  onClick={clearAllFilters}
-                  color="error"
-                  sx={{ p: 0.25 }}
-                >
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
-        </Box>
-      </Paper>
-
-      {/* AG Grid */}
-      <Paper sx={{ p: 0 }}>
-        <style>{`
+            {/* AG Grid */}
+            <Paper sx={{ p: 0 }}>
+                <style>{`
                     .ag-header-today { background-color: #1976d2 !important; color: white !important; }
                     .ag-header-weekend { background-color: #f5f5f5 !important; }
                     .ag-header-holiday { background-color: #E1BEE7 !important; }
@@ -3458,2029 +2617,1171 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                         outline-offset: -2px;
                     }
                 `}</style>
-        <Box sx={{ height: "calc(100vh - 320px)", width: "100%" }}>
-          <AgGridReact
-            rowData={rowData}
-            columnDefs={columnDefs}
-            defaultColDef={defaultColDef}
-            rowHeight={90}
-            headerHeight={85}
-            theme={themeQuartz}
-            getRowId={(params) => String(params.data.employee_id)}
-            onGridReady={onGridReady}
-            onCellClicked={onCellClicked}
-            onCellValueChanged={onCellValueChanged}
-            stopEditingWhenCellsLoseFocus={true}
-            suppressClickEdit={true}
-          />
-        </Box>
-      </Paper>
+                <Box sx={{ height: 'calc(100vh - 320px)', width: '100%' }}>
+                    <AgGridReact
+                        rowData={rowData}
+                        columnDefs={columnDefs}
+                        defaultColDef={defaultColDef}
+                        rowHeight={90}
+                        headerHeight={85}
+                        theme={themeQuartz}
+                        getRowId={(params) => String(params.data.employee_id)}
+                        onGridReady={onGridReady}
+                        onCellClicked={onCellClicked}
+                        onCellValueChanged={onCellValueChanged}
+                        stopEditingWhenCellsLoseFocus={true}
+                        suppressClickEdit={true}
+                    />
+                </Box>
+            </Paper>
 
-      {/* Template Dialog */}
-      <Dialog
-        open={templateDialog}
-        onClose={() => setTemplateDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Générer planning automatique</DialogTitle>
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2} mt={2}>
-            <MuiButton
-              variant="outlined"
-              onClick={() => handleGenerateTemplate("default")}
-              disabled={generating}
-              fullWidth
-            >
-              Modèle par défaut
-            </MuiButton>
-            <MuiButton
-              variant="outlined"
-              onClick={() => handleGenerateTemplate("weekend_off")}
-              disabled={generating}
-              fullWidth
-            >
-              Modèle weekends OFF
-            </MuiButton>
-            <MuiButton
-              variant="outlined"
-              onClick={() => handleGenerateTemplate("rotate_shifts")}
-              disabled={generating}
-              fullWidth
-            >
-              Modèle alterné
-            </MuiButton>
-            <Alert severity="warning">
-              Attention: ceci remplacera toutes les affectations existantes!
-            </Alert>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setTemplateDialog(false)}>
-            Annuler
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
+            {/* Template Dialog */}
+            <Dialog open={templateDialog} onClose={() => setTemplateDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Générer planning automatique</DialogTitle>
+                <DialogContent>
+                    <Box display="flex" flexDirection="column" gap={2} mt={2}>
+                        <MuiButton variant="outlined" onClick={() => handleGenerateTemplate('default')} disabled={generating} fullWidth>Modèle par défaut</MuiButton>
+                        <MuiButton variant="outlined" onClick={() => handleGenerateTemplate('weekend_off')} disabled={generating} fullWidth>Modèle weekends OFF</MuiButton>
+                        <MuiButton variant="outlined" onClick={() => handleGenerateTemplate('rotate_shifts')} disabled={generating} fullWidth>Modèle alterné</MuiButton>
+                        <Alert severity="warning">Attention: ceci remplacera toutes les affectations existantes!</Alert>
+                    </Box>
+                </DialogContent>
+                <DialogActions><MuiButton onClick={() => setTemplateDialog(false)}>Annuler</MuiButton></DialogActions>
+            </Dialog>
 
-      {/* Optimization Dialog */}
-      <Dialog
-        open={optimizeDialog}
-        onClose={() => setOptimizeDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <AutoAwesomeIcon color="success" /> Optimiser le planning
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2} mt={2}>
-            <Typography variant="subtitle2">Choisir l'algorithme:</Typography>
-            <ToggleButtonGroup
-              value={selectedAlgorithm}
-              exclusive
-              onChange={(e, v) => v && setSelectedAlgorithm(v)}
-              fullWidth
-              color="primary"
-            >
-              <ToggleButton value="CP-SAT">
-                <Box textAlign="center">
-                  <Typography fontWeight="bold">🤖 CP-SAT</Typography>
-                  <Typography variant="caption">Standard</Typography>
-                </Box>
-              </ToggleButton>
-              <ToggleButton value="HYBRID">
-                <Box textAlign="center">
-                  <Typography fontWeight="bold">🔬 HYBRID</Typography>
-                  <Typography variant="caption">Recommandé</Typography>
-                </Box>
-              </ToggleButton>
-              <ToggleButton value="GA">
-                <Box textAlign="center">
-                  <Typography fontWeight="bold">🧬 GA</Typography>
-                  <Typography variant="caption">Expérimental</Typography>
-                </Box>
-              </ToggleButton>
-            </ToggleButtonGroup>
-            <Alert severity="success">
-              <Typography variant="subtitle2">
-                L'optimiseur respecte:
-              </Typography>
-              <ul style={{ margin: "8px 0", paddingLeft: "20px" }}>
-                <li>✅ Heures contractuelles</li>
-                <li>✅ Maximum 6 jours consécutifs</li>
-                <li>✅ Pas de matin après soir</li>
-                <li>🏥 Couverture: 4 soignants/jour</li>
-              </ul>
-            </Alert>
-            <Alert severity="warning">
-              Temps: {selectedAlgorithm === "HYBRID" ? "~5 min" : "~60s"}
-            </Alert>
-            <MuiButton
-              variant="contained"
-              color="success"
-              size="large"
-              startIcon={<AutoAwesomeIcon />}
-              onClick={handleOptimizePlanning}
-              disabled={optimizing}
-              fullWidth
-            >
-              {optimizing
-                ? "Optimisation..."
-                : `Optimiser (${selectedAlgorithm})`}
-            </MuiButton>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <MuiButton
-            onClick={() => setOptimizeDialog(false)}
-            disabled={optimizing}
-          >
-            Annuler
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
+            {/* Optimization Dialog */}
+            <Dialog open={optimizeDialog} onClose={() => setOptimizeDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle><Box display="flex" alignItems="center" gap={1}><AutoAwesomeIcon color="success" /> Optimiser le planning</Box></DialogTitle>
+                <DialogContent>
+                    <Box display="flex" flexDirection="column" gap={2} mt={2}>
+                        <Typography variant="subtitle2">Choisir l'algorithme:</Typography>
+                        <ToggleButtonGroup value={selectedAlgorithm} exclusive onChange={(e, v) => v && setSelectedAlgorithm(v)} fullWidth color="primary">
+                            <ToggleButton value="CP-SAT"><Box textAlign="center"><Typography fontWeight="bold">🤖 CP-SAT</Typography><Typography variant="caption">Standard</Typography></Box></ToggleButton>
+                            <ToggleButton value="HYBRID"><Box textAlign="center"><Typography fontWeight="bold">🔬 HYBRID</Typography><Typography variant="caption">Recommandé</Typography></Box></ToggleButton>
+                            <ToggleButton value="GA"><Box textAlign="center"><Typography fontWeight="bold">🧬 GA</Typography><Typography variant="caption">Expérimental</Typography></Box></ToggleButton>
+                        </ToggleButtonGroup>
+                        <Alert severity="success">
+                            <Typography variant="subtitle2">L'optimiseur respecte:</Typography>
+                            <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+                                <li>✅ Heures contractuelles</li>
+                                <li>✅ Maximum 6 jours consécutifs</li>
+                                <li>✅ Pas de matin après soir</li>
+                                <li>🏥 Couverture: 4 soignants/jour</li>
+                            </ul>
+                        </Alert>
+                        <Alert severity="warning">Temps: {selectedAlgorithm === 'HYBRID' ? '~5 min' : '~60s'}</Alert>
+                        <MuiButton variant="contained" color="success" size="large" startIcon={<AutoAwesomeIcon />} onClick={handleOptimizePlanning} disabled={optimizing} fullWidth>
+                            {optimizing ? 'Optimisation...' : `Optimiser (${selectedAlgorithm})`}
+                        </MuiButton>
+                    </Box>
+                </DialogContent>
+                <DialogActions><MuiButton onClick={() => setOptimizeDialog(false)} disabled={optimizing}>Annuler</MuiButton></DialogActions>
+            </Dialog>
 
-      {/* Batch Optimization Start Dialog */}
-      <Dialog
-        open={batchDialog}
-        onClose={() => setBatchDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <RocketLaunchIcon color="secondary" /> Optimisation Batch
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2} mt={2}>
-            <Typography variant="body2" color="text.secondary">
-              Lance une exploration intensive de paramètres en arrière-plan.
-              Idéal pour lancer le soir et retrouver les meilleures solutions le
-              matin.
-            </Typography>
-            <ToggleButtonGroup
-              value={batchPreset}
-              exclusive
-              onChange={(e, v) => v && setBatchPreset(v)}
-              fullWidth
-              color="secondary"
-            >
-              <ToggleButton value="QUICK">
-                <Box textAlign="center" p={1}>
-                  <Typography fontWeight="bold">Rapide</Typography>
-                  <Typography variant="caption">50 essais / ~50 min</Typography>
-                </Box>
-              </ToggleButton>
-              <ToggleButton value="STANDARD">
-                <Box textAlign="center" p={1}>
-                  <Typography fontWeight="bold">Standard</Typography>
-                  <Typography variant="caption">200 essais / ~7h</Typography>
-                </Box>
-              </ToggleButton>
-              <ToggleButton value="EXHAUSTIVE">
-                <Box textAlign="center" p={1}>
-                  <Typography fontWeight="bold">Exhaustif</Typography>
-                  <Typography variant="caption">500+ essais / ~25h</Typography>
-                </Box>
-              </ToggleButton>
-            </ToggleButtonGroup>
-            <Alert severity="info">
-              L'optimisation utilise Optuna (recherche bayésienne) pour explorer
-              des milliers de combinaisons de paramètres. Les 10 meilleures
-              solutions sont conservées pour comparaison.
-            </Alert>
-
-            {/* Pre-launch preflight: who's in, who's out, why. */}
-            {batchPreflightLoading && (
-              <Box display="flex" alignItems="center" gap={1}>
-                <CircularProgress size={16} />
-                <Typography variant="caption" color="text.secondary">
-                  Vérification des employés éligibles…
-                </Typography>
-              </Box>
-            )}
-            {batchPreflight &&
-              (() => {
-                const includedCount =
-                  batchPreflight.employees_included?.length ?? 0;
-                const excludedCount =
-                  batchPreflight.employees_excluded?.length ?? 0;
-                const missingShifts =
-                  batchPreflight.missing_required_shift_types || [];
-                const canLaunch = batchPreflight.can_launch !== false;
-                return (
-                  <Box>
-                    <Alert
-                      severity={
-                        canLaunch
-                          ? excludedCount > 0
-                            ? "warning"
-                            : "success"
-                          : "error"
-                      }
-                      sx={{ mb: 1 }}
-                    >
-                      <strong>{includedCount}</strong> employé(s) seront chargés
-                      · <strong>{excludedCount}</strong> ignoré(s).
-                      {missingShifts.length > 0 && (
-                        <>
-                          {" "}
-                          ⚠️ Shift type(s) requis manquant(s) :{" "}
-                          <strong>{missingShifts.join(", ")}</strong>
-                        </>
-                      )}
-                      {!canLaunch && !missingShifts.length && (
-                        <> Impossible de lancer (aucun employé éligible).</>
-                      )}
-                    </Alert>
-
-                    <Accordion
-                      disableGutters
-                      elevation={0}
-                      sx={{ "&:before": { display: "none" } }}
-                    >
-                      <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        sx={{
-                          minHeight: 36,
-                          "& .MuiAccordionSummary-content": { my: 0.5 },
-                        }}
-                      >
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          ✅ Inclus ({includedCount})
+            {/* Batch Optimization Start Dialog */}
+            <Dialog open={batchDialog} onClose={() => setBatchDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle><Box display="flex" alignItems="center" gap={1}><RocketLaunchIcon color="secondary" /> Optimisation Batch</Box></DialogTitle>
+                <DialogContent>
+                    <Box display="flex" flexDirection="column" gap={2} mt={2}>
+                        <Typography variant="body2" color="text.secondary">
+                            Lance une exploration intensive de paramètres en arrière-plan. Idéal pour lancer le soir et retrouver les meilleures solutions le matin.
                         </Typography>
-                      </AccordionSummary>
-                      <AccordionDetails
-                        sx={{ p: 1, maxHeight: 220, overflowY: "auto" }}
-                      >
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={{ fontSize: "0.75rem" }}>
-                                Nom
-                              </TableCell>
-                              <TableCell sx={{ fontSize: "0.75rem" }}>
-                                Occupation
-                              </TableCell>
-                              <TableCell
-                                sx={{ fontSize: "0.75rem" }}
-                                align="right"
-                              >
-                                FTE
-                              </TableCell>
-                              <TableCell sx={{ fontSize: "0.75rem" }}>
-                                Fin contrat
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {batchPreflight.employees_included.map((e: any) => (
-                              <TableRow key={e.id}>
-                                <TableCell sx={{ fontSize: "0.75rem" }}>
-                                  {e.full_name}
-                                  {e.is_intern && (
-                                    <Chip
-                                      label="CDD"
-                                      size="small"
-                                      sx={{ ml: 0.5, height: 16, fontSize: 10 }}
-                                    />
-                                  )}
-                                </TableCell>
-                                <TableCell sx={{ fontSize: "0.75rem" }}>
-                                  {e.occupation || "—"}
-                                </TableCell>
-                                <TableCell
-                                  sx={{ fontSize: "0.75rem" }}
-                                  align="right"
-                                >
-                                  {e.fte != null ? e.fte.toFixed(2) : "—"}
-                                </TableCell>
-                                <TableCell sx={{ fontSize: "0.75rem" }}>
-                                  {e.end_contract || "—"}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </AccordionDetails>
-                    </Accordion>
+                        <ToggleButtonGroup value={batchPreset} exclusive onChange={(e, v) => v && setBatchPreset(v)} fullWidth color="secondary">
+                            <ToggleButton value="QUICK">
+                                <Box textAlign="center" p={1}>
+                                    <Typography fontWeight="bold">Rapide</Typography>
+                                    <Typography variant="caption">50 essais / ~50 min</Typography>
+                                </Box>
+                            </ToggleButton>
+                            <ToggleButton value="STANDARD">
+                                <Box textAlign="center" p={1}>
+                                    <Typography fontWeight="bold">Standard</Typography>
+                                    <Typography variant="caption">200 essais / ~7h</Typography>
+                                </Box>
+                            </ToggleButton>
+                            <ToggleButton value="EXHAUSTIVE">
+                                <Box textAlign="center" p={1}>
+                                    <Typography fontWeight="bold">Exhaustif</Typography>
+                                    <Typography variant="caption">500+ essais / ~25h</Typography>
+                                </Box>
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                        <Alert severity="info">
+                            L'optimisation utilise Optuna (recherche bayésienne) pour explorer des milliers de combinaisons de paramètres.
+                            Les 10 meilleures solutions sont conservées pour comparaison.
+                        </Alert>
 
-                    {excludedCount > 0 && (
-                      <Accordion
-                        disableGutters
-                        elevation={0}
-                        sx={{ "&:before": { display: "none" } }}
-                      >
-                        <AccordionSummary
-                          expandIcon={<ExpandMoreIcon />}
-                          sx={{
-                            minHeight: 36,
-                            "& .MuiAccordionSummary-content": { my: 0.5 },
-                          }}
-                        >
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            🚫 Ignorés ({excludedCount})
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails
-                          sx={{ p: 1, maxHeight: 220, overflowY: "auto" }}
-                        >
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell sx={{ fontSize: "0.75rem" }}>
-                                  Nom
-                                </TableCell>
-                                <TableCell sx={{ fontSize: "0.75rem" }}>
-                                  Raison
-                                </TableCell>
-                                <TableCell sx={{ fontSize: "0.75rem" }}>
-                                  Détail
-                                </TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {batchPreflight.employees_excluded.map(
-                                (e: any) => (
-                                  <TableRow key={e.id}>
-                                    <TableCell sx={{ fontSize: "0.75rem" }}>
-                                      {e.full_name}
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: "0.75rem" }}>
-                                      <Chip
-                                        label={e.reason_label}
-                                        size="small"
-                                        color={
-                                          e.reason === "contract_ended"
-                                            ? "default"
-                                            : "warning"
-                                        }
-                                        sx={{ height: 18, fontSize: 10 }}
-                                      />
-                                    </TableCell>
-                                    <TableCell
-                                      sx={{
-                                        fontSize: "0.7rem",
-                                        color: "text.secondary",
-                                      }}
+                        {/* Pre-launch preflight: who's in, who's out, why. */}
+                        {batchPreflightLoading && (
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <CircularProgress size={16} />
+                                <Typography variant="caption" color="text.secondary">
+                                    Vérification des employés éligibles…
+                                </Typography>
+                            </Box>
+                        )}
+                        {batchPreflight && (() => {
+                            const includedCount = batchPreflight.employees_included?.length ?? 0;
+                            const excludedCount = batchPreflight.employees_excluded?.length ?? 0;
+                            const missingShifts = batchPreflight.missing_required_shift_types || [];
+                            const canLaunch = batchPreflight.can_launch !== false;
+                            return (
+                                <Box>
+                                    <Alert
+                                        severity={canLaunch ? (excludedCount > 0 ? 'warning' : 'success') : 'error'}
+                                        sx={{ mb: 1 }}
                                     >
-                                      {e.details}
-                                    </TableCell>
-                                  </TableRow>
-                                ),
-                              )}
-                            </TableBody>
-                          </Table>
-                        </AccordionDetails>
-                      </Accordion>
+                                        <strong>{includedCount}</strong> employé(s) seront chargés ·{' '}
+                                        <strong>{excludedCount}</strong> ignoré(s).
+                                        {missingShifts.length > 0 && (
+                                            <>
+                                                {' '}
+                                                ⚠️ Shift type(s) requis manquant(s) :{' '}
+                                                <strong>{missingShifts.join(', ')}</strong>
+                                            </>
+                                        )}
+                                        {!canLaunch && !missingShifts.length && (
+                                            <> Impossible de lancer (aucun employé éligible).</>
+                                        )}
+                                    </Alert>
+
+                                    <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+                                        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                ✅ Inclus ({includedCount})
+                                            </Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails sx={{ p: 1, maxHeight: 220, overflowY: 'auto' }}>
+                                            <Table size="small">
+                                                <TableHead>
+                                                    <TableRow>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Nom</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Occupation</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }} align="right">FTE</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.75rem' }}>Fin contrat</TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {batchPreflight.employees_included.map((e: any) => (
+                                                        <TableRow key={e.id}>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>
+                                                                {e.full_name}
+                                                                {e.is_intern && (
+                                                                    <Chip label="CDD" size="small" sx={{ ml: 0.5, height: 16, fontSize: 10 }} />
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>{e.occupation || '—'}</TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }} align="right">
+                                                                {e.fte != null ? e.fte.toFixed(2) : '—'}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>{e.end_contract || '—'}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </AccordionDetails>
+                                    </Accordion>
+
+                                    {excludedCount > 0 && (
+                                        <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+                                            <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                    🚫 Ignorés ({excludedCount})
+                                                </Typography>
+                                            </AccordionSummary>
+                                            <AccordionDetails sx={{ p: 1, maxHeight: 220, overflowY: 'auto' }}>
+                                                <Table size="small">
+                                                    <TableHead>
+                                                        <TableRow>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>Nom</TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>Raison</TableCell>
+                                                            <TableCell sx={{ fontSize: '0.75rem' }}>Détail</TableCell>
+                                                        </TableRow>
+                                                    </TableHead>
+                                                    <TableBody>
+                                                        {batchPreflight.employees_excluded.map((e: any) => (
+                                                            <TableRow key={e.id}>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>{e.full_name}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>
+                                                                    <Chip
+                                                                        label={e.reason_label}
+                                                                        size="small"
+                                                                        color={e.reason === 'contract_ended' ? 'default' : 'warning'}
+                                                                        sx={{ height: 18, fontSize: 10 }}
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
+                                                                    {e.details}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </AccordionDetails>
+                                        </Accordion>
+                                    )}
+
+                                    <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+                                        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                ⚙️ Règles d'éligibilité ({batchPreflight.rules?.length || 0})
+                                            </Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails sx={{ p: 1 }}>
+                                            {(batchPreflight.rules || []).map((r: any) => (
+                                                <Box key={r.key} sx={{ mb: 1 }}>
+                                                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                                        {r.label}
+                                                    </Typography>
+                                                    <Typography variant="caption" component="div" color="text.secondary" sx={{ pl: 1, fontFamily: 'ui-monospace, monospace', fontSize: 11 }}>
+                                                        {r.detail}
+                                                    </Typography>
+                                                </Box>
+                                            ))}
+                                        </AccordionDetails>
+                                    </Accordion>
+                                </Box>
+                            );
+                        })()}
+                        {batchRuns.length > 0 && (
+                            <Box>
+                                <Typography variant="subtitle2" gutterBottom>Runs précédents:</Typography>
+                                {batchRuns.slice(0, 3).map(r => (
+                                    <Chip
+                                        key={r.id}
+                                        label={`#${r.id} ${r.preset} - ${r.status} (${r.completed_trials}/${r.total_trials})`}
+                                        size="small"
+                                        color={r.status === 'COMPLETED' ? 'success' : r.status === 'RUNNING' ? 'warning' : 'default'}
+                                        sx={{ mr: 0.5, mb: 0.5 }}
+                                        onClick={() => {
+                                            setBatchDialog(false);
+                                            setActiveBatchRun(r);
+                                            if (r.status === 'COMPLETED') handleOpenBatchCompare();
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        )}
+                        <MuiButton
+                            variant="contained"
+                            color="secondary"
+                            size="large"
+                            startIcon={batchStarting ? <CircularProgress size={20} color="inherit" /> : <RocketLaunchIcon />}
+                            onClick={handleStartBatch}
+                            disabled={
+                                batchStarting
+                                || (batchPreflight && batchPreflight.can_launch === false)
+                            }
+                            fullWidth
+                        >
+                            {batchStarting ? 'Démarrage...' : `Lancer (${batchPreset})`}
+                        </MuiButton>
+                    </Box>
+                </DialogContent>
+                <DialogActions><MuiButton onClick={() => setBatchDialog(false)}>Annuler</MuiButton></DialogActions>
+            </Dialog>
+
+            {/* Rules & Audit Dialog */}
+            <Dialog
+                open={rulesDialog}
+                onClose={() => setRulesDialog(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <RuleIcon color="info" />
+                        <Typography variant="h6">Règles d'optimisation & audit</Typography>
+                    </Box>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <ToggleButtonGroup
+                        value={rulesTab}
+                        exclusive
+                        onChange={(_e, v) => v && setRulesTab(v)}
+                        size="small"
+                        color="info"
+                        sx={{ mb: 2 }}
+                    >
+                        <ToggleButton value="catalogue">
+                            <GavelIcon sx={{ mr: 0.5, fontSize: 18 }} />
+                            Catalogue ({rulesCatalogue?.length ?? '…'})
+                        </ToggleButton>
+                        <ToggleButton value="audit">
+                            <VerifiedUserIcon sx={{ mr: 0.5, fontSize: 18 }} />
+                            Audit du planning
+                            {auditResult && auditResult.summary.total_violations > 0 && (
+                                <Chip
+                                    label={auditResult.summary.total_violations}
+                                    size="small"
+                                    color="error"
+                                    sx={{ ml: 0.75, height: 18 }}
+                                />
+                            )}
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+
+                    {rulesTab === 'catalogue' && (
+                        <Box>
+                            {rulesCatalogueLoading && (
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CircularProgress size={18} />
+                                    <Typography variant="body2" color="text.secondary">Chargement…</Typography>
+                                </Box>
+                            )}
+                            {rulesCatalogue && rulesCatalogue.map((r: any) => (
+                                <Accordion key={r.key} disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+                                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" width="100%">
+                                            <Typography variant="body2" sx={{ fontWeight: 600, flexGrow: 1 }}>
+                                                {r.label}
+                                            </Typography>
+                                            <Chip
+                                                label={
+                                                    r.kind === 'hard' ? 'Stricte'
+                                                    : r.kind === 'config' ? 'Configurable'
+                                                    : 'Souple'
+                                                }
+                                                size="small"
+                                                color={r.kind === 'hard' ? 'error' : r.kind === 'config' ? 'warning' : 'default'}
+                                                variant="outlined"
+                                                sx={{ height: 20 }}
+                                            />
+                                            {!r.auditable && (
+                                                <Chip label="non auditable" size="small" sx={{ height: 20 }} />
+                                            )}
+                                        </Box>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                            Source : {r.source}
+                                        </Typography>
+                                        <Typography variant="body2">{r.explanation}</Typography>
+                                    </AccordionDetails>
+                                </Accordion>
+                            ))}
+                        </Box>
                     )}
 
-                    <Accordion
-                      disableGutters
-                      elevation={0}
-                      sx={{ "&:before": { display: "none" } }}
-                    >
-                      <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        sx={{
-                          minHeight: 36,
-                          "& .MuiAccordionSummary-content": { my: 0.5 },
-                        }}
-                      >
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          ⚙️ Règles d'éligibilité (
-                          {batchPreflight.rules?.length || 0})
-                        </Typography>
-                      </AccordionSummary>
-                      <AccordionDetails sx={{ p: 1 }}>
-                        {(batchPreflight.rules || []).map((r: any) => (
-                          <Box key={r.key} sx={{ mb: 1 }}>
-                            <Typography
-                              variant="caption"
-                              sx={{ fontWeight: 600 }}
-                            >
-                              {r.label}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              component="div"
-                              color="text.secondary"
-                              sx={{
-                                pl: 1,
-                                fontFamily: "ui-monospace, monospace",
-                                fontSize: 11,
-                              }}
-                            >
-                              {r.detail}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </AccordionDetails>
-                    </Accordion>
-                  </Box>
-                );
-              })()}
-            {batchRuns.length > 0 && (
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Runs précédents:
-                </Typography>
-                {batchRuns.slice(0, 3).map((r) => (
-                  <Chip
-                    key={r.id}
-                    label={`#${r.id} ${r.preset} - ${r.status} (${r.completed_trials}/${r.total_trials})`}
-                    size="small"
-                    color={
-                      r.status === "COMPLETED"
-                        ? "success"
-                        : r.status === "RUNNING"
-                          ? "warning"
-                          : "default"
-                    }
-                    sx={{ mr: 0.5, mb: 0.5 }}
-                    onClick={() => {
-                      setBatchDialog(false);
-                      setActiveBatchRun(r);
-                      if (r.status === "COMPLETED") handleOpenBatchCompare();
-                    }}
-                  />
-                ))}
-              </Box>
-            )}
-            <MuiButton
-              variant="contained"
-              color="secondary"
-              size="large"
-              startIcon={
-                batchStarting ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  <RocketLaunchIcon />
-                )
-              }
-              onClick={handleStartBatch}
-              disabled={
-                batchStarting ||
-                (batchPreflight && batchPreflight.can_launch === false)
-              }
-              fullWidth
-            >
-              {batchStarting ? "Démarrage..." : `Lancer (${batchPreset})`}
-            </MuiButton>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setBatchDialog(false)}>Annuler</MuiButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Rules & Audit Dialog */}
-      <Dialog
-        open={rulesDialog}
-        onClose={() => setRulesDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <RuleIcon color="info" />
-            <Typography variant="h6">Règles d'optimisation & audit</Typography>
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers>
-          <ToggleButtonGroup
-            value={rulesTab}
-            exclusive
-            onChange={(_e, v) => v && setRulesTab(v)}
-            size="small"
-            color="info"
-            sx={{ mb: 2 }}
-          >
-            <ToggleButton value="catalogue">
-              <GavelIcon sx={{ mr: 0.5, fontSize: 18 }} />
-              Catalogue ({rulesCatalogue?.length ?? "…"})
-            </ToggleButton>
-            <ToggleButton value="audit">
-              <VerifiedUserIcon sx={{ mr: 0.5, fontSize: 18 }} />
-              Audit du planning
-              {auditResult && auditResult.summary.total_violations > 0 && (
-                <Chip
-                  label={auditResult.summary.total_violations}
-                  size="small"
-                  color="error"
-                  sx={{ ml: 0.75, height: 18 }}
-                />
-              )}
-            </ToggleButton>
-          </ToggleButtonGroup>
-
-          {rulesTab === "catalogue" && (
-            <Box>
-              {rulesCatalogueLoading && (
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CircularProgress size={18} />
-                  <Typography variant="body2" color="text.secondary">
-                    Chargement…
-                  </Typography>
-                </Box>
-              )}
-              {rulesCatalogue &&
-                rulesCatalogue.map((r: any) => (
-                  <Accordion
-                    key={r.key}
-                    disableGutters
-                    elevation={0}
-                    sx={{ "&:before": { display: "none" } }}
-                  >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        gap={1}
-                        flexWrap="wrap"
-                        width="100%"
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 600, flexGrow: 1 }}
-                        >
-                          {r.label}
-                        </Typography>
-                        <Chip
-                          label={
-                            r.kind === "hard"
-                              ? "Stricte"
-                              : r.kind === "config"
-                                ? "Configurable"
-                                : "Souple"
-                          }
-                          size="small"
-                          color={
-                            r.kind === "hard"
-                              ? "error"
-                              : r.kind === "config"
-                                ? "warning"
-                                : "default"
-                          }
-                          variant="outlined"
-                          sx={{ height: 20 }}
-                        />
-                        {!r.auditable && (
-                          <Chip
-                            label="non auditable"
-                            size="small"
-                            sx={{ height: 20 }}
-                          />
-                        )}
-                      </Box>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: "block", mb: 0.5 }}
-                      >
-                        Source : {r.source}
-                      </Typography>
-                      <Typography variant="body2">{r.explanation}</Typography>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
-            </Box>
-          )}
-
-          {rulesTab === "audit" && (
-            <Box>
-              <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <MuiButton
-                  variant="contained"
-                  color="info"
-                  startIcon={
-                    auditLoading ? (
-                      <CircularProgress size={16} color="inherit" />
-                    ) : (
-                      <VerifiedUserIcon />
-                    )
-                  }
-                  onClick={runPlanningAudit}
-                  disabled={auditLoading || !planningId}
-                >
-                  {auditLoading ? "Analyse…" : "Vérifier ce planning"}
-                </MuiButton>
-                <Typography variant="caption" color="text.secondary">
-                  Confronte les ShiftAssignment actuels du planning aux règles
-                  auditables.
-                </Typography>
-              </Box>
-
-              {auditResult &&
-                (() => {
-                  const total = auditResult.summary.total_violations;
-                  const high = auditResult.summary.by_severity.high;
-                  const med = auditResult.summary.by_severity.medium;
-                  const low = auditResult.summary.by_severity.low;
-                  const audited = auditResult.summary.rules_audited;
-                  const withV = auditResult.summary.rules_with_violations;
-                  return (
-                    <>
-                      <Alert
-                        severity={
-                          total === 0
-                            ? "success"
-                            : high > 0
-                              ? "error"
-                              : "warning"
-                        }
-                        icon={
-                          total === 0 ? (
-                            <VerifiedUserIcon />
-                          ) : (
-                            <ReportProblemIcon />
-                          )
-                        }
-                        sx={{ mb: 2 }}
-                      >
-                        {total === 0 ? (
-                          <>
-                            Aucune violation détectée sur les{" "}
-                            <strong>{audited}</strong> règles auditables.
-                          </>
-                        ) : (
-                          <>
-                            <strong>{total}</strong> violation(s) sur{" "}
-                            <strong>
-                              {withV}/{audited}
-                            </strong>{" "}
-                            règles — haute : {high}, moyenne : {med}, basse :{" "}
-                            {low}.
-                          </>
-                        )}
-                      </Alert>
-
-                      {auditResult.rules
-                        .filter(
-                          (r: any) => r.violations && r.violations.length > 0,
-                        )
-                        .map((r: any) => (
-                          <Accordion
-                            key={r.key}
-                            disableGutters
-                            elevation={0}
-                            sx={{ "&:before": { display: "none" } }}
-                            defaultExpanded
-                          >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                              <Box
-                                display="flex"
-                                alignItems="center"
-                                gap={1}
-                                width="100%"
-                              >
-                                <ReportProblemIcon
-                                  color={
-                                    r.violations.some(
-                                      (v: any) => v.severity === "high",
-                                    )
-                                      ? "error"
-                                      : "warning"
-                                  }
-                                  fontSize="small"
-                                />
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontWeight: 600, flexGrow: 1 }}
+                    {rulesTab === 'audit' && (
+                        <Box>
+                            <Box display="flex" alignItems="center" gap={1} mb={2}>
+                                <MuiButton
+                                    variant="contained"
+                                    color="info"
+                                    startIcon={auditLoading ? <CircularProgress size={16} color="inherit" /> : <VerifiedUserIcon />}
+                                    onClick={runPlanningAudit}
+                                    disabled={auditLoading || !planningId}
                                 >
-                                  {r.label}
+                                    {auditLoading ? 'Analyse…' : 'Vérifier ce planning'}
+                                </MuiButton>
+                                <Typography variant="caption" color="text.secondary">
+                                    Confronte les ShiftAssignment actuels du planning aux règles auditables.
                                 </Typography>
-                                <Chip
-                                  label={r.violations.length}
-                                  size="small"
-                                  color="error"
-                                  sx={{ height: 20 }}
-                                />
-                              </Box>
-                            </AccordionSummary>
-                            <AccordionDetails
-                              sx={{ p: 1, maxHeight: 300, overflowY: "auto" }}
-                            >
-                              <Table size="small">
+                            </Box>
+
+                            {auditResult && (() => {
+                                const total = auditResult.summary.total_violations;
+                                const high = auditResult.summary.by_severity.high;
+                                const med = auditResult.summary.by_severity.medium;
+                                const low = auditResult.summary.by_severity.low;
+                                const audited = auditResult.summary.rules_audited;
+                                const withV = auditResult.summary.rules_with_violations;
+                                return (
+                                    <>
+                                        <Alert
+                                            severity={total === 0 ? 'success' : high > 0 ? 'error' : 'warning'}
+                                            icon={total === 0 ? <VerifiedUserIcon /> : <ReportProblemIcon />}
+                                            sx={{ mb: 2 }}
+                                        >
+                                            {total === 0 ? (
+                                                <>Aucune violation détectée sur les <strong>{audited}</strong> règles auditables.</>
+                                            ) : (
+                                                <>
+                                                    <strong>{total}</strong> violation(s) sur <strong>{withV}/{audited}</strong> règles —
+                                                    {' '}haute : {high}, moyenne : {med}, basse : {low}.
+                                                </>
+                                            )}
+                                        </Alert>
+
+                                        {auditResult.rules.filter((r: any) => r.violations && r.violations.length > 0).map((r: any) => (
+                                            <Accordion key={r.key} disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }} defaultExpanded>
+                                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                                    <Box display="flex" alignItems="center" gap={1} width="100%">
+                                                        <ReportProblemIcon
+                                                            color={r.violations.some((v: any) => v.severity === 'high') ? 'error' : 'warning'}
+                                                            fontSize="small"
+                                                        />
+                                                        <Typography variant="body2" sx={{ fontWeight: 600, flexGrow: 1 }}>
+                                                            {r.label}
+                                                        </Typography>
+                                                        <Chip label={r.violations.length} size="small" color="error" sx={{ height: 20 }} />
+                                                    </Box>
+                                                </AccordionSummary>
+                                                <AccordionDetails sx={{ p: 1, maxHeight: 300, overflowY: 'auto' }}>
+                                                    <Table size="small">
+                                                        <TableHead>
+                                                            <TableRow>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>Employé</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>Date</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>Message</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.75rem' }}>Détail</TableCell>
+                                                            </TableRow>
+                                                        </TableHead>
+                                                        <TableBody>
+                                                            {r.violations.map((v: any, i: number) => (
+                                                                <TableRow key={i}>
+                                                                    <TableCell sx={{ fontSize: '0.75rem' }}>{v.employee_name || '—'}</TableCell>
+                                                                    <TableCell sx={{ fontSize: '0.75rem' }}>{v.date || '—'}</TableCell>
+                                                                    <TableCell sx={{ fontSize: '0.75rem' }}>
+                                                                        <Chip
+                                                                            label={v.message}
+                                                                            size="small"
+                                                                            color={v.severity === 'high' ? 'error' : v.severity === 'medium' ? 'warning' : 'default'}
+                                                                            sx={{ height: 18, fontSize: 10 }}
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{v.detail || '—'}</TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </AccordionDetails>
+                                            </Accordion>
+                                        ))}
+
+                                        {auditResult.rules.filter((r: any) => r.violations !== null && r.violations.length === 0).length > 0 && (
+                                            <Box sx={{ mt: 2 }}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                                    ✅ Règles respectées
+                                                </Typography>
+                                                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                                    {auditResult.rules
+                                                        .filter((r: any) => r.violations !== null && r.violations.length === 0)
+                                                        .map((r: any) => (
+                                                            <Chip
+                                                                key={r.key}
+                                                                label={r.label}
+                                                                size="small"
+                                                                color="success"
+                                                                variant="outlined"
+                                                                sx={{ height: 22 }}
+                                                            />
+                                                        ))}
+                                                </Box>
+                                            </Box>
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setRulesDialog(false)}>Fermer</MuiButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Extra Employees Dialog */}
+            <Dialog
+                open={extraEmpDialog}
+                onClose={() => setExtraEmpDialog(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <PersonAddIcon color="info" />
+                        <Typography variant="h6">Ajouter un employé au planning</Typography>
+                    </Box>
+                </DialogTitle>
+                <DialogContent dividers>
+                    {!isDraft && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            Ce planning est <strong>{planning?.status}</strong>. L'ajout sera tracé
+                            dans les notes ({`type EXTRA_EMPLOYEE`}) avec votre nom et la date.
+                        </Alert>
+                    )}
+
+                    <Typography variant="subtitle2" gutterBottom>
+                        Employés ajoutés manuellement ({extraEmpList.length})
+                    </Typography>
+                    {extraEmpList.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Aucun. Tous les employés du planning ont au moins une affectation.
+                        </Typography>
+                    ) : (
+                        <Box sx={{ mb: 2 }}>
+                            {extraEmpList.map((e) => (
+                                <Box
+                                    key={e.employee_id}
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={1}
+                                    sx={{ py: 0.5 }}
+                                >
+                                    <Chip label={e.abbreviation} size="small" />
+                                    <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                                        {e.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {new Date(e.added_at).toLocaleDateString('fr-FR')}
+                                    </Typography>
+                                    <Tooltip title="Retirer (uniquement si aucune affectation)">
+                                        <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={() => removeExtraEmployee(e.employee_id)}
+                                        >
+                                            <PersonRemoveIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
+
+                    <Typography variant="subtitle2" gutterBottom>
+                        Employés disponibles ({availableEmpList.length})
+                    </Typography>
+                    {extraEmpLoading ? (
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <CircularProgress size={18} />
+                            <Typography variant="body2" color="text.secondary">Chargement…</Typography>
+                        </Box>
+                    ) : availableEmpList.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                            Aucun candidat (tous les employés actifs sont déjà dans le planning).
+                        </Typography>
+                    ) : (
+                        <Autocomplete
+                            multiple
+                            disableCloseOnSelect
+                            options={availableEmpList}
+                            getOptionLabel={(o: any) => `${o.abbreviation} — ${o.name}${o.job_position ? ` (${o.job_position})` : ''}`}
+                            value={availableEmpList.filter((o: any) => extraEmpSelected.includes(o.employee_id))}
+                            onChange={(_e, v) => setExtraEmpSelected(v.map((o: any) => o.employee_id))}
+                            renderInput={(params) => (
+                                <MuiTextField {...params} placeholder="Sélectionner…" size="small" />
+                            )}
+                            sx={{ mt: 1 }}
+                        />
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setExtraEmpDialog(false)}>Fermer</MuiButton>
+                    <MuiButton
+                        variant="contained"
+                        color="info"
+                        startIcon={extraEmpSubmitting ? <CircularProgress size={16} color="inherit" /> : <PersonAddIcon />}
+                        onClick={submitExtraEmployees}
+                        disabled={extraEmpSelected.length === 0 || extraEmpSubmitting}
+                    >
+                        {extraEmpSubmitting
+                            ? 'Ajout…'
+                            : `Ajouter ${extraEmpSelected.length || ''}`.trim()}
+                    </MuiButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Batch Compare Dialog */}
+            <Dialog open={batchCompareDialog} onClose={() => setBatchCompareDialog(false)} maxWidth="lg" fullWidth>
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <CompareArrowsIcon color="secondary" />
+                            <Typography variant="h6">Comparaison des solutions batch</Typography>
+                        </Box>
+                        {activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) && (() => {
+                            // 'Stale' = no heartbeat at all, or heartbeat older
+                            // than 5 minutes. That's almost certainly a worker
+                            // that died — Reprendre re-enqueues the same run.
+                            const hb = activeBatchRun.last_heartbeat
+                                ? new Date(activeBatchRun.last_heartbeat).getTime()
+                                : null;
+                            const ageMs = hb ? Date.now() - hb : null;
+                            const isStale = activeBatchRun.status === 'RUNNING'
+                                && (ageMs === null || ageMs > 5 * 60 * 1000);
+                            const cancelling = !!activeBatchRun.cancel_requested;
+                            return (
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    {!isStale && <CircularProgress size={20} />}
+                                    <Typography variant="body2" color="text.secondary">
+                                        {activeBatchRun.completed_trials}/{activeBatchRun.total_trials} essais ({activeBatchRun.progress_percent}%)
+                                        {cancelling ? ' · annulation en cours…' : ''}
+                                        {isStale ? ` · 💤 worker silencieux${ageMs !== null ? ` depuis ${Math.round(ageMs / 60000)} min` : ''}` : ''}
+                                    </Typography>
+                                    {isStale && (
+                                        <Tooltip title="Le worker semble mort. Reprendre relance le run sans perdre les essais déjà calculés." arrow>
+                                            <MuiButton
+                                                size="small"
+                                                color="primary"
+                                                variant="contained"
+                                                startIcon={<PlayArrowIcon />}
+                                                onClick={() => handleResumeBatch(activeBatchRun.id)}
+                                            >
+                                                Reprendre
+                                            </MuiButton>
+                                        </Tooltip>
+                                    )}
+                                    <MuiButton
+                                        size="small"
+                                        color="error"
+                                        startIcon={<StopCircleIcon />}
+                                        onClick={() => handleCancelBatch(activeBatchRun.id, false)}
+                                        disabled={cancelling}
+                                    >
+                                        {cancelling ? 'Annulation…' : 'Arrêter'}
+                                    </MuiButton>
+                                    {(isStale || cancelling) && (
+                                        <Tooltip title="Annulation force — kill du worker RQ. À utiliser seulement si le runner est vraiment bloqué et l'annulation coopérative ne réagit pas." arrow>
+                                            <MuiButton
+                                                size="small"
+                                                color="error"
+                                                variant="outlined"
+                                                onClick={() => handleCancelBatch(activeBatchRun.id, true)}
+                                            >
+                                                Force
+                                            </MuiButton>
+                                        </Tooltip>
+                                    )}
+                                </Box>
+                            );
+                        })()}
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {activeBatchRun && (
+                        <Box mb={2}>
+                            <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+                                <Chip label={`Preset: ${activeBatchRun.preset}`} />
+                                <Chip label={`Statut: ${activeBatchRun.status}`} color={activeBatchRun.status === 'COMPLETED' ? 'success' : activeBatchRun.status === 'RUNNING' ? 'warning' : 'default'} />
+                                <Chip label={`${activeBatchRun.completed_trials} réussis / ${activeBatchRun.failed_trials} échoués`} />
+                                {activeBatchRun.best_score && <Chip icon={<EmojiEventsIcon />} label={`Meilleur: ${activeBatchRun.best_score.toFixed(0)}`} color="success" />}
+                                {activeBatchRun.duration_seconds && <Chip label={`Durée: ${(activeBatchRun.duration_seconds / 60).toFixed(0)} min`} />}
+                            </Box>
+                            {/* Progress bar */}
+                            {['RUNNING', 'PENDING'].includes(activeBatchRun.status) && (
+                                <Box sx={{ width: '100%', mb: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ width: '100%', bgcolor: '#e0e0e0', borderRadius: 1, height: 8 }}>
+                                            <Box sx={{ width: `${activeBatchRun.progress_percent}%`, bgcolor: 'secondary.main', borderRadius: 1, height: 8, transition: 'width 0.5s' }} />
+                                        </Box>
+                                        <Typography variant="caption">{activeBatchRun.progress_percent}%</Typography>
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
+                    )}
+                    {batchTopTrials.length > 0 ? (
+                        <TableContainer>
+                            <Table size="small">
                                 <TableHead>
-                                  <TableRow>
-                                    <TableCell sx={{ fontSize: "0.75rem" }}>
-                                      Employé
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: "0.75rem" }}>
-                                      Date
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: "0.75rem" }}>
-                                      Message
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: "0.75rem" }}>
-                                      Détail
-                                    </TableCell>
-                                  </TableRow>
+                                    <TableRow>
+                                        <TableCell>#</TableCell>
+                                        <TableCell>Score</TableCell>
+                                        <TableCell>Algorithme</TableCell>
+                                        <TableCell>Temps</TableCell>
+                                        <TableCell>Couverture</TableCell>
+                                        <TableCell>Heures totales</TableCell>
+                                        <TableCell>Poids clés</TableCell>
+                                        <TableCell>Action</TableCell>
+                                    </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                  {r.violations.map((v: any, i: number) => (
-                                    <TableRow key={i}>
-                                      <TableCell sx={{ fontSize: "0.75rem" }}>
-                                        {v.employee_name || "—"}
-                                      </TableCell>
-                                      <TableCell sx={{ fontSize: "0.75rem" }}>
-                                        {v.date || "—"}
-                                      </TableCell>
-                                      <TableCell sx={{ fontSize: "0.75rem" }}>
-                                        <Chip
-                                          label={v.message}
-                                          size="small"
-                                          color={
-                                            v.severity === "high"
-                                              ? "error"
-                                              : v.severity === "medium"
-                                                ? "warning"
-                                                : "default"
-                                          }
-                                          sx={{ height: 18, fontSize: 10 }}
-                                        />
-                                      </TableCell>
-                                      <TableCell
-                                        sx={{
-                                          fontSize: "0.7rem",
-                                          color: "text.secondary",
-                                        }}
-                                      >
-                                        {v.detail || "—"}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
+                                    {batchTopTrials.map((trial: any, idx: number) => (
+                                        <TableRow key={trial.id} sx={idx === 0 ? { bgcolor: 'success.light', '& td': { fontWeight: 'bold' } } : {}}>
+                                            <TableCell>
+                                                <Box display="flex" alignItems="center" gap={0.5}>
+                                                    {idx === 0 && <EmojiEventsIcon fontSize="small" color="warning" />}
+                                                    {trial.trial_number}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>{trial.score?.toFixed(0)}</TableCell>
+                                            <TableCell><Chip label={trial.algorithm} size="small" /></TableCell>
+                                            <TableCell>{trial.solve_time?.toFixed(1)}s</TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={trial.statistics?.coverage_requirements_met ? 'OK' : 'Non'}
+                                                    size="small"
+                                                    color={trial.statistics?.coverage_requirements_met ? 'success' : 'error'}
+                                                />
+                                            </TableCell>
+                                            <TableCell>{trial.statistics?.total_hours?.toFixed(0) || '-'}h</TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                                                    sf:{trial.objective_weights?.shortfall_penalty} uc:{trial.objective_weights?.unused_capacity_penalty} wh:{trial.objective_weights?.work_hours_bonus}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <MuiButton
+                                                    size="small"
+                                                    variant={idx === 0 ? "contained" : "outlined"}
+                                                    color="success"
+                                                    startIcon={applyingTrial === trial.id ? <CircularProgress size={14} /> : <PlayArrowIcon />}
+                                                    onClick={() => handleApplyTrial(activeBatchRun.id, trial.id)}
+                                                    disabled={applyingTrial !== null}
+                                                >
+                                                    Appliquer
+                                                </MuiButton>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                                 </TableBody>
-                              </Table>
-                            </AccordionDetails>
-                          </Accordion>
-                        ))}
-
-                      {auditResult.rules.filter(
-                        (r: any) =>
-                          r.violations !== null && r.violations.length === 0,
-                      ).length > 0 && (
-                        <Box sx={{ mt: 2 }}>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ fontWeight: 600, display: "block", mb: 0.5 }}
-                          >
-                            ✅ Règles respectées
-                          </Typography>
-                          <Box display="flex" flexWrap="wrap" gap={0.5}>
-                            {auditResult.rules
-                              .filter(
-                                (r: any) =>
-                                  r.violations !== null &&
-                                  r.violations.length === 0,
-                              )
-                              .map((r: any) => (
-                                <Chip
-                                  key={r.key}
-                                  label={r.label}
-                                  size="small"
-                                  color="success"
-                                  variant="outlined"
-                                  sx={{ height: 22 }}
-                                />
-                              ))}
-                          </Box>
+                            </Table>
+                        </TableContainer>
+                    ) : (
+                        <Box textAlign="center" py={4}>
+                            {activeBatchRun && ['RUNNING', 'PENDING'].includes(activeBatchRun.status) ? (
+                                <>
+                                    <CircularProgress sx={{ mb: 2 }} />
+                                    <Typography color="text.secondary">Optimisation en cours... Les résultats apparaîtront ici.</Typography>
+                                </>
+                            ) : (
+                                <Typography color="text.secondary">Aucun résultat disponible. Lancez une optimisation batch.</Typography>
+                            )}
                         </Box>
-                      )}
-                    </>
-                  );
-                })()}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setRulesDialog(false)}>Fermer</MuiButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Extra Employees Dialog */}
-      <Dialog
-        open={extraEmpDialog}
-        onClose={() => setExtraEmpDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <PersonAddIcon color="info" />
-            <Typography variant="h6">Ajouter un employé au planning</Typography>
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers>
-          {!isDraft && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Ce planning est <strong>{planning?.status}</strong>. L'ajout sera
-              tracé dans les notes ({`type EXTRA_EMPLOYEE`}) avec votre nom et
-              la date.
-            </Alert>
-          )}
-
-          <Typography variant="subtitle2" gutterBottom>
-            Employés ajoutés manuellement ({extraEmpList.length})
-          </Typography>
-          {extraEmpList.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Aucun. Tous les employés du planning ont au moins une affectation.
-            </Typography>
-          ) : (
-            <Box sx={{ mb: 2 }}>
-              {extraEmpList.map((e) => (
-                <Box
-                  key={e.employee_id}
-                  display="flex"
-                  alignItems="center"
-                  gap={1}
-                  sx={{ py: 0.5 }}
-                >
-                  <Chip label={e.abbreviation} size="small" />
-                  <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                    {e.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(e.added_at).toLocaleDateString("fr-FR")}
-                  </Typography>
-                  <Tooltip title="Retirer (uniquement si aucune affectation)">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => removeExtraEmployee(e.employee_id)}
-                    >
-                      <PersonRemoveIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              ))}
-            </Box>
-          )}
-
-          <Typography variant="subtitle2" gutterBottom>
-            Employés disponibles ({availableEmpList.length})
-          </Typography>
-          {extraEmpLoading ? (
-            <Box display="flex" alignItems="center" gap={1}>
-              <CircularProgress size={18} />
-              <Typography variant="body2" color="text.secondary">
-                Chargement…
-              </Typography>
-            </Box>
-          ) : availableEmpList.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              Aucun candidat (tous les employés actifs sont déjà dans le
-              planning).
-            </Typography>
-          ) : (
-            <Autocomplete
-              multiple
-              disableCloseOnSelect
-              options={availableEmpList}
-              getOptionLabel={(o: any) =>
-                `${o.abbreviation} — ${o.name}${o.job_position ? ` (${o.job_position})` : ""}`
-              }
-              value={availableEmpList.filter((o: any) =>
-                extraEmpSelected.includes(o.employee_id),
-              )}
-              onChange={(_e, v) =>
-                setExtraEmpSelected(v.map((o: any) => o.employee_id))
-              }
-              renderInput={(params) => (
-                <MuiTextField
-                  {...params}
-                  placeholder="Sélectionner…"
-                  size="small"
-                />
-              )}
-              sx={{ mt: 1 }}
-            />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setExtraEmpDialog(false)}>Fermer</MuiButton>
-          <MuiButton
-            variant="contained"
-            color="info"
-            startIcon={
-              extraEmpSubmitting ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <PersonAddIcon />
-              )
-            }
-            onClick={submitExtraEmployees}
-            disabled={extraEmpSelected.length === 0 || extraEmpSubmitting}
-          >
-            {extraEmpSubmitting
-              ? "Ajout…"
-              : `Ajouter ${extraEmpSelected.length || ""}`.trim()}
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Batch Compare Dialog */}
-      <Dialog
-        open={batchCompareDialog}
-        onClose={() => setBatchCompareDialog(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Box display="flex" alignItems="center" gap={1}>
-              <CompareArrowsIcon color="secondary" />
-              <Typography variant="h6">
-                Comparaison des solutions batch
-              </Typography>
-            </Box>
-            {activeBatchRun &&
-              ["RUNNING", "PENDING"].includes(activeBatchRun.status) &&
-              (() => {
-                // 'Stale' = no heartbeat at all, or heartbeat older
-                // than 5 minutes. That's almost certainly a worker
-                // that died — Reprendre re-enqueues the same run.
-                const hb = activeBatchRun.last_heartbeat
-                  ? new Date(activeBatchRun.last_heartbeat).getTime()
-                  : null;
-                const ageMs = hb ? Date.now() - hb : null;
-                const isStale =
-                  activeBatchRun.status === "RUNNING" &&
-                  (ageMs === null || ageMs > 5 * 60 * 1000);
-                const cancelling = !!activeBatchRun.cancel_requested;
-                return (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    {!isStale && <CircularProgress size={20} />}
-                    <Typography variant="body2" color="text.secondary">
-                      {activeBatchRun.completed_trials}/
-                      {activeBatchRun.total_trials} essais (
-                      {activeBatchRun.progress_percent}%)
-                      {cancelling ? " · annulation en cours…" : ""}
-                      {isStale
-                        ? ` · 💤 worker silencieux${ageMs !== null ? ` depuis ${Math.round(ageMs / 60000)} min` : ""}`
-                        : ""}
-                    </Typography>
-                    {isStale && (
-                      <Tooltip
-                        title="Le worker semble mort. Reprendre relance le run sans perdre les essais déjà calculés."
-                        arrow
-                      >
-                        <MuiButton
-                          size="small"
-                          color="primary"
-                          variant="contained"
-                          startIcon={<PlayArrowIcon />}
-                          onClick={() => handleResumeBatch(activeBatchRun.id)}
-                        >
-                          Reprendre
+                    )}
+                    {/* Previous runs */}
+                    {batchRuns.length > 1 && (
+                        <Box mt={3}>
+                            <Typography variant="subtitle2" gutterBottom>Historique des runs:</Typography>
+                            {batchRuns.filter(r => r.id !== activeBatchRun?.id).slice(0, 5).map(r => (
+                                <Chip
+                                    key={r.id}
+                                    label={`#${r.id} ${r.preset} - ${r.status} (score: ${r.best_score?.toFixed(0) || 'N/A'})`}
+                                    size="small"
+                                    sx={{ mr: 0.5, mb: 0.5, cursor: 'pointer' }}
+                                    color={r.status === 'COMPLETED' ? 'success' : 'default'}
+                                    onClick={async () => {
+                                        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                                        const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${r.id}`);
+                                        if (response.ok) {
+                                            const data = await response.json();
+                                            setActiveBatchRun(data);
+                                            setBatchTopTrials(data.top_trials || []);
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    {!batchPolling && (
+                        <MuiButton onClick={() => { setBatchCompareDialog(false); setBatchDialog(true); }} color="secondary" startIcon={<RocketLaunchIcon />}>
+                            Nouveau batch
                         </MuiButton>
-                      </Tooltip>
+                    )}
+                    <MuiButton onClick={() => setBatchCompareDialog(false)}>Fermer</MuiButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Shift Creation Dialog */}
+            <Dialog open={createShiftDialog} onClose={() => setCreateShiftDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle>Créer un nouveau shift</DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                        <Grid item xs={6}><MuiTextField label="Code" value={newShift.code} onChange={(e) => setNewShift({ ...newShift, code: e.target.value.toUpperCase() })} fullWidth required /></Grid>
+                        <Grid item xs={6}><MuiTextField label="Nom" value={newShift.name} onChange={(e) => setNewShift({ ...newShift, name: e.target.value })} fullWidth required /></Grid>
+                        <Grid item xs={3}><MuiTextField label="Début" type="time" value={newShift.start_time} onChange={(e) => { const v = e.target.value; setNewShift({ ...newShift, start_time: v, hours: calculateWorkedHours(v, newShift.end_time, newShift.break_minutes) || newShift.hours }); }} fullWidth required InputLabelProps={{ shrink: true }} /></Grid>
+                        <Grid item xs={3}><MuiTextField label="Fin" type="time" value={newShift.end_time} onChange={(e) => { const v = e.target.value; setNewShift({ ...newShift, end_time: v, hours: calculateWorkedHours(newShift.start_time, v, newShift.break_minutes) || newShift.hours }); }} fullWidth required InputLabelProps={{ shrink: true }} /></Grid>
+                        <Grid item xs={3}><MuiTextField label="Pause (min)" type="number" value={newShift.break_minutes} onChange={(e) => { const v = parseInt(e.target.value) || 0; setNewShift({ ...newShift, break_minutes: v, hours: calculateWorkedHours(newShift.start_time, newShift.end_time, v) || newShift.hours }); }} fullWidth inputProps={{ min: 0 }} /></Grid>
+                        <Grid item xs={3}><MuiTextField label="Heures" type="number" value={newShift.hours} onChange={(e) => setNewShift({ ...newShift, hours: parseFloat(e.target.value) || 0 })} fullWidth inputProps={{ step: 0.5 }} /></Grid>
+                        <Grid item xs={6}>
+                            <FormControl fullWidth>
+                                <InputLabel>Catégorie</InputLabel>
+                                <Select value={newShift.shift_category} onChange={(e) => setNewShift({ ...newShift, shift_category: e.target.value })} label="Catégorie">
+                                    <MenuItem value="MORNING">Matin</MenuItem>
+                                    <MenuItem value="EVENING">Soir</MenuItem>
+                                    <MenuItem value="NIGHT">Nuit</MenuItem>
+                                    <MenuItem value="OFF">Jour OFF</MenuItem>
+                                    <MenuItem value="LEAVE">Congé</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={6}><MuiTextField label="Couleur" type="color" value={newShift.color_code} onChange={(e) => setNewShift({ ...newShift, color_code: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} /></Grid>
+                        {shiftValidationError && <Grid item xs={12}><Alert severity="error">{shiftValidationError}</Alert></Grid>}
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setCreateShiftDialog(false)}>Annuler</MuiButton>
+                    <MuiButton onClick={handleCreateShift} variant="contained" disabled={!newShift.code || !newShift.name}>Créer</MuiButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* CSV Import Dialog */}
+            <Dialog open={csvImportDialog} onClose={() => setCsvImportDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Importer CSV</DialogTitle>
+                <DialogContent>
+                    <Box display="flex" flexDirection="column" gap={2} mt={2}>
+                        <Alert severity="info">Format: abbreviation,date,shift_code</Alert>
+                        <input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} style={{ padding: '10px', border: '2px dashed #ccc', borderRadius: '4px' }} />
+                        {csvFile && <Alert severity="success">Fichier: {csvFile.name}</Alert>}
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => { setCsvImportDialog(false); setCsvFile(null); }}>Annuler</MuiButton>
+                    <MuiButton onClick={handleCsvImport} variant="contained" disabled={!csvFile || importing}>{importing ? 'Import...' : 'Importer'}</MuiButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Analysis Dialog */}
+            <Dialog open={analysisDialog} onClose={() => setAnalysisDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle><Box display="flex" alignItems="center" gap={1}><AssessmentIcon /> Analyse de Planning</Box></DialogTitle>
+                <DialogContent>
+                    {analysisData && (
+                        <Box display="flex" flexDirection="column" gap={3} mt={2}>
+                            <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                                <CardContent>
+                                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                                        <Box>
+                                            <Typography variant="h4" fontWeight="bold">{analysisData.efficiency_score?.toFixed(1) || 0}%</Typography>
+                                            <Typography variant="body2" sx={{ opacity: 0.9 }}>Score d'Efficacité</Typography>
+                                        </Box>
+                                        <TrendingUpIcon sx={{ fontSize: 60, opacity: 0.3 }} />
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                            <Grid container spacing={2}>
+                                <Grid item xs={6}><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h5" color="primary">{analysisData.current_state?.total_assignments || 0}</Typography><Typography variant="caption">Affectations</Typography></Paper></Grid>
+                                <Grid item xs={6}><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h5" color="success.main">{analysisData.current_state?.total_hours?.toFixed(1) || 0}h</Typography><Typography variant="caption">Heures Totales</Typography></Paper></Grid>
+                            </Grid>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions><MuiButton onClick={() => setAnalysisDialog(false)}>Fermer</MuiButton></DialogActions>
+            </Dialog>
+
+            {/* Validation Dialog */}
+            <Dialog open={validationDialog} onClose={() => setValidationDialog(false)} maxWidth="lg" fullWidth>
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <CheckCircleIcon color={validationResults?.employees_with_errors === 0 ? 'success' : 'error'} />
+                        Résultats de Validation
+                        {validationResults?.employees_with_errors === 0 ? <Chip label="Valide" color="success" size="small" /> : <Chip label="Erreurs" color="error" size="small" />}
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {validationResults && (
+                        <Box display="flex" flexDirection="column" gap={3} mt={2}>
+                            <Grid container spacing={2}>
+                                <Grid item xs={3}><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h4" color="primary">{validationResults.total_employees || 0}</Typography><Typography variant="caption">Employés</Typography></Paper></Grid>
+                                <Grid item xs={3}><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h4" color="success.main">{(validationResults.total_employees || 0) - (validationResults.employees_with_errors || 0) - (validationResults.employees_with_warnings || 0)}</Typography><Typography variant="caption">OK</Typography></Paper></Grid>
+                                <Grid item xs={3}><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h4" color="warning.main">{validationResults.employees_with_warnings || 0}</Typography><Typography variant="caption">Avertissements</Typography></Paper></Grid>
+                                <Grid item xs={3}><Paper sx={{ p: 2, textAlign: 'center' }}><Typography variant="h4" color="error">{validationResults.employees_with_errors || 0}</Typography><Typography variant="caption">Erreurs</Typography></Paper></Grid>
+                            </Grid>
+                            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                                <Table size="small" stickyHeader>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Employé</TableCell>
+                                            <TableCell align="center">Heures</TableCell>
+                                            <TableCell align="center">Jours conséc.</TableCell>
+                                            <TableCell>Statut</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {validationResults.results?.map((emp: any) => (
+                                            <TableRow key={emp.employee_id} sx={{ backgroundColor: emp.has_errors ? 'rgba(244, 67, 54, 0.1)' : emp.has_warnings ? 'rgba(255, 152, 0, 0.1)' : 'inherit' }}>
+                                                <TableCell><Box display="flex" alignItems="center" gap={1}><Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>{emp.abbreviation}</Avatar><Typography variant="body2">{emp.name}</Typography></Box></TableCell>
+                                                <TableCell align="center"><Typography color={emp.checks?.hours?.status === 'error' ? 'error' : 'inherit'}>{emp.checks?.hours?.current?.toFixed(1)}h / {emp.checks?.hours?.limit?.toFixed(1)}h</Typography></TableCell>
+                                                <TableCell align="center"><Chip label={`${emp.checks?.consecutive_days?.max_consecutive || 0}j`} size="small" color={emp.checks?.consecutive_days?.status === 'error' ? 'error' : 'default'} /></TableCell>
+                                                <TableCell>{emp.has_errors ? <Chip label="Erreur" size="small" color="error" /> : emp.has_warnings ? <Chip label="Avert." size="small" color="warning" /> : <Chip label="OK" size="small" color="success" />}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions><MuiButton onClick={() => setValidationDialog(false)}>Fermer</MuiButton></DialogActions>
+            </Dialog>
+
+            {/* Edit Shift Dialog */}
+            <Dialog open={!!editDialog?.open} onClose={() => setEditDialog(null)} maxWidth="sm" fullWidth>
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <EditIcon color="primary" />
+                        Modifier l'affectation
+                        {planning?.status === 'PUBLISHED' && (
+                            <Chip label="Planning publié" color="success" size="small" sx={{ ml: 1 }} />
+                        )}
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {editDialog && (
+                        <Box display="flex" flexDirection="column" gap={2} mt={2}>
+                            <Alert severity="info" icon={false}>
+                                <Typography variant="body2">
+                                    <strong>{editDialog.employeeName}</strong> - Jour {editDialog.day}
+                                    {editDialog.currentShift && (
+                                        <span> (actuellement: <strong>{editDialog.currentShift}</strong>)</span>
+                                    )}
+                                </Typography>
+                            </Alert>
+
+                            <FormControl fullWidth>
+                                <InputLabel>Shift</InputLabel>
+                                <Select
+                                    value={editingShiftValue}
+                                    onChange={(e) => setEditingShiftValue(e.target.value)}
+                                    label="Shift"
+                                >
+                                    <MenuItem value="">
+                                        <em>- Aucun (supprimer) -</em>
+                                    </MenuItem>
+                                    {shiftTypes.map((st) => (
+                                        <MenuItem key={st.id} value={st.code}>
+                                            <Box display="flex" alignItems="center" gap={1} width="100%">
+                                                <Box
+                                                    sx={{
+                                                        width: 16,
+                                                        height: 16,
+                                                        borderRadius: 1,
+                                                        backgroundColor: st.color_code || '#ccc',
+                                                    }}
+                                                />
+                                                <Typography>{st.code}</Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                                                    {st.hours}h
+                                                </Typography>
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            {/* Audit fields - shown for PUBLISHED planning */}
+                            {planning?.status === 'PUBLISHED' && (
+                                <>
+                                    <Alert severity="warning" sx={{ py: 0.5 }}>
+                                        <Typography variant="caption">
+                                            Ce planning est publié. Un commentaire est requis pour tracer la modification.
+                                        </Typography>
+                                    </Alert>
+
+                                    <FormControl fullWidth>
+                                        <InputLabel>Demandé par</InputLabel>
+                                        <Select
+                                            value={editRequestedBy}
+                                            onChange={(e) => setEditRequestedBy(e.target.value as any)}
+                                            label="Demandé par"
+                                        >
+                                            <MenuItem value="EMPLOYEE">👤 Employé</MenuItem>
+                                            <MenuItem value="EMPLOYER">🏢 Employeur</MenuItem>
+                                            <MenuItem value="OTHER">📋 Autre</MenuItem>
+                                        </Select>
+                                    </FormControl>
+
+                                    <MuiTextField
+                                        label="Raison de la modification *"
+                                        value={editComment}
+                                        onChange={(e) => setEditComment(e.target.value)}
+                                        multiline
+                                        rows={2}
+                                        fullWidth
+                                        placeholder="Ex: Demande de l'employé pour raison personnelle, Remplacement maladie, etc."
+                                        required
+                                        error={!editComment.trim()}
+                                        helperText={!editComment.trim() ? "Requis pour les plannings publiés" : ""}
+                                    />
+                                </>
+                            )}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setEditDialog(null)}>Annuler</MuiButton>
+                    {editDialog?.currentShift && (
+                        <MuiButton
+                            color="error"
+                            onClick={async () => {
+                                if (editDialog) {
+                                    const isPublished = planning?.status === 'PUBLISHED';
+                                    if (isPublished && !editComment.trim()) {
+                                        notify('Un commentaire est requis', { type: 'warning' });
+                                        return;
+                                    }
+                                    await handleShiftDelete(editDialog.employeeId, editDialog.day, editComment, editRequestedBy);
+                                    setEditDialog(null);
+                                }
+                            }}
+                        >
+                            Supprimer
+                        </MuiButton>
                     )}
                     <MuiButton
-                      size="small"
-                      color="error"
-                      startIcon={<StopCircleIcon />}
-                      onClick={() =>
-                        handleCancelBatch(activeBatchRun.id, false)
-                      }
-                      disabled={cancelling}
+                        variant="contained"
+                        onClick={async () => {
+                            if (editDialog) {
+                                const isPublished = planning?.status === 'PUBLISHED';
+                                if (isPublished && !editComment.trim()) {
+                                    notify('Un commentaire est requis', { type: 'warning' });
+                                    return;
+                                }
+                                if (editingShiftValue) {
+                                    await handleShiftSave(editDialog.employeeId, editDialog.day, editingShiftValue, editComment, editRequestedBy);
+                                } else if (editDialog.currentShift) {
+                                    await handleShiftDelete(editDialog.employeeId, editDialog.day, editComment, editRequestedBy);
+                                }
+                                setEditDialog(null);
+                            }
+                        }}
                     >
-                      {cancelling ? "Annulation…" : "Arrêter"}
+                        Enregistrer
                     </MuiButton>
-                    {(isStale || cancelling) && (
-                      <Tooltip
-                        title="Annulation force — kill du worker RQ. À utiliser seulement si le runner est vraiment bloqué et l'annulation coopérative ne réagit pas."
-                        arrow
-                      >
-                        <MuiButton
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          onClick={() =>
-                            handleCancelBatch(activeBatchRun.id, true)
-                          }
-                        >
-                          Force
-                        </MuiButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                );
-              })()}
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {activeBatchRun && (
-            <Box mb={2}>
-              <Box display="flex" gap={2} mb={2} flexWrap="wrap">
-                <Chip label={`Preset: ${activeBatchRun.preset}`} />
-                <Chip
-                  label={`Statut: ${activeBatchRun.status}`}
-                  color={
-                    activeBatchRun.status === "COMPLETED"
-                      ? "success"
-                      : activeBatchRun.status === "RUNNING"
-                        ? "warning"
-                        : "default"
-                  }
+                </DialogActions>
+            </Dialog>
+
+            {/* Shift History Popover */}
+            {historyPopover && (
+                <ShiftHistoryPopover
+                    anchorEl={historyPopover.anchorEl}
+                    onClose={() => setHistoryPopover(null)}
+                    planningId={planningId}
+                    employeeId={historyPopover.employeeId}
+                    employeeName={historyPopover.employeeName}
+                    date={historyPopover.date}
                 />
-                <Chip
-                  label={`${activeBatchRun.completed_trials} réussis / ${activeBatchRun.failed_trials} échoués`}
+            )}
+
+            {/* Day Detail View */}
+            {dayDetailView && (
+                <DayDetailView
+                    day={dayDetailView.day}
+                    date={dayDetailView.date}
+                    employees={calendarData.employees}
+                    shiftTypes={shiftTypes}
+                    planningId={planningId}
+                    planning={planning}
+                    onClose={() => setDayDetailView(null)}
+                    onUpdate={loadData}
                 />
-                {activeBatchRun.best_score && (
-                  <Chip
-                    icon={<EmojiEventsIcon />}
-                    label={`Meilleur: ${activeBatchRun.best_score.toFixed(0)}`}
-                    color="success"
-                  />
-                )}
-                {activeBatchRun.duration_seconds && (
-                  <Chip
-                    label={`Durée: ${(activeBatchRun.duration_seconds / 60).toFixed(0)} min`}
-                  />
-                )}
-              </Box>
-              {/* Progress bar */}
-              {["RUNNING", "PENDING"].includes(activeBatchRun.status) && (
-                <Box sx={{ width: "100%", mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box
-                      sx={{
-                        width: "100%",
-                        bgcolor: "#e0e0e0",
-                        borderRadius: 1,
-                        height: 8,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: `${activeBatchRun.progress_percent}%`,
-                          bgcolor: "secondary.main",
-                          borderRadius: 1,
-                          height: 8,
-                          transition: "width 0.5s",
-                        }}
-                      />
-                    </Box>
-                    <Typography variant="caption">
-                      {activeBatchRun.progress_percent}%
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          )}
-          {batchTopTrials.length > 0 ? (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>#</TableCell>
-                    <TableCell>Score</TableCell>
-                    <TableCell>Algorithme</TableCell>
-                    <TableCell>Temps</TableCell>
-                    <TableCell>Couverture</TableCell>
-                    <TableCell>Heures totales</TableCell>
-                    <TableCell>Poids clés</TableCell>
-                    <TableCell>Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {batchTopTrials.map((trial: any, idx: number) => (
-                    <TableRow
-                      key={trial.id}
-                      sx={
-                        idx === 0
-                          ? {
-                              bgcolor: "success.light",
-                              "& td": { fontWeight: "bold" },
-                            }
-                          : {}
-                      }
-                    >
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          {idx === 0 && (
-                            <EmojiEventsIcon fontSize="small" color="warning" />
-                          )}
-                          {trial.trial_number}
-                        </Box>
-                      </TableCell>
-                      <TableCell>{trial.score?.toFixed(0)}</TableCell>
-                      <TableCell>
-                        <Chip label={trial.algorithm} size="small" />
-                      </TableCell>
-                      <TableCell>{trial.solve_time?.toFixed(1)}s</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={
-                            trial.statistics?.coverage_requirements_met
-                              ? "OK"
-                              : "Non"
-                          }
-                          size="small"
-                          color={
-                            trial.statistics?.coverage_requirements_met
-                              ? "success"
-                              : "error"
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {trial.statistics?.total_hours?.toFixed(0) || "-"}h
-                      </TableCell>
-                      <TableCell>
-                        <Typography
-                          variant="caption"
-                          sx={{ fontSize: "0.7rem" }}
-                        >
-                          sf:{trial.objective_weights?.shortfall_penalty} uc:
-                          {trial.objective_weights?.unused_capacity_penalty} wh:
-                          {trial.objective_weights?.work_hours_bonus}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <MuiButton
-                          size="small"
-                          variant={idx === 0 ? "contained" : "outlined"}
-                          color="success"
-                          startIcon={
-                            applyingTrial === trial.id ? (
-                              <CircularProgress size={14} />
-                            ) : (
-                              <PlayArrowIcon />
-                            )
-                          }
-                          onClick={() =>
-                            handleApplyTrial(activeBatchRun.id, trial.id)
-                          }
-                          disabled={applyingTrial !== null}
-                        >
-                          Appliquer
-                        </MuiButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Box textAlign="center" py={4}>
-              {activeBatchRun &&
-              ["RUNNING", "PENDING"].includes(activeBatchRun.status) ? (
-                <>
-                  <CircularProgress sx={{ mb: 2 }} />
-                  <Typography color="text.secondary">
-                    Optimisation en cours... Les résultats apparaîtront ici.
-                  </Typography>
-                </>
-              ) : (
-                <Typography color="text.secondary">
-                  Aucun résultat disponible. Lancez une optimisation batch.
-                </Typography>
-              )}
-            </Box>
-          )}
-          {/* Previous runs */}
-          {batchRuns.length > 1 && (
-            <Box mt={3}>
-              <Typography variant="subtitle2" gutterBottom>
-                Historique des runs:
-              </Typography>
-              {batchRuns
-                .filter((r) => r.id !== activeBatchRun?.id)
-                .slice(0, 5)
-                .map((r) => (
-                  <Chip
-                    key={r.id}
-                    label={`#${r.id} ${r.preset} - ${r.status} (score: ${r.best_score?.toFixed(0) || "N/A"})`}
-                    size="small"
-                    sx={{ mr: 0.5, mb: 0.5, cursor: "pointer" }}
-                    color={r.status === "COMPLETED" ? "success" : "default"}
-                    onClick={async () => {
-                      const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-                      const response = await authenticatedFetch(
-                        `${apiUrl}/planning/batch-optimize/${r.id}`,
-                      );
-                      if (response.ok) {
-                        const data = await response.json();
-                        setActiveBatchRun(data);
-                        setBatchTopTrials(data.top_trials || []);
-                      }
-                    }}
-                  />
-                ))}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          {!batchPolling && (
-            <MuiButton
-              onClick={() => {
-                setBatchCompareDialog(false);
-                setBatchDialog(true);
-              }}
-              color="secondary"
-              startIcon={<RocketLaunchIcon />}
+            )}
+
+            {/* AI Assistant FAB */}
+            <Fab
+                color="secondary"
+                aria-label="AI Assistant"
+                onClick={() => setAiChatOpen(true)}
+                sx={{ position: 'fixed', bottom: 24, right: 24, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
             >
-              Nouveau batch
-            </MuiButton>
-          )}
-          <MuiButton onClick={() => setBatchCompareDialog(false)}>
-            Fermer
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
+                <PsychologyIcon />
+            </Fab>
 
-      {/* Shift Creation Dialog */}
-      <Dialog
-        open={createShiftDialog}
-        onClose={() => setCreateShiftDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Créer un nouveau shift</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={6}>
-              <MuiTextField
-                label="Code"
-                value={newShift.code}
-                onChange={(e) =>
-                  setNewShift({
-                    ...newShift,
-                    code: e.target.value.toUpperCase(),
-                  })
-                }
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <MuiTextField
-                label="Nom"
-                value={newShift.name}
-                onChange={(e) =>
-                  setNewShift({ ...newShift, name: e.target.value })
-                }
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <MuiTextField
-                label="Début"
-                type="time"
-                value={newShift.start_time}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setNewShift({
-                    ...newShift,
-                    start_time: v,
-                    hours:
-                      calculateWorkedHours(
-                        v,
-                        newShift.end_time,
-                        newShift.break_minutes,
-                      ) || newShift.hours,
-                  });
-                }}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <MuiTextField
-                label="Fin"
-                type="time"
-                value={newShift.end_time}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setNewShift({
-                    ...newShift,
-                    end_time: v,
-                    hours:
-                      calculateWorkedHours(
-                        newShift.start_time,
-                        v,
-                        newShift.break_minutes,
-                      ) || newShift.hours,
-                  });
-                }}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <MuiTextField
-                label="Pause (min)"
-                type="number"
-                value={newShift.break_minutes}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value) || 0;
-                  setNewShift({
-                    ...newShift,
-                    break_minutes: v,
-                    hours:
-                      calculateWorkedHours(
-                        newShift.start_time,
-                        newShift.end_time,
-                        v,
-                      ) || newShift.hours,
-                  });
-                }}
-                fullWidth
-                inputProps={{ min: 0 }}
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <MuiTextField
-                label="Heures"
-                type="number"
-                value={newShift.hours}
-                onChange={(e) =>
-                  setNewShift({
-                    ...newShift,
-                    hours: parseFloat(e.target.value) || 0,
-                  })
-                }
-                fullWidth
-                inputProps={{ step: 0.5 }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel>Catégorie</InputLabel>
-                <Select
-                  value={newShift.shift_category}
-                  onChange={(e) =>
-                    setNewShift({ ...newShift, shift_category: e.target.value })
-                  }
-                  label="Catégorie"
-                >
-                  <MenuItem value="MORNING">Matin</MenuItem>
-                  <MenuItem value="EVENING">Soir</MenuItem>
-                  <MenuItem value="NIGHT">Nuit</MenuItem>
-                  <MenuItem value="OFF">Jour OFF</MenuItem>
-                  <MenuItem value="LEAVE">Congé</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={6}>
-              <MuiTextField
-                label="Couleur"
-                type="color"
-                value={newShift.color_code}
-                onChange={(e) =>
-                  setNewShift({ ...newShift, color_code: e.target.value })
-                }
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            {shiftValidationError && (
-              <Grid item xs={12}>
-                <Alert severity="error">{shiftValidationError}</Alert>
-              </Grid>
-            )}
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setCreateShiftDialog(false)}>
-            Annuler
-          </MuiButton>
-          <MuiButton
-            onClick={handleCreateShift}
-            variant="contained"
-            disabled={!newShift.code || !newShift.name}
-          >
-            Créer
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
+            {/* AI Chat Dialog */}
+            <Dialog open={aiChatOpen} onClose={() => setAiChatOpen(false)} maxWidth="md" fullWidth>
+                <DialogContent sx={{ p: 0 }}>
+                    <OptimizerAIChat
+                        planningId={planningId}
+                        month={planning.month}
+                        year={planning.year}
+                        failureMessage={optimizerFailureMessage}
+                        onClose={() => setAiChatOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
 
-      {/* CSV Import Dialog */}
-      <Dialog
-        open={csvImportDialog}
-        onClose={() => setCsvImportDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Importer CSV</DialogTitle>
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2} mt={2}>
-            <Alert severity="info">Format: abbreviation,date,shift_code</Alert>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-              style={{
-                padding: "10px",
-                border: "2px dashed #ccc",
-                borderRadius: "4px",
-              }}
-            />
-            {csvFile && (
-              <Alert severity="success">Fichier: {csvFile.name}</Alert>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <MuiButton
-            onClick={() => {
-              setCsvImportDialog(false);
-              setCsvFile(null);
-            }}
-          >
-            Annuler
-          </MuiButton>
-          <MuiButton
-            onClick={handleCsvImport}
-            variant="contained"
-            disabled={!csvFile || importing}
-          >
-            {importing ? "Import..." : "Importer"}
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Analysis Dialog */}
-      <Dialog
-        open={analysisDialog}
-        onClose={() => setAnalysisDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <AssessmentIcon /> Analyse de Planning
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {analysisData && (
-            <Box display="flex" flexDirection="column" gap={3} mt={2}>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                }}
-              >
-                <CardContent>
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="space-between"
-                  >
-                    <Box>
-                      <Typography variant="h4" fontWeight="bold">
-                        {analysisData.efficiency_score?.toFixed(1) || 0}%
-                      </Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                        Score d'Efficacité
-                      </Typography>
-                    </Box>
-                    <TrendingUpIcon sx={{ fontSize: 60, opacity: 0.3 }} />
-                  </Box>
-                </CardContent>
-              </Card>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Paper sx={{ p: 2, textAlign: "center" }}>
-                    <Typography variant="h5" color="primary">
-                      {analysisData.current_state?.total_assignments || 0}
-                    </Typography>
-                    <Typography variant="caption">Affectations</Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={6}>
-                  <Paper sx={{ p: 2, textAlign: "center" }}>
-                    <Typography variant="h5" color="success.main">
-                      {analysisData.current_state?.total_hours?.toFixed(1) || 0}
-                      h
-                    </Typography>
-                    <Typography variant="caption">Heures Totales</Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setAnalysisDialog(false)}>Fermer</MuiButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Validation Dialog */}
-      <Dialog
-        open={validationDialog}
-        onClose={() => setValidationDialog(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <CheckCircleIcon
-              color={
-                validationResults?.employees_with_errors === 0
-                  ? "success"
-                  : "error"
-              }
-            />
-            Résultats de Validation
-            {validationResults?.employees_with_errors === 0 ? (
-              <Chip label="Valide" color="success" size="small" />
-            ) : (
-              <Chip label="Erreurs" color="error" size="small" />
-            )}
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {validationResults && (
-            <Box display="flex" flexDirection="column" gap={3} mt={2}>
-              <Grid container spacing={2}>
-                <Grid item xs={3}>
-                  <Paper sx={{ p: 2, textAlign: "center" }}>
-                    <Typography variant="h4" color="primary">
-                      {validationResults.total_employees || 0}
-                    </Typography>
-                    <Typography variant="caption">Employés</Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={3}>
-                  <Paper sx={{ p: 2, textAlign: "center" }}>
-                    <Typography variant="h4" color="success.main">
-                      {(validationResults.total_employees || 0) -
-                        (validationResults.employees_with_errors || 0) -
-                        (validationResults.employees_with_warnings || 0)}
-                    </Typography>
-                    <Typography variant="caption">OK</Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={3}>
-                  <Paper sx={{ p: 2, textAlign: "center" }}>
-                    <Typography variant="h4" color="warning.main">
-                      {validationResults.employees_with_warnings || 0}
-                    </Typography>
-                    <Typography variant="caption">Avertissements</Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={3}>
-                  <Paper sx={{ p: 2, textAlign: "center" }}>
-                    <Typography variant="h4" color="error">
-                      {validationResults.employees_with_errors || 0}
-                    </Typography>
-                    <Typography variant="caption">Erreurs</Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
-              <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
-                <Table size="small" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Employé</TableCell>
-                      <TableCell align="center">Heures</TableCell>
-                      <TableCell align="center">Jours conséc.</TableCell>
-                      <TableCell>Statut</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {validationResults.results?.map((emp: any) => (
-                      <TableRow
-                        key={emp.employee_id}
-                        sx={{
-                          backgroundColor: emp.has_errors
-                            ? "rgba(244, 67, 54, 0.1)"
-                            : emp.has_warnings
-                              ? "rgba(255, 152, 0, 0.1)"
-                              : "inherit",
-                        }}
-                      >
-                        <TableCell>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Avatar
-                              sx={{ width: 24, height: 24, fontSize: "0.7rem" }}
-                            >
-                              {emp.abbreviation}
-                            </Avatar>
-                            <Typography variant="body2">{emp.name}</Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Typography
-                            color={
-                              emp.checks?.hours?.status === "error"
-                                ? "error"
-                                : "inherit"
-                            }
-                          >
-                            {emp.checks?.hours?.current?.toFixed(1)}h /{" "}
-                            {emp.checks?.hours?.limit?.toFixed(1)}h
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Chip
-                            label={`${emp.checks?.consecutive_days?.max_consecutive || 0}j`}
-                            size="small"
-                            color={
-                              emp.checks?.consecutive_days?.status === "error"
-                                ? "error"
-                                : "default"
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {emp.has_errors ? (
-                            <Chip label="Erreur" size="small" color="error" />
-                          ) : emp.has_warnings ? (
-                            <Chip label="Avert." size="small" color="warning" />
-                          ) : (
-                            <Chip label="OK" size="small" color="success" />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setValidationDialog(false)}>
-            Fermer
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit Shift Dialog */}
-      <Dialog
-        open={!!editDialog?.open}
-        onClose={() => setEditDialog(null)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <EditIcon color="primary" />
-            Modifier l'affectation
-            {planning?.status === "PUBLISHED" && (
-              <Chip
-                label="Planning publié"
-                color="success"
-                size="small"
-                sx={{ ml: 1 }}
-              />
-            )}
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {editDialog && (
-            <Box display="flex" flexDirection="column" gap={2} mt={2}>
-              <Alert severity="info" icon={false}>
-                <Typography variant="body2">
-                  <strong>{editDialog.employeeName}</strong> - Jour{" "}
-                  {editDialog.day}
-                  {editDialog.currentShift && (
-                    <span>
-                      {" "}
-                      (actuellement: <strong>{editDialog.currentShift}</strong>)
-                    </span>
-                  )}
-                </Typography>
-              </Alert>
-
-              <FormControl fullWidth>
-                <InputLabel>Shift</InputLabel>
-                <Select
-                  value={editingShiftValue}
-                  onChange={(e) => setEditingShiftValue(e.target.value)}
-                  label="Shift"
-                >
-                  <MenuItem value="">
-                    <em>- Aucun (supprimer) -</em>
-                  </MenuItem>
-                  {shiftTypes.map((st) => (
-                    <MenuItem key={st.id} value={st.code}>
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        gap={1}
-                        width="100%"
-                      >
-                        <Box
-                          sx={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: 1,
-                            backgroundColor: st.color_code || "#ccc",
-                          }}
-                        />
-                        <Typography>{st.code}</Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ ml: "auto" }}
-                        >
-                          {st.hours}h
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {/* Audit fields - shown for PUBLISHED planning */}
-              {planning?.status === "PUBLISHED" && (
-                <>
-                  <Alert severity="warning" sx={{ py: 0.5 }}>
-                    <Typography variant="caption">
-                      Ce planning est publié. Un commentaire est requis pour
-                      tracer la modification.
-                    </Typography>
-                  </Alert>
-
-                  <FormControl fullWidth>
-                    <InputLabel>Demandé par</InputLabel>
-                    <Select
-                      value={editRequestedBy}
-                      onChange={(e) =>
-                        setEditRequestedBy(e.target.value as any)
-                      }
-                      label="Demandé par"
-                    >
-                      <MenuItem value="EMPLOYEE">👤 Employé</MenuItem>
-                      <MenuItem value="EMPLOYER">🏢 Employeur</MenuItem>
-                      <MenuItem value="OTHER">📋 Autre</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <MuiTextField
-                    label="Raison de la modification *"
-                    value={editComment}
-                    onChange={(e) => setEditComment(e.target.value)}
-                    multiline
-                    rows={2}
-                    fullWidth
-                    placeholder="Ex: Demande de l'employé pour raison personnelle, Remplacement maladie, etc."
-                    required
-                    error={!editComment.trim()}
-                    helperText={
-                      !editComment.trim()
-                        ? "Requis pour les plannings publiés"
-                        : ""
-                    }
-                  />
-                </>
-              )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setEditDialog(null)}>Annuler</MuiButton>
-          {editDialog?.currentShift && (
-            <MuiButton
-              color="error"
-              onClick={async () => {
-                if (editDialog) {
-                  const isPublished = planning?.status === "PUBLISHED";
-                  if (isPublished && !editComment.trim()) {
-                    notify("Un commentaire est requis", { type: "warning" });
-                    return;
-                  }
-                  await handleShiftDelete(
-                    editDialog.employeeId,
-                    editDialog.day,
-                    editComment,
-                    editRequestedBy,
-                  );
-                  setEditDialog(null);
-                }
-              }}
-            >
-              Supprimer
-            </MuiButton>
-          )}
-          <MuiButton
-            variant="contained"
-            onClick={async () => {
-              if (editDialog) {
-                const isPublished = planning?.status === "PUBLISHED";
-                if (isPublished && !editComment.trim()) {
-                  notify("Un commentaire est requis", { type: "warning" });
-                  return;
-                }
-                if (editingShiftValue) {
-                  await handleShiftSave(
-                    editDialog.employeeId,
-                    editDialog.day,
-                    editingShiftValue,
-                    editComment,
-                    editRequestedBy,
-                  );
-                } else if (editDialog.currentShift) {
-                  await handleShiftDelete(
-                    editDialog.employeeId,
-                    editDialog.day,
-                    editComment,
-                    editRequestedBy,
-                  );
-                }
-                setEditDialog(null);
-              }
-            }}
-          >
-            Enregistrer
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Shift History Popover */}
-      {historyPopover && (
-        <ShiftHistoryPopover
-          anchorEl={historyPopover.anchorEl}
-          onClose={() => setHistoryPopover(null)}
-          planningId={planningId}
-          employeeId={historyPopover.employeeId}
-          employeeName={historyPopover.employeeName}
-          date={historyPopover.date}
-        />
-      )}
-
-      {/* Day Detail View */}
-      {dayDetailView && (
-        <DayDetailView
-          day={dayDetailView.day}
-          date={dayDetailView.date}
-          employees={calendarData.employees}
-          shiftTypes={shiftTypes}
-          planningId={planningId}
-          planning={planning}
-          onClose={() => setDayDetailView(null)}
-          onUpdate={loadData}
-        />
-      )}
-
-      {/* AI Assistant FAB */}
-      <Fab
-        color="secondary"
-        aria-label="AI Assistant"
-        onClick={() => setAiChatOpen(true)}
-        sx={{
-          position: "fixed",
-          bottom: 24,
-          right: 24,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        }}
-      >
-        <PsychologyIcon />
-      </Fab>
-
-      {/* AI Chat Dialog */}
-      <Dialog
-        open={aiChatOpen}
-        onClose={() => setAiChatOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogContent sx={{ p: 0 }}>
-          <OptimizerAIChat
-            planningId={planningId}
-            month={planning.month}
-            year={planning.year}
-            failureMessage={optimizerFailureMessage}
-            onClose={() => setAiChatOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Hidden debug: per-shift breakdown of worked hours.
+            {/* Hidden debug: per-shift breakdown of worked hours.
                 Enable with ?debug=hours in the URL or localStorage('planning.debugHours','1'). */}
-      <Dialog
-        open={!!debugHoursDialog}
-        onClose={() => setDebugHoursDialog(null)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          Debug — Calcul des heures travaillées
-          {debugHoursDialog && (
-            <Typography variant="body2" color="text.secondary">
-              {debugHoursDialog.employeeName}
-            </Typography>
-          )}
-        </DialogTitle>
-        <DialogContent dividers>
-          {debugHoursDialog && (
-            <>
-              <Box mb={2}>
-                <Typography variant="body2">
-                  Total calculé :{" "}
-                  <strong>{debugHoursDialog.totalHours.toFixed(2)}h</strong>
-                  {" / "}
-                  Plafond mensuel :{" "}
-                  <strong>
-                    {debugHoursDialog.maxMonthlyHours.toFixed(2)}h
-                  </strong>
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Règle : exclus si <code>shift_category === 'OFF'</code>, ou
-                  code commence par <code>DES</code>, ou code dans (OFF, REPOS),
-                  ou heures &le; 0. Les congés (CP, CONG) comptent comme heures
-                  payées.
-                </Typography>
-              </Box>
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Jour</TableCell>
-                      <TableCell>Code</TableCell>
-                      <TableCell>Catégorie</TableCell>
-                      <TableCell align="right">Heures</TableCell>
-                      <TableCell>Inclus ?</TableCell>
-                      <TableCell>Raison</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {debugHoursDialog.breakdown.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          <Typography variant="caption" color="text.secondary">
-                            Aucun shift sur ce mois.
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
+            <Dialog
+                open={!!debugHoursDialog}
+                onClose={() => setDebugHoursDialog(null)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    Debug — Calcul des heures travaillées
+                    {debugHoursDialog && (
+                        <Typography variant="body2" color="text.secondary">
+                            {debugHoursDialog.employeeName}
+                        </Typography>
                     )}
-                    {debugHoursDialog.breakdown.map((entry) => (
-                      <TableRow
-                        key={entry.day}
-                        sx={{
-                          backgroundColor: entry.included
-                            ? "success.light"
-                            : entry.hours > 0
-                              ? "warning.light"
-                              : "inherit",
-                          opacity: entry.included ? 1 : 0.85,
-                        }}
-                      >
-                        <TableCell>{entry.day}</TableCell>
-                        <TableCell>
-                          <code>{entry.shift_code || "—"}</code>
-                        </TableCell>
-                        <TableCell>
-                          <code>{entry.shift_category || "—"}</code>
-                        </TableCell>
-                        <TableCell align="right">
-                          {entry.hours.toFixed(2)}
-                        </TableCell>
-                        <TableCell>{entry.included ? "✓" : "✗"}</TableCell>
-                        <TableCell>
-                          <Typography variant="caption">
-                            {entry.reason}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setDebugHoursDialog(null)}>
-            Fermer
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
-    </Box>
-  );
+                </DialogTitle>
+                <DialogContent dividers>
+                    {debugHoursDialog && (
+                        <>
+                            <Box mb={2}>
+                                <Typography variant="body2">
+                                    Total calculé : <strong>{debugHoursDialog.totalHours.toFixed(2)}h</strong>
+                                    {' / '}
+                                    Plafond mensuel : <strong>{debugHoursDialog.maxMonthlyHours.toFixed(2)}h</strong>
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Règle : exclus si <code>shift_category === 'OFF'</code>, ou code commence par <code>DES</code>, ou code dans (OFF, REPOS), ou heures &le; 0. Les congés (CP, CONG) comptent comme heures payées.
+                                </Typography>
+                            </Box>
+                            <TableContainer component={Paper} variant="outlined">
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Jour</TableCell>
+                                            <TableCell>Code</TableCell>
+                                            <TableCell>Catégorie</TableCell>
+                                            <TableCell align="right">Heures</TableCell>
+                                            <TableCell>Inclus ?</TableCell>
+                                            <TableCell>Raison</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {debugHoursDialog.breakdown.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={6} align="center">
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Aucun shift sur ce mois.
+                                                    </Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                        {debugHoursDialog.breakdown.map((entry) => (
+                                            <TableRow
+                                                key={entry.day}
+                                                sx={{
+                                                    backgroundColor: entry.included
+                                                        ? 'success.light'
+                                                        : entry.hours > 0
+                                                          ? 'warning.light'
+                                                          : 'inherit',
+                                                    opacity: entry.included ? 1 : 0.85,
+                                                }}
+                                            >
+                                                <TableCell>{entry.day}</TableCell>
+                                                <TableCell>
+                                                    <code>{entry.shift_code || '—'}</code>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <code>{entry.shift_category || '—'}</code>
+                                                </TableCell>
+                                                <TableCell align="right">{entry.hours.toFixed(2)}</TableCell>
+                                                <TableCell>{entry.included ? '✓' : '✗'}</TableCell>
+                                                <TableCell>
+                                                    <Typography variant="caption">{entry.reason}</Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setDebugHoursDialog(null)}>Fermer</MuiButton>
+                </DialogActions>
+            </Dialog>
+        </Box>
+    );
 };
 
 // =============== SHOW ===============
 export const PlanningAgGridShow = () => {
-  const planningId = parseInt(
-    window.location.hash.match(/\/(\d+)\/show/)?.[1] || "0",
-  );
+    const planningId = parseInt(window.location.hash.match(/\/(\d+)\/show/)?.[1] || '0');
 
-  return (
-    <Box p={2}>
-      <PlanningAgGridCalendar planningId={planningId} />
-    </Box>
-  );
+    return (
+        <Box p={2}>
+            <PlanningAgGridCalendar planningId={planningId} />
+        </Box>
+    );
 };

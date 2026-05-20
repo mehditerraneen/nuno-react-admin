@@ -99,16 +99,9 @@ export const CnsCarePlanList = () => (
         label="Period"
         render={(record: any) => {
           if (!record?.request_start_date) return null;
-          const start = new Date(record.request_start_date).toLocaleDateString(
-            "fr-FR",
-            { day: "2-digit", month: "short" },
-          );
+          const start = new Date(record.request_start_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
           const end = record.request_end_date
-            ? new Date(record.request_end_date).toLocaleDateString("fr-FR", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
+            ? new Date(record.request_end_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })
             : "...";
           return (
             <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>

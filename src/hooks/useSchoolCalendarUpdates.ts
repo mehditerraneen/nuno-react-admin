@@ -5,15 +5,15 @@
  * and allows manual refresh.
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { useDataProvider } from "react-admin";
+import { useState, useEffect, useCallback } from 'react';
+import { useDataProvider } from 'react-admin';
 
 interface UpdateInfo {
   hasUpdates: boolean;
   academicYear: string;
   currentCount: number;
   newCount: number;
-  source: "OFFICIAL" | "FALLBACK";
+  source: 'OFFICIAL' | 'FALLBACK';
   message: string;
 }
 
@@ -27,8 +27,7 @@ interface UseSchoolCalendarUpdatesReturn {
   updating: boolean;
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_SIMPLE_REST_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_SIMPLE_REST_URL || 'http://localhost:8000';
 
 export const useSchoolCalendarUpdates = (): UseSchoolCalendarUpdatesReturn => {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
@@ -45,15 +44,12 @@ export const useSchoolCalendarUpdates = (): UseSchoolCalendarUpdatesReturn => {
     setError(null);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/school-calendar/check-updates`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`${API_BASE_URL}/school-calendar/check-updates`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+      });
 
       if (!response.ok) {
         // Silently fail if endpoint not implemented yet (404)
@@ -92,9 +88,9 @@ export const useSchoolCalendarUpdates = (): UseSchoolCalendarUpdatesReturn => {
 
     try {
       const response = await fetch(`${API_BASE_URL}/school-calendar/update`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           academic_year: updateInfo.academicYear,
@@ -112,15 +108,14 @@ export const useSchoolCalendarUpdates = (): UseSchoolCalendarUpdatesReturn => {
       setUpdateInfo(null);
 
       // Optionally show success notification
-      console.log("School calendar updated successfully:", data.message);
+      console.log('School calendar updated successfully:', data.message);
 
       // Reload after update to reflect changes
       window.location.reload();
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to apply update";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to apply update';
       setError(errorMessage);
-      console.error("School calendar update failed:", err);
+      console.error('School calendar update failed:', err);
     } finally {
       setUpdating(false);
     }
@@ -142,12 +137,9 @@ export const useSchoolCalendarUpdates = (): UseSchoolCalendarUpdatesReturn => {
     checkForUpdates();
 
     // Check every 24 hours (86400000 ms)
-    const interval = setInterval(
-      () => {
-        checkForUpdates();
-      },
-      24 * 60 * 60 * 1000,
-    );
+    const interval = setInterval(() => {
+      checkForUpdates();
+    }, 24 * 60 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [checkForUpdates]);

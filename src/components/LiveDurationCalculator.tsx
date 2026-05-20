@@ -35,13 +35,11 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
   const { data: occurrences } = useGetList<CareOccurrence>("careoccurrences");
 
   // Fetch care items data to get weekly_package values
-  const { data: allCareItems } = useGetList<LongTermCareItem>(
-    "longtermcareitems",
-    {
+  const { data: allCareItems } =
+    useGetList<LongTermCareItem>("longtermcareitems", {
       pagination: { page: 1, perPage: 500 },
       sort: { field: "code", order: "ASC" },
-    },
-  );
+    });
 
   // Calculate session duration
   const [sessionDuration, setSessionDuration] = useState(0);

@@ -5,7 +5,7 @@
  * Users can ask questions about failed optimizations and get suggestions.
  */
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -23,7 +23,7 @@ import {
   Divider,
   Card,
   CardContent,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Send as SendIcon,
   SmartToy as AIIcon,
@@ -33,12 +33,12 @@ import {
   Close as CloseIcon,
   Refresh as RefreshIcon,
   Psychology as PsychologyIcon,
-} from "@mui/icons-material";
-import { useDataProvider, useNotify } from "react-admin";
+} from '@mui/icons-material';
+import { useDataProvider, useNotify } from 'react-admin';
 
 interface Message {
   id: string;
-  role: "user" | "assistant";
+  role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
   suggestions?: Suggestion[];
@@ -51,7 +51,7 @@ interface Suggestion {
   relaxation_strategy: string;
   description: string;
   expected_impact: string;
-  risk_level: "low" | "medium" | "high";
+  risk_level: 'low' | 'medium' | 'high';
   implementation_code?: string;
 }
 
@@ -63,12 +63,9 @@ interface OptimizerAIChatProps {
   onClose?: () => void;
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_SIMPLE_REST_URL || "http://localhost:8000";
-const AI_ORCHESTRATOR_URL =
-  import.meta.env.VITE_AI_ORCHESTRATOR_URL || "https://nunoollama.opefitoo.com";
-const AI_ORCHESTRATOR_API_KEY =
-  import.meta.env.VITE_AI_ORCHESTRATOR_API_KEY || "";
+const API_BASE_URL = import.meta.env.VITE_SIMPLE_REST_URL || 'http://localhost:8000';
+const AI_ORCHESTRATOR_URL = import.meta.env.VITE_AI_ORCHESTRATOR_URL || 'https://nunoollama.opefitoo.com';
+const AI_ORCHESTRATOR_API_KEY = import.meta.env.VITE_AI_ORCHESTRATOR_API_KEY || '';
 
 export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
   planningId,
@@ -78,24 +75,22 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
   onClose,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(
-    null,
-  );
+  const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const notify = useNotify();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Initial greeting
   useEffect(() => {
     const greeting: Message = {
-      id: "0",
-      role: "assistant",
+      id: '0',
+      role: 'assistant',
       content: `👋 Bonjour! Je suis votre assistant IA pour l'optimisation du planning ${month}/${year}.\n\n${
         failureMessage
           ? `J'ai détecté un échec d'optimisation: "${failureMessage}"\n\nJe peux vous aider à comprendre pourquoi et suggérer des solutions. Que voulez-vous savoir?`
@@ -111,31 +106,23 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: "user",
+      role: 'user',
       content: input.trim(),
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+    setInput('');
     setLoading(true);
 
     try {
       // Detect intent from user message
       const lowerInput = input.toLowerCase();
 
-      if (
-        lowerInput.includes("analys") ||
-        lowerInput.includes("pourquoi") ||
-        lowerInput.includes("problème")
-      ) {
+      if (lowerInput.includes('analys') || lowerInput.includes('pourquoi') || lowerInput.includes('problème')) {
         // Full analysis request
         await performFullAnalysis(userMessage);
-      } else if (
-        lowerInput.includes("suggestion") ||
-        lowerInput.includes("fix") ||
-        lowerInput.includes("résoudre")
-      ) {
+      } else if (lowerInput.includes('suggestion') || lowerInput.includes('fix') || lowerInput.includes('résoudre')) {
         // Quick advice request
         await getQuickAdvice(userMessage);
       } else {
@@ -143,11 +130,11 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
         await getQuickAdvice(userMessage);
       }
     } catch (error: any) {
-      notify(`Erreur: ${error.message}`, { type: "error" });
+      notify(`Erreur: ${error.message}`, { type: 'error' });
 
       const errorMessage: Message = {
         id: Date.now().toString(),
-        role: "assistant",
+        role: 'assistant',
         content: `❌ Désolé, une erreur s'est produite: ${error.message}\n\nAssurez-vous que le service AI Orchestrator est en cours d'exécution (${AI_ORCHESTRATOR_URL})`,
         timestamp: new Date(),
       };
@@ -159,19 +146,16 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
 
   const performFullAnalysis = async (userMessage: Message) => {
     // Call Django backend to get diagnostics and forward to AI orchestrator
-    const response = await fetch(
-      `${API_BASE_URL}/planning/${planningId}/ai-analysis`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_question: userMessage.content,
-          failure_message: failureMessage,
-        }),
+    const response = await fetch(`${API_BASE_URL}/planning/${planningId}/ai-analysis`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({
+        user_question: userMessage.content,
+        failure_message: failureMessage,
+      }),
+    });
 
     if (!response.ok) {
       throw new Error(`Échec de l'analyse (${response.status})`);
@@ -181,8 +165,8 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
 
     const assistantMessage: Message = {
       id: Date.now().toString(),
-      role: "assistant",
-      content: `📊 **Analyse Complète**\n\n**Cause Racine:**\n${data.root_cause_summary}\n\n**Problèmes Critiques:**\n${data.critical_issues.map((issue: string) => `• ${issue}`).join("\n")}`,
+      role: 'assistant',
+      content: `📊 **Analyse Complète**\n\n**Cause Racine:**\n${data.root_cause_summary}\n\n**Problèmes Critiques:**\n${data.critical_issues.map((issue: string) => `• ${issue}`).join('\n')}`,
       timestamp: new Date(),
       suggestions: data.relaxation_suggestions,
       reasoning: data.reasoning_trace,
@@ -194,20 +178,20 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
   const getQuickAdvice = async (userMessage: Message) => {
     // Quick advice endpoint - faster response
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     };
 
     // Add API key if configured
     if (AI_ORCHESTRATOR_API_KEY) {
-      headers["X-API-Key"] = AI_ORCHESTRATOR_API_KEY;
+      headers['X-API-Key'] = AI_ORCHESTRATOR_API_KEY;
     }
 
     const response = await fetch(`${AI_ORCHESTRATOR_URL}/quick-advice`, {
-      method: "POST",
+      method: 'POST',
       headers,
       body: JSON.stringify({
         failure_message: failureMessage || userMessage.content,
-        strategies_attempted: ["Full constraints", "Relaxed"],
+        strategies_attempted: ['Full constraints', 'Relaxed'],
       }),
     });
 
@@ -219,7 +203,7 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
 
     const assistantMessage: Message = {
       id: Date.now().toString(),
-      role: "assistant",
+      role: 'assistant',
       content: `💡 ${data.advice}`,
       timestamp: new Date(),
     };
@@ -228,7 +212,7 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -236,14 +220,14 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case "low":
-        return "success";
-      case "medium":
-        return "warning";
-      case "high":
-        return "error";
+      case 'low':
+        return 'success';
+      case 'medium':
+        return 'warning';
+      case 'high':
+        return 'error';
       default:
-        return "default";
+        return 'default';
     }
   };
 
@@ -251,32 +235,30 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
     <Paper
       elevation={3}
       sx={{
-        height: "600px",
-        display: "flex",
-        flexDirection: "column",
+        height: '600px',
+        display: 'flex',
+        flexDirection: 'column',
         borderRadius: 2,
-        overflow: "hidden",
+        overflow: 'hidden',
       }}
     >
       {/* Header */}
       <Box
         sx={{
           p: 2,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <PsychologyIcon />
-          <Typography variant="h6">
-            Assistant IA - Optimisation Planning
-          </Typography>
+          <Typography variant="h6">Assistant IA - Optimisation Planning</Typography>
         </Box>
         {onClose && (
-          <IconButton size="small" onClick={onClose} sx={{ color: "white" }}>
+          <IconButton size="small" onClick={onClose} sx={{ color: 'white' }}>
             <CloseIcon />
           </IconButton>
         )}
@@ -286,27 +268,26 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
       <Box
         sx={{
           flex: 1,
-          overflowY: "auto",
+          overflowY: 'auto',
           p: 2,
-          backgroundColor: "#f5f5f5",
+          backgroundColor: '#f5f5f5',
         }}
       >
         {messages.map((message) => (
           <Box
             key={message.id}
             sx={{
-              display: "flex",
-              justifyContent:
-                message.role === "user" ? "flex-end" : "flex-start",
+              display: 'flex',
+              justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
               mb: 2,
             }}
           >
             <Box
               sx={{
-                maxWidth: "80%",
-                display: "flex",
+                maxWidth: '80%',
+                display: 'flex',
                 gap: 1,
-                flexDirection: message.role === "user" ? "row-reverse" : "row",
+                flexDirection: message.role === 'user' ? 'row-reverse' : 'row',
               }}
             >
               {/* Avatar */}
@@ -314,17 +295,16 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
                 sx={{
                   width: 40,
                   height: 40,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor:
-                    message.role === "user" ? "#667eea" : "#764ba2",
-                  color: "white",
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: message.role === 'user' ? '#667eea' : '#764ba2',
+                  color: 'white',
                   flexShrink: 0,
                 }}
               >
-                {message.role === "user" ? <PersonIcon /> : <AIIcon />}
+                {message.role === 'user' ? <PersonIcon /> : <AIIcon />}
               </Box>
 
               {/* Message Content */}
@@ -333,15 +313,14 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
                   elevation={1}
                   sx={{
                     p: 2,
-                    backgroundColor:
-                      message.role === "user" ? "#667eea" : "white",
-                    color: message.role === "user" ? "white" : "black",
+                    backgroundColor: message.role === 'user' ? '#667eea' : 'white',
+                    color: message.role === 'user' ? 'white' : 'black',
                     borderRadius: 2,
                   }}
                 >
                   <Typography
                     variant="body1"
-                    sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                    sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
                   >
                     {message.content}
                   </Typography>
@@ -349,10 +328,7 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
                   {/* Suggestions */}
                   {message.suggestions && message.suggestions.length > 0 && (
                     <Box sx={{ mt: 2 }}>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ mb: 1, fontWeight: "bold" }}
-                      >
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
                         💡 Suggestions de Relaxation (par priorité):
                       </Typography>
                       {message.suggestions.map((suggestion, index) => (
@@ -360,24 +336,18 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
                           <CardContent>
                             <Box
                               sx={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                cursor: "pointer",
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                cursor: 'pointer',
                               }}
                               onClick={() =>
                                 setExpandedSuggestion(
-                                  expandedSuggestion === index ? null : index,
+                                  expandedSuggestion === index ? null : index
                                 )
                               }
                             >
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
-                                }}
-                              >
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Chip
                                   label={`#${suggestion.priority}`}
                                   size="small"
@@ -387,19 +357,11 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
                                   {suggestion.constraint_to_relax}
                                 </Typography>
                               </Box>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
-                                }}
-                              >
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Chip
                                   label={suggestion.risk_level}
                                   size="small"
-                                  color={
-                                    getRiskColor(suggestion.risk_level) as any
-                                  }
+                                  color={getRiskColor(suggestion.risk_level) as any}
                                 />
                                 <IconButton size="small">
                                   {expandedSuggestion === index ? (
@@ -413,36 +375,18 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
 
                             <Collapse in={expandedSuggestion === index}>
                               <Box sx={{ mt: 2 }}>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                  paragraph
-                                >
-                                  <strong>Stratégie:</strong>{" "}
-                                  {suggestion.relaxation_strategy}
+                                <Typography variant="body2" color="text.secondary" paragraph>
+                                  <strong>Stratégie:</strong> {suggestion.relaxation_strategy}
                                 </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                  paragraph
-                                >
-                                  <strong>Description:</strong>{" "}
-                                  {suggestion.description}
+                                <Typography variant="body2" color="text.secondary" paragraph>
+                                  <strong>Description:</strong> {suggestion.description}
                                 </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                  paragraph
-                                >
-                                  <strong>Impact Attendu:</strong>{" "}
-                                  {suggestion.expected_impact}
+                                <Typography variant="body2" color="text.secondary" paragraph>
+                                  <strong>Impact Attendu:</strong> {suggestion.expected_impact}
                                 </Typography>
                                 {suggestion.implementation_code && (
                                   <Alert severity="info" sx={{ mt: 1 }}>
-                                    <Typography
-                                      variant="caption"
-                                      component="pre"
-                                    >
+                                    <Typography variant="caption" component="pre">
                                       {suggestion.implementation_code}
                                     </Typography>
                                   </Alert>
@@ -460,12 +404,9 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
                     <Box sx={{ mt: 2 }}>
                       <Collapse in={expandedSuggestion === -1}>
                         <Alert severity="info" icon={<PsychologyIcon />}>
-                          <Typography
-                            variant="caption"
-                            sx={{ whiteSpace: "pre-wrap" }}
-                          >
+                          <Typography variant="caption" sx={{ whiteSpace: 'pre-wrap' }}>
                             <strong>🤔 Raisonnement LLM:</strong>
-                            {"\n"}
+                            {'\n'}
                             {message.reasoning}
                           </Typography>
                         </Alert>
@@ -473,29 +414,21 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
                       <Button
                         size="small"
                         onClick={() =>
-                          setExpandedSuggestion(
-                            expandedSuggestion === -1 ? null : -1,
-                          )
+                          setExpandedSuggestion(expandedSuggestion === -1 ? null : -1)
                         }
                         sx={{ mt: 1 }}
                       >
-                        {expandedSuggestion === -1
-                          ? "Masquer"
-                          : "Voir le raisonnement"}
+                        {expandedSuggestion === -1 ? 'Masquer' : 'Voir le raisonnement'}
                       </Button>
                     </Box>
                   )}
                 </Paper>
 
                 {/* Timestamp */}
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ mt: 0.5, ml: 1 }}
-                >
-                  {message.timestamp.toLocaleTimeString("fr-FR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1 }}>
+                  {message.timestamp.toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
                   })}
                 </Typography>
               </Box>
@@ -505,24 +438,24 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
 
         {/* Loading indicator */}
         {loading && (
-          <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}>
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <Box
                 sx={{
                   width: 40,
                   height: 40,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "#764ba2",
-                  color: "white",
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#764ba2',
+                  color: 'white',
                 }}
               >
                 <AIIcon />
               </Box>
               <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <CircularProgress size={16} />
                   <Typography variant="body2" color="text.secondary">
                     L'IA réfléchit...
@@ -537,10 +470,8 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
       </Box>
 
       {/* Input Area */}
-      <Box
-        sx={{ p: 2, backgroundColor: "white", borderTop: "1px solid #e0e0e0" }}
-      >
-        <Box sx={{ display: "flex", gap: 1 }}>
+      <Box sx={{ p: 2, backgroundColor: 'white', borderTop: '1px solid #e0e0e0' }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <TextField
             fullWidth
             multiline
@@ -558,8 +489,8 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
             onClick={sendMessage}
             disabled={!input.trim() || loading}
             sx={{
-              minWidth: "56px",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              minWidth: '56px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             }}
           >
             <SendIcon />
@@ -567,33 +498,23 @@ export const OptimizerAIChat: React.FC<OptimizerAIChatProps> = ({
         </Box>
 
         {/* Quick Actions */}
-        <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
+        <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
           <Chip
             label="Pourquoi ça échoue?"
             size="small"
-            onClick={() =>
-              setInput("Pourquoi l'optimisation échoue pour ce planning?")
-            }
+            onClick={() => setInput("Pourquoi l'optimisation échoue pour ce planning?")}
             clickable
           />
           <Chip
             label="Suggère des solutions"
             size="small"
-            onClick={() =>
-              setInput(
-                "Quelles solutions suggères-tu pour résoudre ce problème?",
-              )
-            }
+            onClick={() => setInput('Quelles solutions suggères-tu pour résoudre ce problème?')}
             clickable
           />
           <Chip
             label="Analyse complète"
             size="small"
-            onClick={() =>
-              setInput(
-                "Fais une analyse complète du planning et donne-moi des recommandations",
-              )
-            }
+            onClick={() => setInput('Fais une analyse complète du planning et donne-moi des recommandations')}
             clickable
           />
         </Box>

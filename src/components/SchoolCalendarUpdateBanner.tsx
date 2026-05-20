@@ -5,7 +5,7 @@
  * Provides a one-click update button.
  */
 
-import React from "react";
+import React from 'react';
 import {
   Alert,
   AlertTitle,
@@ -14,17 +14,23 @@ import {
   CircularProgress,
   IconButton,
   Collapse,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Update as UpdateIcon,
   Close as CloseIcon,
   CalendarToday as CalendarIcon,
-} from "@mui/icons-material";
-import { useSchoolCalendarUpdates } from "../hooks/useSchoolCalendarUpdates";
+} from '@mui/icons-material';
+import { useSchoolCalendarUpdates } from '../hooks/useSchoolCalendarUpdates';
 
 export const SchoolCalendarUpdateBanner: React.FC = () => {
-  const { updateInfo, loading, error, applyUpdate, dismissUpdate, updating } =
-    useSchoolCalendarUpdates();
+  const {
+    updateInfo,
+    loading,
+    error,
+    applyUpdate,
+    dismissUpdate,
+    updating,
+  } = useSchoolCalendarUpdates();
 
   // Don't show anything if no updates or still loading
   if (!updateInfo || loading) {
@@ -38,18 +44,16 @@ export const SchoolCalendarUpdateBanner: React.FC = () => {
           severity="info"
           icon={<CalendarIcon />}
           action={
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Button
                 color="inherit"
                 size="small"
                 variant="outlined"
-                startIcon={
-                  updating ? <CircularProgress size={16} /> : <UpdateIcon />
-                }
+                startIcon={updating ? <CircularProgress size={16} /> : <UpdateIcon />}
                 onClick={applyUpdate}
                 disabled={updating}
               >
-                {updating ? "Mise à jour..." : "Mettre à jour"}
+                {updating ? 'Mise à jour...' : 'Mettre à jour'}
               </Button>
               <IconButton
                 size="small"
@@ -63,7 +67,7 @@ export const SchoolCalendarUpdateBanner: React.FC = () => {
             </Box>
           }
           sx={{
-            "& .MuiAlert-message": {
+            '& .MuiAlert-message': {
               flex: 1,
             },
           }}
@@ -73,14 +77,12 @@ export const SchoolCalendarUpdateBanner: React.FC = () => {
           </AlertTitle>
           <Box>
             <div>
-              Nouvelle mise à jour du calendrier scolaire luxembourgeois pour{" "}
+              Nouvelle mise à jour du calendrier scolaire luxembourgeois pour{' '}
               <strong>{updateInfo.academicYear}</strong>
             </div>
-            <div style={{ marginTop: "4px", fontSize: "0.875rem" }}>
-              {updateInfo.newCount} période(s) de vacances • Source:{" "}
-              {updateInfo.source === "OFFICIAL"
-                ? "Ministère de l'Éducation"
-                : "Calendrier par défaut"}
+            <div style={{ marginTop: '4px', fontSize: '0.875rem' }}>
+              {updateInfo.newCount} période(s) de vacances •{' '}
+              Source: {updateInfo.source === 'OFFICIAL' ? 'Ministère de l\'Éducation' : 'Calendrier par défaut'}
             </div>
           </Box>
         </Alert>

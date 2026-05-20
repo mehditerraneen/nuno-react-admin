@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useDataProvider, useNotify, Title } from "react-admin";
+import {
+  useDataProvider,
+  useNotify,
+  Title,
+} from "react-admin";
 import {
   Box,
   Typography,
@@ -77,15 +81,7 @@ interface Overlap {
 }
 
 const DAY_NAMES = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const DAY_MAP: Record<string, number> = {
-  "0": 0,
-  "1": 1,
-  "2": 2,
-  "3": 3,
-  "4": 4,
-  "5": 5,
-  "6": 6,
-};
+const DAY_MAP: Record<string, number> = { "0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6 };
 
 const timeToMin = (t: string): number => {
   const parts = t.split(":");
@@ -107,16 +103,8 @@ const getActiveDays = (occurrences: CareOccurrence[]): number[] => {
 };
 
 const COLORS = [
-  "#1976d2",
-  "#388e3c",
-  "#f57c00",
-  "#7b1fa2",
-  "#c62828",
-  "#00838f",
-  "#4e342e",
-  "#283593",
-  "#1b5e20",
-  "#bf360c",
+  "#1976d2", "#388e3c", "#f57c00", "#7b1fa2", "#c62828",
+  "#00838f", "#4e342e", "#283593", "#1b5e20", "#bf360c",
 ];
 
 export const CarePlanOverlapView = () => {
@@ -141,15 +129,12 @@ export const CarePlanOverlapView = () => {
         });
 
         // Fetch patient names
-        const patientIds = [
-          ...new Set(response.data.map((p: any) => p.patient_id)),
-        ];
+        const patientIds = [...new Set(response.data.map((p: any) => p.patient_id))];
         const patients: Record<number, string> = {};
         for (const pid of patientIds) {
           try {
             const pRes = await dataProvider.getOne("patients", { id: pid });
-            patients[pid as number] =
-              `${pRes.data.first_name} ${pRes.data.name}`;
+            patients[pid as number] = `${pRes.data.first_name} ${pRes.data.name}`;
           } catch {
             patients[pid as number] = `Patient #${pid}`;
           }
@@ -159,8 +144,7 @@ export const CarePlanOverlapView = () => {
           response.data.map((cp: any) => ({
             id: cp.id,
             patient_id: cp.patient_id,
-            patient_name:
-              patients[cp.patient_id] || `Patient #${cp.patient_id}`,
+            patient_name: patients[cp.patient_id] || `Patient #${cp.patient_id}`,
             plan_number: cp.plan_number,
             plan_start_date: cp.plan_start_date,
             last_valid_plan: cp.last_valid_plan,
@@ -187,9 +171,7 @@ export const CarePlanOverlapView = () => {
 
   const handleSelectAll = () => {
     const allSelected = carePlans.every((cp) => cp.selected);
-    setCarePlans((prev) =>
-      prev.map((cp) => ({ ...cp, selected: !allSelected })),
-    );
+    setCarePlans((prev) => prev.map((cp) => ({ ...cp, selected: !allSelected })));
     setAnalyzed(false);
   };
 
@@ -202,9 +184,7 @@ export const CarePlanOverlapView = () => {
       const sessions: SessionSlot[] = [];
 
       for (const cp of selectedPlans) {
-        const details: CarePlanDetail[] = await dataProvider.getCarePlanDetails(
-          cp.id,
-        );
+        const details: CarePlanDetail[] = await dataProvider.getCarePlanDetails(cp.id);
         const colorIdx = selectedPlans.indexOf(cp) % COLORS.length;
 
         for (const detail of details) {
@@ -339,9 +319,7 @@ export const CarePlanOverlapView = () => {
     const overlapSessionIds = new Set<string>();
     overlaps.forEach((o) => {
       o.sessions.forEach((s) => {
-        overlapSessionIds.add(
-          `${s.carePlanId}-${s.detailName}-${s.dayIndex}-${s.timeStart}`,
-        );
+        overlapSessionIds.add(`${s.carePlanId}-${s.detailName}-${s.dayIndex}-${s.timeStart}`);
       });
     });
 
@@ -358,37 +336,25 @@ export const CarePlanOverlapView = () => {
         Détection des Chevauchements de Soins
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Sélectionnez les plans de soins à comparer puis lancez l'analyse pour
-        détecter les chevauchements horaires entre les passages.
+        Sélectionnez les plans de soins à comparer puis lancez l'analyse pour détecter
+        les chevauchements horaires entre les passages.
       </Typography>
 
       {/* Plan Selection */}
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 1,
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
           <Typography variant="h6">
-            Plans de Soins ({selectedPlans.length}/{carePlans.length}{" "}
-            sélectionnés)
+            Plans de Soins ({selectedPlans.length}/{carePlans.length} sélectionnés)
           </Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button size="small" onClick={handleSelectAll}>
-              {carePlans.every((cp) => cp.selected)
-                ? "Tout désélectionner"
-                : "Tout sélectionner"}
+              {carePlans.every((cp) => cp.selected) ? "Tout désélectionner" : "Tout sélectionner"}
             </Button>
             <Button
               variant="contained"
               onClick={handleAnalyze}
               disabled={analyzing || selectedPlans.length === 0}
-              startIcon={
-                analyzing ? <CircularProgress size={16} /> : <RefreshIcon />
-              }
+              startIcon={analyzing ? <CircularProgress size={16} /> : <RefreshIcon />}
             >
               {analyzing ? "Analyse..." : "Analyser"}
             </Button>
@@ -403,9 +369,7 @@ export const CarePlanOverlapView = () => {
               color={cp.selected ? "primary" : "default"}
               variant={cp.selected ? "filled" : "outlined"}
               sx={{
-                borderLeft: cp.selected
-                  ? `4px solid ${COLORS[idx % COLORS.length]}`
-                  : undefined,
+                borderLeft: cp.selected ? `4px solid ${COLORS[idx % COLORS.length]}` : undefined,
               }}
             />
           ))}
@@ -440,12 +404,8 @@ export const CarePlanOverlapView = () => {
                       <TableCell sx={{ fontWeight: 600 }}>Jour</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Créneau</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Durée</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>
-                        Sessions en conflit
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>
-                        Correction proposée
-                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Sessions en conflit</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Correction proposée</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -454,41 +414,26 @@ export const CarePlanOverlapView = () => {
                         <TableCell>
                           <Chip label={o.day} size="small" color="warning" />
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
-                          {o.timeRange}
-                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>{o.timeRange}</TableCell>
                         <TableCell>{o.overlapMinutes} min</TableCell>
                         <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 0.5,
-                            }}
-                          >
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                             {o.sessions.map((s, si) => {
-                              const cpIdx = selectedPlans.findIndex(
-                                (p) => p.id === s.carePlanId,
-                              );
+                              const cpIdx = selectedPlans.findIndex((p) => p.id === s.carePlanId);
                               return (
                                 <Chip
                                   key={si}
                                   label={`${s.patientName} — ${s.detailName} (${s.timeStart}–${s.timeEnd})`}
                                   size="small"
                                   variant="outlined"
-                                  sx={{
-                                    borderColor: COLORS[cpIdx % COLORS.length],
-                                    borderWidth: 2,
-                                  }}
+                                  sx={{ borderColor: COLORS[cpIdx % COLORS.length], borderWidth: 2 }}
                                 />
                               );
                             })}
                           </Box>
                         </TableCell>
                         <TableCell>
-                          <Tooltip
-                            title={`Appliquer: ${o.fix.newStart}–${o.fix.newEnd}`}
-                          >
+                          <Tooltip title={`Appliquer: ${o.fix.newStart}–${o.fix.newEnd}`}>
                             <Button
                               size="small"
                               variant="outlined"
@@ -503,22 +448,14 @@ export const CarePlanOverlapView = () => {
                                       time_end: o.fix.newEnd,
                                     },
                                   );
-                                  notify(
-                                    `Session modifiée: ${o.fix.newStart}–${o.fix.newEnd}`,
-                                    { type: "success" },
-                                  );
+                                  notify(`Session modifiée: ${o.fix.newStart}–${o.fix.newEnd}`, { type: "success" });
                                   // Re-analyze after fix
                                   handleAnalyze();
                                 } catch (err) {
-                                  notify("Erreur lors de la modification", {
-                                    type: "error",
-                                  });
+                                  notify("Erreur lors de la modification", { type: "error" });
                                 }
                               }}
-                              sx={{
-                                textTransform: "none",
-                                fontSize: "0.75rem",
-                              }}
+                              sx={{ textTransform: "none", fontSize: "0.75rem" }}
                             >
                               {o.fix.label}
                             </Button>
@@ -568,9 +505,7 @@ export const CarePlanOverlapView = () => {
                           .filter((o) => o.day === DAY_NAMES[dayIdx])
                           .forEach((o) =>
                             o.sessions.forEach((s) =>
-                              overlapKeys.add(
-                                `${s.carePlanId}-${s.detailName}-${s.timeStart}`,
-                              ),
+                              overlapKeys.add(`${s.carePlanId}-${s.detailName}-${s.timeStart}`),
                             ),
                           );
 
@@ -580,27 +515,20 @@ export const CarePlanOverlapView = () => {
                             sx={{
                               p: 0.5,
                               verticalAlign: "top",
-                              backgroundColor:
-                                dayIdx >= 5 ? "#fafafe" : "white",
+                              backgroundColor: dayIdx >= 5 ? "#fafafe" : "white",
                             }}
                           >
                             {sessions.length === 0 ? (
                               <Typography
                                 variant="caption"
                                 color="text.disabled"
-                                sx={{
-                                  display: "block",
-                                  textAlign: "center",
-                                  py: 1,
-                                }}
+                                sx={{ display: "block", textAlign: "center", py: 1 }}
                               >
                                 —
                               </Typography>
                             ) : (
                               sessions.map((s, i) => {
-                                const cpIdx = selectedPlans.findIndex(
-                                  (p) => p.id === s.carePlanId,
-                                );
+                                const cpIdx = selectedPlans.findIndex((p) => p.id === s.carePlanId);
                                 const color = COLORS[cpIdx % COLORS.length];
                                 const isOverlap = overlapKeys.has(
                                   `${s.carePlanId}-${s.detailName}-${s.timeStart}`,
@@ -615,21 +543,13 @@ export const CarePlanOverlapView = () => {
                                         mb: 0.5,
                                         p: 0.5,
                                         borderLeft: `3px solid ${color}`,
-                                        backgroundColor: isOverlap
-                                          ? "#ffebee"
-                                          : "#f5f5f5",
+                                        backgroundColor: isOverlap ? "#ffebee" : "#f5f5f5",
                                         borderRadius: 0.5,
-                                        border: isOverlap
-                                          ? "1px solid #ef5350"
-                                          : undefined,
+                                        border: isOverlap ? "1px solid #ef5350" : undefined,
                                       }}
                                     >
                                       <Typography
-                                        sx={{
-                                          fontSize: "7pt",
-                                          fontWeight: 600,
-                                          color,
-                                        }}
+                                        sx={{ fontSize: "7pt", fontWeight: 600, color }}
                                       >
                                         {s.timeStart}–{s.timeEnd}
                                       </Typography>
@@ -645,9 +565,7 @@ export const CarePlanOverlapView = () => {
                                       >
                                         {s.patientName.split(" ")[0]}
                                       </Typography>
-                                      <Typography
-                                        sx={{ fontSize: "6pt", color: "#888" }}
-                                      >
+                                      <Typography sx={{ fontSize: "6pt", color: "#888" }}>
                                         {s.detailName} ({s.duration}m)
                                       </Typography>
                                     </Box>

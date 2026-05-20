@@ -132,9 +132,7 @@ const PlanningAuditLogPage: React.FC = () => {
 
   // Edit reason dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingAudit, setEditingAudit] = useState<ShiftChangeAudit | null>(
-    null,
-  );
+  const [editingAudit, setEditingAudit] = useState<ShiftChangeAudit | null>(null);
   const [editReason, setEditReason] = useState<string>("");
   const [savingReason, setSavingReason] = useState(false);
 
@@ -155,7 +153,7 @@ const PlanningAuditLogPage: React.FC = () => {
       // @ts-expect-error Custom method
       const response = await dataProvider.getPlanningAuditLog(
         planningId,
-        params,
+        params
       );
       setData(response);
     } catch (error) {
@@ -184,7 +182,7 @@ const PlanningAuditLogPage: React.FC = () => {
   };
 
   const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -225,7 +223,7 @@ const PlanningAuditLogPage: React.FC = () => {
           changes: data.changes.map((change) =>
             change.id === editingAudit.id
               ? { ...change, change_reason: editReason }
-              : change,
+              : change
           ),
         });
       }
@@ -277,7 +275,7 @@ const PlanningAuditLogPage: React.FC = () => {
     link.setAttribute("href", encodeURI(csvContent));
     link.setAttribute(
       "download",
-      `historique_planning_${planningId}_${new Date().toISOString().split("T")[0]}.csv`,
+      `historique_planning_${planningId}_${new Date().toISOString().split("T")[0]}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -317,7 +315,9 @@ const PlanningAuditLogPage: React.FC = () => {
             <ArrowBackIcon />
           </IconButton>
           <Box>
-            <Typography variant="h5">Historique des modifications</Typography>
+            <Typography variant="h5">
+              Historique des modifications
+            </Typography>
             {data && (
               <Typography variant="body2" color="text.secondary">
                 {data.planning_name} - {data.total} modification
@@ -429,7 +429,9 @@ const PlanningAuditLogPage: React.FC = () => {
       <Card>
         <CardContent sx={{ p: 0 }}>
           {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <Box
+              sx={{ display: "flex", justifyContent: "center", py: 4 }}
+            >
               <CircularProgress />
             </Box>
           ) : !data || (filteredChanges && filteredChanges.length === 0) ? (
@@ -444,12 +446,22 @@ const PlanningAuditLogPage: React.FC = () => {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Date/Heure</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Employé</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Date poste</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        Date/Heure
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        Employé
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        Date poste
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Action</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Ancien</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Nouveau</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        Ancien
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        Nouveau
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>
                         Modifié par
                       </TableCell>
@@ -494,9 +506,7 @@ const PlanningAuditLogPage: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Chip
-                            icon={
-                              actionIcons[change.action] as React.ReactElement
-                            }
+                            icon={actionIcons[change.action] as React.ReactElement}
                             label={actionLabels[change.action] || change.action}
                             size="small"
                             color={actionColors[change.action] || "default"}
@@ -576,11 +586,7 @@ const PlanningAuditLogPage: React.FC = () => {
                               <IconButton
                                 size="small"
                                 onClick={() => handleOpenEditDialog(change)}
-                                sx={{
-                                  ml: "auto",
-                                  opacity: 0.6,
-                                  "&:hover": { opacity: 1 },
-                                }}
+                                sx={{ ml: "auto", opacity: 0.6, "&:hover": { opacity: 1 } }}
                               >
                                 <EditNoteIcon fontSize="small" />
                               </IconButton>
@@ -617,15 +623,15 @@ const PlanningAuditLogPage: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Modifier la raison du changement</DialogTitle>
+        <DialogTitle>
+          Modifier la raison du changement
+        </DialogTitle>
         <DialogContent>
           {editingAudit && (
             <Box sx={{ mb: 2, mt: 1 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Modification de{" "}
-                <strong>{editingAudit.employee_abbreviation}</strong> le{" "}
-                {formatDate(editingAudit.date)} (
-                {actionLabels[editingAudit.action]})
+                Modification de <strong>{editingAudit.employee_abbreviation}</strong> le{" "}
+                {formatDate(editingAudit.date)} ({actionLabels[editingAudit.action]})
               </Typography>
             </Box>
           )}
@@ -642,8 +648,7 @@ const PlanningAuditLogPage: React.FC = () => {
           />
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary">
-              Suggestions: Demande employé, Changement US, Maladie, Formation,
-              Congé exceptionnel
+              Suggestions: Demande employé, Changement US, Maladie, Formation, Congé exceptionnel
             </Typography>
           </Box>
         </DialogContent>

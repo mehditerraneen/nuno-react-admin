@@ -111,11 +111,9 @@ const summarizeOne = (r: ScheduleRule): string => {
 
 const legacySummary = (med: Medication): string | null => {
   const parts: string[] = [];
-  if (med.morning)
-    parts.push(med.morning_dose ? `Matin ${med.morning_dose}` : "Matin");
+  if (med.morning) parts.push(med.morning_dose ? `Matin ${med.morning_dose}` : "Matin");
   if (med.noon) parts.push(med.noon_dose ? `Midi ${med.noon_dose}` : "Midi");
-  if (med.evening)
-    parts.push(med.evening_dose ? `Soir ${med.evening_dose}` : "Soir");
+  if (med.evening) parts.push(med.evening_dose ? `Soir ${med.evening_dose}` : "Soir");
   if (med.night) parts.push(med.night_dose ? `Nuit ${med.night_dose}` : "Nuit");
   return parts.length ? parts.join(", ") : null;
 };
@@ -189,8 +187,7 @@ export const groupByPrescription = (
   // Any remaining keyed groups (prescriptions not in rxOrder — rare)
   for (const [rxId, meds] of byId) {
     if (rxId == null) continue;
-    if (meds.length > 0)
-      groups.push({ prescriptionId: rxId, medications: meds });
+    if (meds.length > 0) groups.push({ prescriptionId: rxId, medications: meds });
   }
   const orphans = byId.get(null);
   if (orphans && orphans.length > 0) {

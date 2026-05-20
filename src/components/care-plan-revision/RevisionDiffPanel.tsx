@@ -76,7 +76,10 @@ const FIELD_LABELS_FR: Record<string, string> = {
   description: "Description",
 };
 
-const renderFieldDiff = (field: string, change: unknown): React.ReactNode => {
+const renderFieldDiff = (
+  field: string,
+  change: unknown,
+): React.ReactNode => {
   const label = FIELD_LABELS_FR[field] ?? field;
   // Most fields come back as { before, after }
   if (
@@ -92,7 +95,8 @@ const renderFieldDiff = (field: string, change: unknown): React.ReactNode => {
         <span style={{ textDecoration: "line-through", color: "#888" }}>
           {fmtValue(c.before)}
         </span>{" "}
-        → <strong>{fmtValue(c.after)}</strong>
+        →{" "}
+        <strong>{fmtValue(c.after)}</strong>
       </Typography>
     );
   }
@@ -103,8 +107,7 @@ const renderFieldDiff = (field: string, change: unknown): React.ReactNode => {
     const added = (c.added as unknown[]) ?? [];
     const removed = (c.removed as unknown[]) ?? [];
     const qty = (c.quantity_changed as unknown[]) ?? [];
-    if (Array.isArray(removed) && removed.length)
-      bits.push(`−${removed.length}`);
+    if (Array.isArray(removed) && removed.length) bits.push(`−${removed.length}`);
     if (Array.isArray(added) && added.length) bits.push(`+${added.length}`);
     if (Array.isArray(qty) && qty.length) bits.push(`qté ×${qty.length}`);
     return (
@@ -178,11 +181,7 @@ export const RevisionDiffPanel = ({
 
   if (data.against_revision_id === null) {
     return (
-      <Alert
-        severity="info"
-        icon={<CompareArrowsIcon fontSize="inherit" />}
-        sx={{ mt: 1 }}
-      >
+      <Alert severity="info" icon={<CompareArrowsIcon fontSize="inherit" />} sx={{ mt: 1 }}>
         Première révision — aucune révision antérieure pour comparer.
       </Alert>
     );
@@ -190,25 +189,17 @@ export const RevisionDiffPanel = ({
 
   if (!data.against_has_snapshot) {
     return (
-      <Alert
-        severity="warning"
-        icon={<CompareArrowsIcon fontSize="inherit" />}
-        sx={{ mt: 1 }}
-      >
+      <Alert severity="warning" icon={<CompareArrowsIcon fontSize="inherit" />} sx={{ mt: 1 }}>
         La révision précédente ({fmtDate(data.against_revised_on)}) n'a pas de
-        snapshot enregistré (révision antérieure à la mise en place du suivi).
-        Comparaison impossible.
+        snapshot enregistré (révision antérieure à la mise en place du
+        suivi). Comparaison impossible.
       </Alert>
     );
   }
 
   if (totalChanges === 0) {
     return (
-      <Alert
-        severity="success"
-        icon={<CompareArrowsIcon fontSize="inherit" />}
-        sx={{ mt: 1 }}
-      >
+      <Alert severity="success" icon={<CompareArrowsIcon fontSize="inherit" />} sx={{ mt: 1 }}>
         Aucun changement détecté depuis la révision du{" "}
         {fmtDate(data.against_revised_on)}.
       </Alert>
@@ -245,11 +236,7 @@ export const RevisionDiffPanel = ({
           >
             🎯 Objectifs
           </Typography>
-          <Stack
-            direction="row"
-            spacing={0.5}
-            sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.25 }}
-          >
+          <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.25 }}>
             {data.objectives.added.map((o) => (
               <Chip
                 key={`added-${o.id}`}
@@ -302,20 +289,12 @@ export const RevisionDiffPanel = ({
           </Typography>
           <Stack spacing={0.5} sx={{ mt: 0.25 }}>
             {data.details.added.map((d) => (
-              <Typography
-                key={`a-${d.id}`}
-                variant="caption"
-                sx={{ color: "success.main" }}
-              >
+              <Typography key={`a-${d.id}`} variant="caption" sx={{ color: "success.main" }}>
                 + Ajouté : <strong>{String(d.name)}</strong>
               </Typography>
             ))}
             {data.details.removed.map((d) => (
-              <Typography
-                key={`r-${d.id}`}
-                variant="caption"
-                sx={{ color: "error.main" }}
-              >
+              <Typography key={`r-${d.id}`} variant="caption" sx={{ color: "error.main" }}>
                 − Supprimé : <strong>{String(d.name)}</strong>
               </Typography>
             ))}
