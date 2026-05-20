@@ -278,14 +278,12 @@ export interface CarePlanDiffChanges {
 }
 
 export interface CarePlanDiff {
-  against:
-    | {
-        id: number;
-        plan_number: number;
-        plan_start_date: string | null;
-        plan_end_date: string | null;
-      }
-    | null;
+  against: {
+    id: number;
+    plan_number: number;
+    plan_start_date: string | null;
+    plan_end_date: string | null;
+  } | null;
   added: CarePlanDetailSummary[];
   removed: CarePlanDetailSummary[];
   changed: { name: string; changes: CarePlanDiffChanges }[];
@@ -557,9 +555,7 @@ export interface MyDataProvider extends DataProvider {
     carePlanId: Identifier,
     comment: string,
   ) => Promise<CarePlanRevision>;
-  getCarePlanRevisions: (
-    carePlanId: Identifier,
-  ) => Promise<CarePlanRevision[]>;
+  getCarePlanRevisions: (carePlanId: Identifier) => Promise<CarePlanRevision[]>;
   deleteCarePlanRevision: (
     carePlanId: Identifier,
     revisionId: Identifier,
@@ -710,7 +706,10 @@ export interface MyDataProvider extends DataProvider {
     medicationId: Identifier,
     data: any,
   ) => Promise<any>;
-  deleteMedication: (planId: Identifier, medicationId: Identifier) => Promise<any>;
+  deleteMedication: (
+    planId: Identifier,
+    medicationId: Identifier,
+  ) => Promise<any>;
   bulkUpdateMedications: (
     planId: Identifier,
     medicationIds: number[],
@@ -743,7 +742,9 @@ export interface MyDataProvider extends DataProvider {
   searchPhysicians: (query: string, limit?: number) => Promise<any[]>;
   getPhysicianDetails: (physicianId: Identifier) => Promise<any>;
   getPatientPrescriptions: (patientId: Identifier) => Promise<any[]>;
-  getPrescriptionMedications: (prescriptionId: Identifier) => Promise<{ data: any[]; total: number }>;
+  getPrescriptionMedications: (
+    prescriptionId: Identifier,
+  ) => Promise<{ data: any[]; total: number }>;
   uploadPrescriptionFile: (
     prescriptionId: Identifier,
     file: File,
@@ -754,14 +755,19 @@ export interface MyDataProvider extends DataProvider {
 
   // Wound Management methods
   getPatientWounds: (patientId: Identifier) => Promise<any[]>;
-  getWoundEvolutions: (woundId: Identifier) => Promise<{ data: any[]; total: number }>;
+  getWoundEvolutions: (
+    woundId: Identifier,
+  ) => Promise<{ data: any[]; total: number }>;
   createWoundEvolution: (woundId: Identifier, data: any) => Promise<any>;
   updateWoundEvolution: (
     woundId: Identifier,
     evolutionId: Identifier,
     data: any,
   ) => Promise<any>;
-  deleteWoundEvolution: (woundId: Identifier, evolutionId: Identifier) => Promise<any>;
+  deleteWoundEvolution: (
+    woundId: Identifier,
+    evolutionId: Identifier,
+  ) => Promise<any>;
   getWoundImages: (woundId: Identifier) => Promise<any[]>;
   uploadWoundImage: (
     woundId: Identifier,
@@ -1052,7 +1058,10 @@ export const dataProvider: MyDataProvider = {
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.detail || `HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(
+            errorData?.detail ||
+              `HTTP ${response.status}: ${response.statusText}`,
+          );
         }
         const data = await response.json();
         const result = data.data || data;
@@ -1166,16 +1175,15 @@ export const dataProvider: MyDataProvider = {
         if (!response.ok) {
           const errorData = await response.json().catch(() => null);
           throw new Error(
-            errorData?.detail || `HTTP ${response.status}: ${response.statusText}`,
+            errorData?.detail ||
+              `HTTP ${response.status}: ${response.statusText}`,
           );
         }
         const data = await response.json();
         if (data && typeof data === "object" && data.id != null) {
           return { data };
         }
-        throw new Error(
-          `${resource} creation response must include an id`,
-        );
+        throw new Error(`${resource} creation response must include an id`);
       }
 
       // For other resources, use the base data provider
@@ -1198,7 +1206,10 @@ export const dataProvider: MyDataProvider = {
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.detail || `HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(
+            errorData?.detail ||
+              `HTTP ${response.status}: ${response.statusText}`,
+          );
         }
         const data = await response.json();
         const result = data.data || data;
@@ -1448,7 +1459,9 @@ export const dataProvider: MyDataProvider = {
 
     // IMPORTANT: Handle planning-fc resource (same API as planning/monthly-planning)
     if (resource === "planning-fc") {
-      console.log("📅 Handling planning-fc with FastAPI endpoint (mapped to planning/monthly-planning)");
+      console.log(
+        "📅 Handling planning-fc with FastAPI endpoint (mapped to planning/monthly-planning)",
+      );
 
       const url = `${apiUrl}/planning/monthly-planning`;
       console.log("🌐 Making request to planning endpoint:", url);
@@ -1584,7 +1597,11 @@ export const dataProvider: MyDataProvider = {
         queryParams.set("_order", order.toUpperCase());
       }
       Object.keys(filter).forEach((key) => {
-        if (filter[key] !== undefined && filter[key] !== null && filter[key] !== "") {
+        if (
+          filter[key] !== undefined &&
+          filter[key] !== null &&
+          filter[key] !== ""
+        ) {
           queryParams.set(key, filter[key].toString());
         }
       });
@@ -1651,9 +1668,7 @@ export const dataProvider: MyDataProvider = {
             "❌ Unexpected medication-plans response format:",
             data,
           );
-          throw new Error(
-            `Expected React Admin format for medication-plans`,
-          );
+          throw new Error(`Expected React Admin format for medication-plans`);
         }
       } catch (error: any) {
         console.error("❌ Error fetching medication-plans:", error);
@@ -1709,11 +1724,18 @@ export const dataProvider: MyDataProvider = {
             data: data,
             total: data.length,
           };
-        } else if (data && typeof data === "object" && data.data && Array.isArray(data.data)) {
+        } else if (
+          data &&
+          typeof data === "object" &&
+          data.data &&
+          Array.isArray(data.data)
+        ) {
           return data;
         } else {
           console.error("❌ Unexpected tour-types response format:", data);
-          throw new Error("Expected array or React Admin format for tour-types");
+          throw new Error(
+            "Expected array or React Admin format for tour-types",
+          );
         }
       } catch (error: any) {
         console.error("❌ Error fetching tour-types:", error);
@@ -1741,11 +1763,21 @@ export const dataProvider: MyDataProvider = {
             data: data,
             total: data.length,
           };
-        } else if (data && typeof data === "object" && data.data && Array.isArray(data.data)) {
+        } else if (
+          data &&
+          typeof data === "object" &&
+          data.data &&
+          Array.isArray(data.data)
+        ) {
           return data;
         } else {
-          console.error("❌ Unexpected long-term-packages response format:", data);
-          throw new Error("Expected array or React Admin format for long-term-packages");
+          console.error(
+            "❌ Unexpected long-term-packages response format:",
+            data,
+          );
+          throw new Error(
+            "Expected array or React Admin format for long-term-packages",
+          );
         }
       } catch (error: any) {
         console.error("❌ Error fetching long-term-packages:", error);
@@ -2693,12 +2725,7 @@ export const dataProvider: MyDataProvider = {
     return response.json();
   },
 
-  searchRevisionTriggerCandidates: async (
-    carePlanId,
-    kind,
-    q,
-    limit = 20,
-  ) => {
+  searchRevisionTriggerCandidates: async (carePlanId, kind, q, limit = 20) => {
     const params = new URLSearchParams({ kind, limit: String(limit) });
     if (q) params.set("q", q);
     const url = `${apiUrl}/careplans/${carePlanId}/revisions/trigger-candidates?${params}`;
@@ -2922,7 +2949,11 @@ export const dataProvider: MyDataProvider = {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ Proximity calculation failed:", response.status, errorText);
+      console.error(
+        "❌ Proximity calculation failed:",
+        response.status,
+        errorText,
+      );
       throw new Error(
         `Failed to calculate event proximity: ${response.status} ${errorText}`,
       );
@@ -2935,13 +2966,16 @@ export const dataProvider: MyDataProvider = {
   },
 
   // Tour break management
-  addBreakToTour: async (tourId: number, breakData: {
-    break_type: string;
-    start_time: string;
-    end_time: string;
-    location?: string;
-    notes?: string;
-  }) => {
+  addBreakToTour: async (
+    tourId: number,
+    breakData: {
+      break_type: string;
+      start_time: string;
+      end_time: string;
+      location?: string;
+      notes?: string;
+    },
+  ) => {
     const url = `${apiUrl}/tours/${tourId}/breaks`;
     const response = await authenticatedFetch(url, {
       method: "POST",
@@ -3353,7 +3387,10 @@ export const dataProvider: MyDataProvider = {
     return response.json();
   },
 
-  deleteWoundEvolution: async (woundId: Identifier, evolutionId: Identifier) => {
+  deleteWoundEvolution: async (
+    woundId: Identifier,
+    evolutionId: Identifier,
+  ) => {
     const url = `${apiUrl}/wounds/${woundId}/evolutions/${evolutionId}`;
     console.log("🗑️ Deleting wound evolution:", url);
 
@@ -3467,7 +3504,7 @@ export const dataProvider: MyDataProvider = {
   getCellHistory: async (
     planningId: Identifier,
     employeeId: Identifier,
-    date: string
+    date: string,
   ) => {
     const url = `${apiUrl}/planning/monthly-planning/${planningId}/cell-history/${employeeId}/${date}`;
     console.log("📜 Getting cell history:", url);
@@ -3491,7 +3528,7 @@ export const dataProvider: MyDataProvider = {
       dateTo?: string;
       action?: string;
       changedBy?: number;
-    }
+    },
   ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());

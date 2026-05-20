@@ -285,7 +285,8 @@ export function formatDurationDisplay(totalMinutes: number): string {
 
   const hours = Math.floor(rounded / 60);
   const mins = rounded % 60;
-  const hoursText = mins === 0 ? `${hours}h` : `${hours}h${String(mins).padStart(2, "0")}`;
+  const hoursText =
+    mins === 0 ? `${hours}h` : `${hours}h${String(mins).padStart(2, "0")}`;
 
   return `${rounded} min (${hoursText})`;
 }
@@ -506,7 +507,8 @@ export function checkSessionDurationMatch(
 } {
   const actualDuration = calculateSessionDuration(startTime, endTime);
   const expectedDuration =
-    calculateCareItemsDailyDuration(careItems) + calculateActionsDuration(actions);
+    calculateCareItemsDailyDuration(careItems) +
+    calculateActionsDuration(actions);
   const suggestedEndTime = calculateSuggestedEndTime(
     startTime,
     careItems,

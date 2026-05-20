@@ -56,7 +56,13 @@ import { LiveDurationCalculator } from "./LiveDurationCalculator";
 import { formatDurationDisplay } from "../utils/timeUtils";
 import { LongTermCareItem } from "../dataProvider";
 
-const EditWeeklyPackageButton = ({ itemId, currentValue }: { itemId: number; currentValue: number | null }) => {
+const EditWeeklyPackageButton = ({
+  itemId,
+  currentValue,
+}: {
+  itemId: number;
+  currentValue: number | null;
+}) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [value, setValue] = useState(currentValue ?? "");
   const [saving, setSaving] = useState(false);
@@ -86,7 +92,11 @@ const EditWeeklyPackageButton = ({ itemId, currentValue }: { itemId: number; cur
     <>
       <IconButton
         size="small"
-        onClick={(e) => { e.stopPropagation(); setAnchorEl(e.currentTarget); setValue(currentValue ?? ""); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setAnchorEl(e.currentTarget);
+          setValue(currentValue ?? "");
+        }}
         title="Edit weekly duration"
         sx={{ ml: 0.5, p: 0.25 }}
       >
@@ -99,7 +109,15 @@ const EditWeeklyPackageButton = ({ itemId, currentValue }: { itemId: number; cur
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1, minWidth: 200 }}>
+        <Box
+          sx={{
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+            minWidth: 200,
+          }}
+        >
           <Typography variant="subtitle2">Weekly package (min)</Typography>
           <MuiTextField
             size="small"
@@ -107,7 +125,9 @@ const EditWeeklyPackageButton = ({ itemId, currentValue }: { itemId: number; cur
             value={value}
             onChange={(e) => setValue(e.target.value)}
             autoFocus
-            onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSave();
+            }}
           />
           <Button
             variant="contained"
@@ -152,7 +172,9 @@ const validateNoDuplicate = (value: any, allValues: any, props: any) => {
   const occurrences = allValues.long_term_care_items.filter(
     (item: any) => item?.long_term_care_item_id === value,
   );
-  return occurrences.length > 1 ? "This care code is already selected" : undefined;
+  return occurrences.length > 1
+    ? "This care code is already selected"
+    : undefined;
 };
 
 interface TabbedCareFormLayoutProps {
@@ -271,7 +293,10 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
   return (
     <Box sx={{ width: "100%" }}>
       {/* Header with Progress Steps */}
-      <Paper elevation={1} sx={{ p: 2, mb: 2, backgroundColor: "action.hover" }}>
+      <Paper
+        elevation={1}
+        sx={{ p: 2, mb: 2, backgroundColor: "action.hover" }}
+      >
         <Typography
           variant="h6"
           gutterBottom
@@ -485,9 +510,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                   color="text.secondary"
                   sx={{ mb: 2 }}
                 >
-                  {translate(
-                    "care_plan_detail.schedule.weekly_pattern_helper",
-                  )}
+                  {translate("care_plan_detail.schedule.weekly_pattern_helper")}
                 </Typography>
                 <SmartOccurrenceInput
                   source="params_occurrence_ids"
@@ -525,9 +548,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                       required
                       helperText={
                         validationErrors.time_start ||
-                        translate(
-                          "care_plan_detail.schedule.time_start_helper",
-                        )
+                        translate("care_plan_detail.schedule.time_start_helper")
                       }
                       error={!!validationErrors.time_start}
                     />
@@ -697,17 +718,26 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                                       ? ` (${formatDurationDisplay(wp)}/wk)`
                                       : "";
 
-                                  const customDesc = cnsCustomDescriptions[choice.code];
+                                  const customDesc =
+                                    cnsCustomDescriptions[choice.code];
                                   const tooltipParts: string[] = [];
                                   if (customDesc) tooltipParts.push(customDesc);
-                                  if (choice.description && choice.description !== customDesc) {
+                                  if (
+                                    choice.description &&
+                                    choice.description !== customDesc
+                                  ) {
                                     tooltipParts.push(choice.description);
                                   }
-                                  if (!tooltipParts.length) tooltipParts.push("No description");
+                                  if (!tooltipParts.length)
+                                    tooltipParts.push("No description");
                                   if (wp) {
-                                    tooltipParts.push(`${formatDurationDisplay(wp)}/week`);
+                                    tooltipParts.push(
+                                      `${formatDurationDisplay(wp)}/week`,
+                                    );
                                   } else {
-                                    tooltipParts.push("No duration set — click pencil to add");
+                                    tooltipParts.push(
+                                      "No duration set — click pencil to add",
+                                    );
                                   }
 
                                   return (
@@ -716,12 +746,20 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                                       placement="right"
                                       arrow
                                     >
-                                      <Box component="span" sx={{ display: "inline-flex", alignItems: "center" }}>
+                                      <Box
+                                        component="span"
+                                        sx={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                        }}
+                                      >
                                         {choice.code}
                                         {weeklyText || " —"}
                                         <EditWeeklyPackageButton
                                           itemId={choice.id}
-                                          currentValue={choice.weekly_package ?? null}
+                                          currentValue={
+                                            choice.weekly_package ?? null
+                                          }
                                         />
                                       </Box>
                                     </Tooltip>
@@ -797,9 +835,7 @@ export const TabbedCareFormLayout: React.FC<TabbedCareFormLayoutProps> = ({
                         )}
                       </li>
                       <li>
-                        {translate(
-                          "care_plan_detail.care_items.guideline_cns",
-                        )}
+                        {translate("care_plan_detail.care_items.guideline_cns")}
                       </li>
                     </Box>
                   </Grid>

@@ -218,13 +218,31 @@ const SectionContrat = () => {
   return (
     <Section title="Contrat & prise en charge">
       <Field label="Premier contact" value={r.first_contact_date} span={4} />
-      <Field label="Voie de premier contact" value={r.first_contact_way} span={4} />
+      <Field
+        label="Voie de premier contact"
+        value={r.first_contact_way}
+        span={4}
+      />
       <Field label="Contrat signé le" value={r.contract_signed_date} span={4} />
       <Field label="Début contrat" value={r.contract_start_date} span={4} />
       <Field label="Fin contrat" value={r.contract_end_date} span={4} />
-      <Field label="Soin urgent / préventif" value={r.urgent_or_preventive_care} span={4} />
-      <Field label="Raison de la dépendance" value={r.reason_for_dependence} span={12} multiline />
-      <Field label="Mots-clés bio" value={r.bio_highlights} span={12} multiline />
+      <Field
+        label="Soin urgent / préventif"
+        value={r.urgent_or_preventive_care}
+        span={4}
+      />
+      <Field
+        label="Raison de la dépendance"
+        value={r.reason_for_dependence}
+        span={12}
+        multiline
+      />
+      <Field
+        label="Mots-clés bio"
+        value={r.bio_highlights}
+        span={12}
+        multiline
+      />
     </Section>
   );
 };
@@ -235,9 +253,21 @@ const SectionLanguesDirectives = () => {
   return (
     <Section title="Langues, directives & croyances">
       <Field label="Langues parlées" value={r.spoken_languages} span={6} />
-      <Field label="Langues comprises" value={r.understand_languages} span={6} />
-      <Field label="Croyances religieuses" value={r.religious_beliefs} span={6} />
-      <Field label="Directives anticipées" value={r.anticipated_directives} span={3} />
+      <Field
+        label="Langues comprises"
+        value={r.understand_languages}
+        span={6}
+      />
+      <Field
+        label="Croyances religieuses"
+        value={r.religious_beliefs}
+        span={6}
+      />
+      <Field
+        label="Directives anticipées"
+        value={r.anticipated_directives}
+        span={3}
+      />
       <Field
         label="Date directives anticipées"
         value={r.anticipated_directives_date}
@@ -448,17 +478,32 @@ const SectionMedical = () => {
   return (
     <Section title="Pathologies & antécédents">
       <Field label="Pathologies" value={r.pathologies} span={12} multiline />
-      <Field label="Antécédents médicaux" value={r.medical_background} span={12} multiline />
+      <Field
+        label="Antécédents médicaux"
+        value={r.medical_background}
+        span={12}
+        multiline
+      />
       <Field label="Traitements" value={r.treatments} span={12} multiline />
       <Field label="Allergies" value={r.allergies} span={12} multiline />
-      <Field label="Évaluation générale" value={r.general_evaluation} span={12} multiline />
+      <Field
+        label="Évaluation générale"
+        value={r.general_evaluation}
+        span={12}
+        multiline
+      />
       <Field label="Hôpital préféré" value={r.preferred_hospital} span={6} />
       <Field
         label="Emplacement dossier soins"
         value={r.health_care_dossier_location}
         span={6}
       />
-      <Field label="Aidant informel" value={r.informal_caregiver} span={12} multiline />
+      <Field
+        label="Aidant informel"
+        value={r.informal_caregiver}
+        span={12}
+        multiline
+      />
     </Section>
   );
 };
@@ -476,8 +521,18 @@ const SectionAids = () => {
       <Field label="Lunettes" value={r.glasses} span={3} />
       <Field label="Prothèse dentaire" value={r.dental_prosthesis} span={3} />
       <Field label="Appareil auditif" value={r.hearing_aid} span={3} />
-      <Field label="Autres aides techniques" value={r.other_technical_help} span={6} multiline />
-      <Field label="Autres prothèses" value={r.other_prosthesis} span={6} multiline />
+      <Field
+        label="Autres aides techniques"
+        value={r.other_technical_help}
+        span={6}
+        multiline
+      />
+      <Field
+        label="Autres prothèses"
+        value={r.other_prosthesis}
+        span={6}
+        multiline
+      />
     </Section>
   );
 };
@@ -492,7 +547,12 @@ const SectionMedication = () => {
       <Field label="Distribution" value={r.drugs_distribution} span={4} />
       <Field label="Commandes" value={r.drugs_ordering} span={4} />
       <Field label="Visites pharmacie" value={r.pharmacy_visits} span={4} />
-      <Field label="Pharmacies préférées" value={r.preferred_pharmacies} span={4} multiline />
+      <Field
+        label="Pharmacies préférées"
+        value={r.preferred_pharmacies}
+        span={4}
+        multiline
+      />
     </Section>
   );
 };
@@ -512,10 +572,18 @@ const SectionFallRisk = () => {
         }
         span={3}
       />
-      <Field label="Date évaluation" value={r.fall_risk_assessment_date} span={3} />
+      <Field
+        label="Date évaluation"
+        value={r.fall_risk_assessment_date}
+        span={3}
+      />
       <Field label="Dernière chute" value={r.last_fall_date} span={3} />
       <Field label="Antécédents de chute" value={r.fall_history} span={4} />
-      <Field label="Diagnostic secondaire" value={r.secondary_diagnosis} span={4} />
+      <Field
+        label="Diagnostic secondaire"
+        value={r.secondary_diagnosis}
+        span={4}
+      />
       <Field label="Aide ambulatoire" value={r.ambulatory_aid} span={4} />
       <Field label="Thérapie IV" value={r.iv_therapy} span={4} />
       <Field label="Démarche / transfert" value={r.gait_transfer} span={4} />
@@ -537,7 +605,12 @@ const SectionMobility = () => {
     <Section title="Mobilité">
       <Field label="Mobilisation" value={r.mobilization} span={6} />
       <Field label="Latéralité" value={r.handedness} span={6} />
-      <Field label="Description" value={r.mobilization_description} span={12} multiline />
+      <Field
+        label="Description"
+        value={r.mobilization_description}
+        span={12}
+        multiline
+      />
     </Section>
   );
 };
@@ -576,11 +649,7 @@ const SectionNutrition = () => {
       <Field label="Régime" value={r.diet} span={3} />
       <Field label="Repas livré" value={r.meal_on_wheels} span={3} />
       <Field label="Boissons préférées" value={r.preferred_drinks} span={9} />
-      <Field
-        label="Gestion courses"
-        value={r.shopping_management}
-        span={6}
-      />
+      <Field label="Gestion courses" value={r.shopping_management} span={6} />
       <Field
         label="Description courses"
         value={r.shopping_management_desc}
@@ -596,12 +665,24 @@ const SectionContinence = () => {
   if (!r) return null;
   return (
     <Section title="Élimination">
-      <Field label="Incontinence urinaire" value={r.urinary_incontinence} span={4} />
-      <Field label="Incontinence fécale" value={r.faecal_incontinence} span={4} />
+      <Field
+        label="Incontinence urinaire"
+        value={r.urinary_incontinence}
+        span={4}
+      />
+      <Field
+        label="Incontinence fécale"
+        value={r.faecal_incontinence}
+        span={4}
+      />
       <Field label="Protection" value={r.protection} span={4} />
       <Field label="Protection jour" value={r.day_protection} span={4} />
       <Field label="Protection nuit" value={r.night_protection} span={4} />
-      <Field label="Protection commandée" value={r.protection_ordered} span={4} />
+      <Field
+        label="Protection commandée"
+        value={r.protection_ordered}
+        span={4}
+      />
       <Field label="Sonde urinaire" value={r.urinary_catheter} span={4} />
       <Field label="Cystofix" value={r.crystofix_catheter} span={4} />
       <Field

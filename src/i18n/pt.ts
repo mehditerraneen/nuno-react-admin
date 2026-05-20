@@ -61,8 +61,7 @@ export const pt = {
       guideline_daily: "Duração diária = pacote semanal ÷ 7 dias",
       guideline_endtime:
         "A hora de fim é sugerida com base na hora de início + duração diária total",
-      guideline_quantity:
-        "A quantidade predefinida é 1 para novos elementos",
+      guideline_quantity: "A quantidade predefinida é 1 para novos elementos",
       guideline_cns:
         "O filtro CNS aplica-se quando há plano de cuidados associado",
     },
@@ -84,8 +83,7 @@ export const pt = {
       create_error: "Não foi possível criar o detalhe do plano",
       fix_errors: "Por favor corrija os erros de validação",
       delete: "Apagar",
-      delete_confirm:
-        "Apagar este detalhe do plano? Esta ação é irreversível.",
+      delete_confirm: "Apagar este detalhe do plano? Esta ação é irreversível.",
       delete_success: "Detalhe do plano apagado",
       delete_error: "Não foi possível apagar o detalhe do plano",
     },
@@ -98,7 +96,7 @@ export const pt = {
     generating_pdf: "A gerar...",
     no_details: "Sem detalhes para este plano de cuidados.",
     no_details_hint:
-      "👆 Clique em \"Adicionar detalhe\" acima para começar a adicionar detalhes, ocorrências e prestações.",
+      '👆 Clique em "Adicionar detalhe" acima para começar a adicionar detalhes, ocorrências e prestações.',
     start_time: "Hora de início",
     end_time: "Hora de fim",
     care_actions: "Ações de cuidado",
@@ -144,8 +142,7 @@ export const pt = {
     history_title: "Histórico de revisões",
     history_empty: "Sem revisões anteriores.",
     delete_tooltip: "Apagar esta revisão (administrador)",
-    delete_confirm:
-      "Apagar esta revisão? Esta ação é irreversível.",
+    delete_confirm: "Apagar esta revisão? Esta ação é irreversível.",
     delete_success: "Revisão apagada",
     delete_error: "Não foi possível apagar a revisão",
   },

@@ -92,8 +92,8 @@ const SessionManager = () => {
         <DialogTitle>Session Expired</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Your session has expired. Please log in again to continue.
-            Any unsaved changes may have been lost.
+            Your session has expired. Please log in again to continue. Any
+            unsaved changes may have been lost.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

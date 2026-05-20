@@ -8,14 +8,14 @@
  * - Mobile-responsive design
  */
 
-export { WoundList } from './WoundList';
-export { WoundEdit } from './WoundEdit';
-export { WoundShow } from './WoundShow';
-export { WoundCreate } from './WoundCreate';
-export { WoundEvolutionDialog } from './WoundEvolutionDialog';
-export { WoundImageGallery } from './WoundImageGallery';
-export { WoundMarker } from './WoundMarker';
-export { BodyMapViewer } from './BodyMapViewer';
-export { WoundPreviewCard } from './WoundPreviewCard';
-export { ZoomControls } from './ZoomControls';
-export { MiniMap } from './MiniMap';
+export { WoundList } from "./WoundList";
+export { WoundEdit } from "./WoundEdit";
+export { WoundShow } from "./WoundShow";
+export { WoundCreate } from "./WoundCreate";
+export { WoundEvolutionDialog } from "./WoundEvolutionDialog";
+export { WoundImageGallery } from "./WoundImageGallery";
+export { WoundMarker } from "./WoundMarker";
+export { BodyMapViewer } from "./BodyMapViewer";
+export { WoundPreviewCard } from "./WoundPreviewCard";
+export { ZoomControls } from "./ZoomControls";
+export { MiniMap } from "./MiniMap";

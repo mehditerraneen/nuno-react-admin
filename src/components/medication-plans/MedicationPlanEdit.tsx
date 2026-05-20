@@ -36,15 +36,13 @@ const MedicationsSection = () => {
 
   if (!record?.medications || record.medications.length === 0) {
     return (
-      <Box sx={{ mt: 2, p: 2, backgroundColor: "action.hover", borderRadius: 1 }}>
+      <Box
+        sx={{ mt: 2, p: 2, backgroundColor: "action.hover", borderRadius: 1 }}
+      >
         <Typography variant="body2" color="text.secondary">
           No medications in this plan yet.
         </Typography>
-        <Button
-          label="Add Medication"
-          startIcon={<AddIcon />}
-          sx={{ mt: 1 }}
-        />
+        <Button label="Add Medication" startIcon={<AddIcon />} sx={{ mt: 1 }} />
       </Box>
     );
   }

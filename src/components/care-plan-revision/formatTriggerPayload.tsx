@@ -31,7 +31,8 @@ const KEY_LABELS: Record<string, string> = {
 
 const SKIP_KEYS = new Set(["prescriptor_id", "body_area", "body_view"]);
 
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$/;
+const ISO_DATE_RE =
+  /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$/;
 
 const formatValue = (value: unknown): string => {
   if (value === null || value === undefined || value === "") return "";
@@ -65,10 +66,15 @@ interface FormatTriggerPayloadProps {
  * TRIGGER_KINDS); we just iterate, prettify dates/booleans, and skip
  * empty values.
  */
-export const FormatTriggerPayload = ({ payload }: FormatTriggerPayloadProps) => {
+export const FormatTriggerPayload = ({
+  payload,
+}: FormatTriggerPayloadProps) => {
   if (!payload || typeof payload !== "object") return null;
   const rows = Object.entries(payload)
-    .filter(([k, v]) => !SKIP_KEYS.has(k) && v !== null && v !== undefined && v !== "")
+    .filter(
+      ([k, v]) =>
+        !SKIP_KEYS.has(k) && v !== null && v !== undefined && v !== "",
+    )
     .map(([k, v]) => [KEY_LABELS[k] || k, formatValue(v)] as const)
     .filter(([, v]) => v !== "");
 

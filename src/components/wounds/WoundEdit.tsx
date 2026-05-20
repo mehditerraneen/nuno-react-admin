@@ -5,9 +5,9 @@ import {
   SelectInput,
   required,
   useRecordContext,
-} from 'react-admin';
-import { Box, Typography } from '@mui/material';
-import { STATUS_LABELS, BODY_AREAS } from '../../types/wounds';
+} from "react-admin";
+import { Box, Typography } from "@mui/material";
+import { STATUS_LABELS, BODY_AREAS } from "../../types/wounds";
 
 /**
  * WoundEdit Component
@@ -64,11 +64,17 @@ const WoundInfoDisplay = () => {
 
   if (!record) return null;
 
-  const bodyAreaLabel = BODY_AREAS[record.body_area as keyof typeof BODY_AREAS] || record.body_area;
-  const viewLabel = record.body_view === 'FRONT' ? 'Face' : record.body_view === 'BACK' ? 'Dos' : 'Latérale';
+  const bodyAreaLabel =
+    BODY_AREAS[record.body_area as keyof typeof BODY_AREAS] || record.body_area;
+  const viewLabel =
+    record.body_view === "FRONT"
+      ? "Face"
+      : record.body_view === "BACK"
+        ? "Dos"
+        : "Latérale";
 
   return (
-    <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+    <Box sx={{ mt: 3, p: 2, bgcolor: "grey.100", borderRadius: 1 }}>
       <Typography variant="subtitle2" gutterBottom>
         Informations de localisation
       </Typography>
@@ -79,10 +85,16 @@ const WoundInfoDisplay = () => {
         <strong>Vue:</strong> {viewLabel}
       </Typography>
       <Typography variant="body2" sx={{ mt: 1 }}>
-        <strong>Position:</strong> X: {record.x_position}, Y: {record.y_position}
+        <strong>Position:</strong> X: {record.x_position}, Y:{" "}
+        {record.y_position}
       </Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-        La localisation de la plaie ne peut pas être modifiée. Pour changer l'emplacement, créez une nouvelle plaie.
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 1, display: "block" }}
+      >
+        La localisation de la plaie ne peut pas être modifiée. Pour changer
+        l'emplacement, créez une nouvelle plaie.
       </Typography>
     </Box>
   );

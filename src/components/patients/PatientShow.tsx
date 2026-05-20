@@ -126,7 +126,8 @@ const AnamnesisBlock = () => {
       <Card variant="outlined" sx={{ mb: 2 }}>
         <CardContent>
           <Typography variant="body2" color="error">
-            Impossible de charger l'anamnèse : {String((error as Error).message || error)}
+            Impossible de charger l'anamnèse :{" "}
+            {String((error as Error).message || error)}
           </Typography>
         </CardContent>
       </Card>

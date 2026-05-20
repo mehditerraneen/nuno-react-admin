@@ -178,7 +178,9 @@ const ChangeDiff = ({ field, before, after, objectives }: ChangeDiffProps) => {
     case "objective_ids": {
       const titlesOf = (raw: unknown): string => {
         const ids = Array.isArray(raw)
-          ? (raw.map((v) => Number(v)).filter((n) => !Number.isNaN(n)) as number[])
+          ? (raw
+              .map((v) => Number(v))
+              .filter((n) => !Number.isNaN(n)) as number[])
           : [];
         if (ids.length === 0) return "—";
         const titles = ids.map(
@@ -220,7 +222,10 @@ const ChangeDiff = ({ field, before, after, objectives }: ChangeDiffProps) => {
     }
     case "long_term_care_items": {
       const b = Array.isArray(before)
-        ? (before as Array<{ long_term_care_item_id: number; quantity: number }>)
+        ? (before as Array<{
+            long_term_care_item_id: number;
+            quantity: number;
+          }>)
         : [];
       const a = Array.isArray(after)
         ? (after as Array<{ long_term_care_item_id: number; quantity: number }>)
@@ -236,9 +241,7 @@ const ChangeDiff = ({ field, before, after, objectives }: ChangeDiffProps) => {
         return bItem && Number(bItem.quantity) !== Number(aItem?.quantity);
       });
       beforeStr = `${b.length} prestation${b.length > 1 ? "s" : ""}`;
-      const afterParts = [
-        `${a.length} prestation${a.length > 1 ? "s" : ""}`,
-      ];
+      const afterParts = [`${a.length} prestation${a.length > 1 ? "s" : ""}`];
       if (added.length || removed.length || qtyChanged.length) {
         const detail = [
           removed.length && `−${removed.length}`,
@@ -271,7 +274,9 @@ const ChangeDiff = ({ field, before, after, objectives }: ChangeDiffProps) => {
   }
 
   return (
-    <Box sx={{ display: "flex", gap: 1, alignItems: "baseline", flexWrap: "wrap" }}>
+    <Box
+      sx={{ display: "flex", gap: 1, alignItems: "baseline", flexWrap: "wrap" }}
+    >
       <Typography variant="caption" sx={{ fontWeight: 600, minWidth: 130 }}>
         {FIELD_LABELS_FR[field] ?? field}
       </Typography>
@@ -307,7 +312,14 @@ interface CarePlanDetailEditDialogProps {
 
 export const CarePlanDetailEditDialog: React.FC<
   CarePlanDetailEditDialogProps
-> = ({ open, onClose, carePlanId, detailToEdit, cnsCarePlanId, objectives = [] }) => {
+> = ({
+  open,
+  onClose,
+  carePlanId,
+  detailToEdit,
+  cnsCarePlanId,
+  objectives = [],
+}) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
   const translate = useTranslate();
@@ -320,7 +332,9 @@ export const CarePlanDetailEditDialog: React.FC<
   }>({ isDirty: false, dirtyFields: {}, values: {} });
 
   const handleDelete = async () => {
-    if (!window.confirm(translate("care_plan_detail.validation.delete_confirm")))
+    if (
+      !window.confirm(translate("care_plan_detail.validation.delete_confirm"))
+    )
       return;
     setIsDeleting(true);
     try {
@@ -340,7 +354,9 @@ export const CarePlanDetailEditDialog: React.FC<
     }
   };
   const [cnsItemIds, setCnsItemIds] = useState<number[]>([]);
-  const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<Record<string, string>>({});
+  const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<
+    Record<string, string>
+  >({});
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -494,7 +510,9 @@ export const CarePlanDetailEditDialog: React.FC<
       time_start: formattedValues.time_start, // Properly formatted HH:MM
       time_end: formattedValues.time_end, // Properly formatted HH:MM
       long_term_care_items: formattedValues.long_term_care_items
-        .filter((item: FormLongTermCareItem) => item.long_term_care_item_id != null)
+        .filter(
+          (item: FormLongTermCareItem) => item.long_term_care_item_id != null,
+        )
         .map((item: FormLongTermCareItem) => ({
           long_term_care_item_id: item.long_term_care_item_id,
           quantity: item.quantity || 1,
@@ -687,9 +705,7 @@ export const CarePlanDetailEditDialog: React.FC<
         </Button>
         <Tooltip
           title={
-            !formStateInfo.isDirty
-              ? "Aucune modification à enregistrer"
-              : ""
+            !formStateInfo.isDirty ? "Aucune modification à enregistrer" : ""
           }
           arrow
         >
@@ -698,9 +714,7 @@ export const CarePlanDetailEditDialog: React.FC<
               type="submit"
               form="care-plan-edit-form"
               variant="contained"
-              disabled={
-                isSaving || isDeleting || !formStateInfo.isDirty
-              }
+              disabled={isSaving || isDeleting || !formStateInfo.isDirty}
             >
               {isSaving ? (
                 <CircularProgress size={24} />

@@ -24,15 +24,8 @@ import {
 } from "react-admin";
 import type { MyDataProvider } from "../../dataProvider";
 import { prescriptionStyle } from "./medBoardPalette";
-import type {
-  Medication,
-  MedicationPlan,
-} from "../../types/medicationPlans";
-import {
-  bucketize,
-  groupByPrescription,
-  type LaneKey,
-} from "./medBoardUtils";
+import type { Medication, MedicationPlan } from "../../types/medicationPlans";
+import { bucketize, groupByPrescription, type LaneKey } from "./medBoardUtils";
 import { MedicationBoardCard } from "./MedicationBoardCard";
 import {
   projectMedications,
@@ -50,11 +43,36 @@ interface LaneDescriptor {
 }
 
 const LANES: LaneDescriptor[] = [
-  { key: "active", labelKey: "med_board.lane_active", icon: <MedicationIcon />, accent: "#2e7d32" },
-  { key: "prn", labelKey: "med_board.lane_prn", icon: <BoltIcon />, accent: "#6a1b9a" },
-  { key: "insulin", labelKey: "med_board.lane_insulin", icon: <OpacityIcon />, accent: "#1565c0" },
-  { key: "ending", labelKey: "med_board.lane_ending", icon: <HourglassBottomIcon />, accent: "#ef6c00" },
-  { key: "archived", labelKey: "med_board.lane_archived", icon: <Inventory2OutlinedIcon />, accent: "#546e7a" },
+  {
+    key: "active",
+    labelKey: "med_board.lane_active",
+    icon: <MedicationIcon />,
+    accent: "#2e7d32",
+  },
+  {
+    key: "prn",
+    labelKey: "med_board.lane_prn",
+    icon: <BoltIcon />,
+    accent: "#6a1b9a",
+  },
+  {
+    key: "insulin",
+    labelKey: "med_board.lane_insulin",
+    icon: <OpacityIcon />,
+    accent: "#1565c0",
+  },
+  {
+    key: "ending",
+    labelKey: "med_board.lane_ending",
+    icon: <HourglassBottomIcon />,
+    accent: "#ef6c00",
+  },
+  {
+    key: "archived",
+    labelKey: "med_board.lane_archived",
+    icon: <Inventory2OutlinedIcon />,
+    accent: "#546e7a",
+  },
 ];
 
 const LaneColumn: React.FC<{
@@ -139,10 +157,7 @@ const LaneColumn: React.FC<{
                   ? `Rx ${date ?? "#" + group.prescriptionId} — ${doctor}`
                   : `Rx ${date ?? "#" + group.prescriptionId}`;
             return (
-              <Box
-                key={group.prescriptionId ?? "none"}
-                sx={{ mb: 1.5 }}
-              >
+              <Box key={group.prescriptionId ?? "none"} sx={{ mb: 1.5 }}>
                 <Box
                   sx={{
                     px: 1,
@@ -234,7 +249,7 @@ export const MedicationBoard: React.FC = () => {
         const list: RawPrescription[] = Array.isArray(result)
           ? (result as RawPrescription[])
           : Array.isArray((result as { data?: unknown })?.data)
-            ? ((result as { data: RawPrescription[] }).data)
+            ? (result as { data: RawPrescription[] }).data
             : [];
         setPrescriptionsList(list);
       })
@@ -286,9 +301,7 @@ export const MedicationBoard: React.FC = () => {
   );
   for (const p of prescriptionsList) {
     if (!usedRxIds.has(p.id)) continue;
-    const date = p.date
-      ? new Date(p.date).toLocaleDateString()
-      : `#${p.id}`;
+    const date = p.date ? new Date(p.date).toLocaleDateString() : `#${p.id}`;
     const doctorName = p.prescriptor_name || p.prescriptor?.name;
     prescriptionLabels.set(p.id, date);
     prescriptionDoctors.set(p.id, doctorName);
@@ -371,7 +384,9 @@ export const MedicationBoard: React.FC = () => {
           await dataProvider.createScheduleRule(planId, medId, r);
         }
         // 3b) Delete removed rules
-        for (const r of serverRules.filter((r) => r.id != null && !projectedIds.has(r.id!))) {
+        for (const r of serverRules.filter(
+          (r) => r.id != null && !projectedIds.has(r.id!),
+        )) {
           if (r.id != null) {
             await dataProvider.deleteScheduleRule(planId, medId, r.id);
           }
@@ -379,7 +394,11 @@ export const MedicationBoard: React.FC = () => {
         // 3c) Update changed rules
         for (const r of projectedRules.filter((r) => r.id != null)) {
           const srv = serverRules.find((s) => s.id === r.id);
-          if (srv && JSON.stringify(srv) !== JSON.stringify(r) && r.id != null) {
+          if (
+            srv &&
+            JSON.stringify(srv) !== JSON.stringify(r) &&
+            r.id != null
+          ) {
             await dataProvider.updateScheduleRule(planId, medId, r.id, r);
           }
         }
@@ -400,7 +419,7 @@ export const MedicationBoard: React.FC = () => {
 
   const selectedMed =
     selectedMedId != null
-      ? medications.find((m) => m.id === selectedMedId) ?? null
+      ? (medications.find((m) => m.id === selectedMedId) ?? null)
       : null;
 
   return (

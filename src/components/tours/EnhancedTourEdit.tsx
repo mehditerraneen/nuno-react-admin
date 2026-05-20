@@ -78,7 +78,7 @@ interface AvailableEvent extends Event {
   assigned_to_tour?: number;
   is_available: boolean;
   patient_name?: string;
-  care_plan_detail_ids?: number[];  // CNS MedicalCareSummaryPerPatientDetail IDs
+  care_plan_detail_ids?: number[]; // CNS MedicalCareSummaryPerPatientDetail IDs
 }
 
 // Validation interfaces
@@ -191,18 +191,29 @@ const EnhancedTourEditForm = () => {
       duration: number;
       timeGap: number;
       color: string;
-    }
+    };
   }>({});
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [lastDroppedEventId, setLastDroppedEventId] = useState<number | null>(null);
+  const [lastDroppedEventId, setLastDroppedEventId] = useState<number | null>(
+    null,
+  );
   const [patientSearch, setPatientSearch] = useState("");
   const [tourMode, setTourMode] = useState<"events" | "careplans">("events");
   const [tourTypes, setTourTypes] = useState<TourType[]>([]);
-  const [selectedTourTypeId, setSelectedTourTypeId] = useState<number | null>(null);
-  const [tourBreaks, setTourBreaks] = useState<Array<{
-    id: number; break_type: string; start_time: string; end_time: string;
-    duration_minutes?: number; location?: string; notes?: string;
-  }>>([]);
+  const [selectedTourTypeId, setSelectedTourTypeId] = useState<number | null>(
+    null,
+  );
+  const [tourBreaks, setTourBreaks] = useState<
+    Array<{
+      id: number;
+      break_type: string;
+      start_time: string;
+      end_time: string;
+      duration_minutes?: number;
+      location?: string;
+      notes?: string;
+    }>
+  >([]);
 
   const dataProvider = useDataProvider();
   const notify = useNotify();
@@ -362,11 +373,15 @@ const EnhancedTourEditForm = () => {
           sequence: index + 1,
           state: event.state || 1,
         })),
-        planned_start_time: currentFormValues.time_start || record?.time_start || "08:00",
-        planned_end_time: currentFormValues.time_end || record?.time_end || "17:00",
+        planned_start_time:
+          currentFormValues.time_start || record?.time_start || "08:00",
+        planned_end_time:
+          currentFormValues.time_end || record?.time_end || "17:00",
         employee_id: currentFormValues.employee_id || record?.employee_id || 1,
         tour_date:
-          currentFormValues.date || record?.date || new Date().toISOString().split("T")[0],
+          currentFormValues.date ||
+          record?.date ||
+          new Date().toISOString().split("T")[0],
         tour_name: currentFormValues.name || record?.name || "Untitled Tour",
         include_travel_calculation: true,
         include_optimization_suggestions: true,
@@ -505,16 +520,20 @@ const EnhancedTourEditForm = () => {
         const details = await (dataProvider as any).getCarePlanDetails(cp.id);
 
         // Fetch CNS details to map LongTermCareItem IDs → CNS detail IDs
-        let cnsDetailsByItemId: Record<number, number> = {};
+        const cnsDetailsByItemId: Record<number, number> = {};
         if (cp.medical_care_summary_per_patient_id) {
           try {
-            const cnsDetails = await (dataProvider as any).getCnsCarePlanDetails(cp.medical_care_summary_per_patient_id);
+            const cnsDetails = await (
+              dataProvider as any
+            ).getCnsCarePlanDetails(cp.medical_care_summary_per_patient_id);
             for (const cd of cnsDetails) {
               if (cd.item?.id) {
                 cnsDetailsByItemId[cd.item.id] = cd.id;
               }
             }
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
 
         for (const detail of details) {
@@ -531,7 +550,8 @@ const EnhancedTourEditForm = () => {
 
           // Filter by tour time window
           const formValues = getCurrentFormValues();
-          const tourStart = formValues.time_start || record?.time_start || "00:00";
+          const tourStart =
+            formValues.time_start || record?.time_start || "00:00";
           const tourEnd = formValues.time_end || record?.time_end || "23:59";
           if (timeStart < tourStart || timeEnd > tourEnd) continue;
 
@@ -547,9 +567,9 @@ const EnhancedTourEditForm = () => {
           const cnsPlanDetailIds = codeItems
             .map((c: any) => cnsDetailsByItemId[c.itemId])
             .filter(Boolean);
-          const codesText = codeItems.map((c: any) =>
-            `${c.code}${c.qty > 1 ? ` x${c.qty}` : ""}`,
-          ).join(", ");
+          const codesText = codeItems
+            .map((c: any) => `${c.code}${c.qty > 1 ? ` x${c.qty}` : ""}`)
+            .join(", ");
           const noteParts = [
             detail.name,
             detail.care_actions,
@@ -875,11 +895,18 @@ const EnhancedTourEditForm = () => {
     }));
 
     const newDur = newEndMin - startMin;
-    notify(`Duration changed to ${newDur}min (${effective.time_start} - ${newEndTime})`, { type: "info" });
+    notify(
+      `Duration changed to ${newDur}min (${effective.time_start} - ${newEndTime})`,
+      { type: "info" },
+    );
   };
 
   // Add a break to the tour at a specific time
-  const addBreak = async (startTime: string, durationMinutes: number, breakType: string = "REST") => {
+  const addBreak = async (
+    startTime: string,
+    durationMinutes: number,
+    breakType: string = "REST",
+  ) => {
     if (!record) return;
     const startMin = timeToMinutes(startTime);
     const endTime = minutesToTime(startMin + durationMinutes);
@@ -890,7 +917,9 @@ const EnhancedTourEditForm = () => {
         end_time: endTime,
       });
       setTourBreaks((prev) => [...prev, result]);
-      notify(`${breakType} break added: ${startTime} - ${endTime}`, { type: "success" });
+      notify(`${breakType} break added: ${startTime} - ${endTime}`, {
+        type: "success",
+      });
     } catch (error: any) {
       notify(`Failed to add break: ${error.message}`, { type: "error" });
     }
@@ -933,9 +962,10 @@ const EnhancedTourEditForm = () => {
     const durB = timeToMinutes(effB.time_end) - timeToMinutes(effB.time_start);
 
     // The earlier slot start stays the same; reassign durations in swapped order
-    const earlierStart = direction === "up"
-      ? timeToMinutes(effB.time_start)
-      : timeToMinutes(effA.time_start);
+    const earlierStart =
+      direction === "up"
+        ? timeToMinutes(effB.time_start)
+        : timeToMinutes(effA.time_start);
 
     // Event moving into the earlier slot
     const firstDur = direction === "up" ? durA : durB;
@@ -944,9 +974,10 @@ const EnhancedTourEditForm = () => {
     const secondId = direction === "up" ? eventB.id : eventA.id;
 
     // Get travel time between the two (will be recalculated after validation)
-    const travelGap = direction === "up"
-      ? timeToMinutes(effA.time_start) - timeToMinutes(effB.time_end)
-      : timeToMinutes(effB.time_start) - timeToMinutes(effA.time_end);
+    const travelGap =
+      direction === "up"
+        ? timeToMinutes(effA.time_start) - timeToMinutes(effB.time_end)
+        : timeToMinutes(effB.time_start) - timeToMinutes(effA.time_end);
     const gap = Math.max(travelGap, 0);
 
     const firstStart = earlierStart;
@@ -1159,7 +1190,9 @@ const EnhancedTourEditForm = () => {
 
   // Calculate and display proximity highlights for available events
   // Combines geographic proximity (from API) with time proximity (client-side)
-  const calculateProximityHighlights = async (sourceEvent: AvailableEvent | Event | null) => {
+  const calculateProximityHighlights = async (
+    sourceEvent: AvailableEvent | Event | null,
+  ) => {
     if (!sourceEvent) {
       setProximityHighlights({});
       return;
@@ -1167,7 +1200,8 @@ const EnhancedTourEditForm = () => {
 
     // Get unassigned available events (targets for proximity)
     const unassignedEvents = availableEvents.filter(
-      (e) => e.is_available && !e.assigned_to_tour && e.event_type !== "BIRTHDAY",
+      (e) =>
+        e.is_available && !e.assigned_to_tour && e.event_type !== "BIRTHDAY",
     );
 
     if (unassignedEvents.length === 0) {
@@ -1183,11 +1217,13 @@ const EnhancedTourEditForm = () => {
     try {
       const response = await dataProvider.calculateEventProximity({
         source_event_id: sourceEvent.id,
-        target_event_ids: unassignedEvents.map(e => e.id),
+        target_event_ids: unassignedEvents.map((e) => e.id),
       });
 
       // Build a map of geographic scores from API (lower = closer)
-      const geoScores: { [eventId: number]: { distance_km: number; duration_min: number } } = {};
+      const geoScores: {
+        [eventId: number]: { distance_km: number; duration_min: number };
+      } = {};
       response.closest_events.forEach((ev: any) => {
         geoScores[ev.event_id] = {
           distance_km: ev.distance_km,
@@ -1222,8 +1258,16 @@ const EnhancedTourEditForm = () => {
         .sort((a, b) => a.combinedScore - b.combinedScore);
 
       // Highlight top 5
-      const highlights: { [eventId: number]: { rank: number; distance: number; duration: number; timeGap: number; color: string } } = {};
-      const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336'];
+      const highlights: {
+        [eventId: number]: {
+          rank: number;
+          distance: number;
+          duration: number;
+          timeGap: number;
+          color: string;
+        };
+      } = {};
+      const colors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#F44336"];
 
       scored.slice(0, 5).forEach((item, index) => {
         highlights[item.eventId] = {
@@ -1231,13 +1275,13 @@ const EnhancedTourEditForm = () => {
           distance: item.distance_km,
           duration: item.duration_min,
           timeGap: item.timeGapMin,
-          color: colors[index] || '#757575',
+          color: colors[index] || "#757575",
         };
       });
 
       setProximityHighlights(highlights);
     } catch (error) {
-      console.error('Failed to calculate proximity:', error);
+      console.error("Failed to calculate proximity:", error);
       setProximityHighlights({});
     }
   };
@@ -1253,7 +1297,7 @@ const EnhancedTourEditForm = () => {
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-    
+
     // Calculate proximity highlights when dragging over the tour area
     if (draggedEvent && !isDraggingOver) {
       setIsDraggingOver(true);
@@ -1296,13 +1340,13 @@ const EnhancedTourEditForm = () => {
     notify("Event added - review validation feedback before saving", {
       type: "info",
     });
-    
+
     // Store the last dropped event and recalculate proximity based on it
     setLastDroppedEventId(draggedEvent.id);
-    
+
     // Recalculate proximity highlights from the just-dropped event to available events
     await calculateProximityHighlights(draggedEvent);
-    
+
     // Reset drag state but keep proximity highlights
     setIsDraggingOver(false);
     setDraggedEvent(null);
@@ -1323,10 +1367,13 @@ const EnhancedTourEditForm = () => {
   const handleCalculateProximity = async (sourceEvent: Event) => {
     setLastDroppedEventId(sourceEvent.id);
     await calculateProximityHighlights(sourceEvent);
-    
-    notify(`Showing closest available events to ${getPatientName(sourceEvent.patient_id)}`, {
-      type: "info",
-    });
+
+    notify(
+      `Showing closest available events to ${getPatientName(sourceEvent.patient_id)}`,
+      {
+        type: "info",
+      },
+    );
   };
 
   const handleRemoveFromTour = async (eventToRemove: Event) => {
@@ -1435,10 +1482,14 @@ const EnhancedTourEditForm = () => {
               notes: event.notes || "",
               event_type_enum: "ASS_DEP", // Assurance dépendance
               tour_id: record.id,
-              care_plan_detail_ids: (event as AvailableEvent).care_plan_detail_ids || [],
+              care_plan_detail_ids:
+                (event as AvailableEvent).care_plan_detail_ids || [],
             },
           });
-          console.log("Created real event from care plan session:", created.data.id);
+          console.log(
+            "Created real event from care plan session:",
+            created.data.id,
+          );
         } else {
           // Real event — just assign to tour
           await dataProvider.update("events", {
@@ -1483,7 +1534,9 @@ const EnhancedTourEditForm = () => {
           employee_id: record.employee_id,
           tour_type_id: selectedTourTypeId,
           ...(validationState.statistics
-            ? { total_distance_km: validationState.statistics.total_distance_km }
+            ? {
+                total_distance_km: validationState.statistics.total_distance_km,
+              }
             : {}),
         },
         previousData: record,
@@ -1600,7 +1653,8 @@ const EnhancedTourEditForm = () => {
                     {/* Day of week quick selector */}
                     <ToggleButtonGroup
                       value={(() => {
-                        const dateVal = formContext?.getValues("date") || record?.date;
+                        const dateVal =
+                          formContext?.getValues("date") || record?.date;
                         if (!dateVal) return null;
                         const d = new Date(dateVal);
                         const js = d.getDay();
@@ -1611,7 +1665,8 @@ const EnhancedTourEditForm = () => {
                         if (dow === null) return;
                         // Find the next occurrence of this day from today
                         const today = new Date();
-                        const currentDow = today.getDay() === 0 ? 6 : today.getDay() - 1;
+                        const currentDow =
+                          today.getDay() === 0 ? 6 : today.getDay() - 1;
                         let diff = dow - currentDow;
                         if (diff <= 0) diff += 7;
                         const target = new Date(today);
@@ -1624,15 +1679,22 @@ const EnhancedTourEditForm = () => {
                       size="small"
                       sx={{ flexWrap: "wrap" }}
                     >
-                      {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map((label, idx) => (
-                        <ToggleButton
-                          key={idx}
-                          value={idx}
-                          sx={{ px: 1, py: 0.25, fontSize: "0.7rem", minWidth: 32 }}
-                        >
-                          {label}
-                        </ToggleButton>
-                      ))}
+                      {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map(
+                        (label, idx) => (
+                          <ToggleButton
+                            key={idx}
+                            value={idx}
+                            sx={{
+                              px: 1,
+                              py: 0.25,
+                              fontSize: "0.7rem",
+                              minWidth: 32,
+                            }}
+                          >
+                            {label}
+                          </ToggleButton>
+                        ),
+                      )}
                     </ToggleButtonGroup>
 
                     {/* Time inputs - Compact layout */}
@@ -1708,7 +1770,11 @@ const EnhancedTourEditForm = () => {
 
                     {/* Events Source Mode */}
                     <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mb: 0.5, display: "block" }}
+                      >
                         Source
                       </Typography>
                       <ToggleButtonGroup
@@ -1732,9 +1798,7 @@ const EnhancedTourEditForm = () => {
                         size="small"
                         fullWidth
                       >
-                        <ToggleButton value="events">
-                          Événements
-                        </ToggleButton>
+                        <ToggleButton value="events">Événements</ToggleButton>
                         <ToggleButton value="careplans">
                           Plans de soins
                         </ToggleButton>
@@ -2045,7 +2109,13 @@ const EnhancedTourEditForm = () => {
 
                     <Button
                       variant={needsRefresh ? "contained" : "outlined"}
-                      startIcon={eventsLoading ? undefined : needsRefresh ? <Warning /> : <RefreshIcon />}
+                      startIcon={
+                        eventsLoading ? undefined : needsRefresh ? (
+                          <Warning />
+                        ) : (
+                          <RefreshIcon />
+                        )
+                      }
                       onClick={refreshEventsWithCurrentForm}
                       fullWidth
                       color={needsRefresh ? "warning" : "secondary"}
@@ -2068,7 +2138,11 @@ const EnhancedTourEditForm = () => {
                         }),
                       }}
                     >
-                      {eventsLoading ? "Loading..." : needsRefresh ? "⚠️ Update Events List" : "Update Events"}
+                      {eventsLoading
+                        ? "Loading..."
+                        : needsRefresh
+                          ? "⚠️ Update Events List"
+                          : "Update Events"}
                     </Button>
 
                     {/* Save/Cancel Changes Buttons */}
@@ -2155,40 +2229,47 @@ const EnhancedTourEditForm = () => {
                   action={
                     <Box sx={{ display: "flex", gap: 1 }}>
                       {/* General proximity calculation button */}
-                      {assignedEventsForTour.length >= 1 && (!proximityHighlights || Object.keys(proximityHighlights).length === 0) && (
-                        <Button
-                          size="small"
-                          onClick={async () => {
-                            // Use the last dropped event if available, otherwise use the last event in the tour
-                            const sourceEvent = lastDroppedEventId 
-                              ? assignedEventsForTour.find(e => e.id === lastDroppedEventId)
-                              : assignedEventsForTour[assignedEventsForTour.length - 1];
-                            
-                            if (sourceEvent) {
-                              await handleCalculateProximity(sourceEvent);
-                            }
-                          }}
-                          startIcon={<LocationOn />}
-                          sx={{ fontSize: "0.75rem" }}
-                          variant="outlined"
-                        >
-                          Show Closest Available
-                        </Button>
-                      )}
+                      {assignedEventsForTour.length >= 1 &&
+                        (!proximityHighlights ||
+                          Object.keys(proximityHighlights).length === 0) && (
+                          <Button
+                            size="small"
+                            onClick={async () => {
+                              // Use the last dropped event if available, otherwise use the last event in the tour
+                              const sourceEvent = lastDroppedEventId
+                                ? assignedEventsForTour.find(
+                                    (e) => e.id === lastDroppedEventId,
+                                  )
+                                : assignedEventsForTour[
+                                    assignedEventsForTour.length - 1
+                                  ];
+
+                              if (sourceEvent) {
+                                await handleCalculateProximity(sourceEvent);
+                              }
+                            }}
+                            startIcon={<LocationOn />}
+                            sx={{ fontSize: "0.75rem" }}
+                            variant="outlined"
+                          >
+                            Show Closest Available
+                          </Button>
+                        )}
                       {/* Clear proximity button */}
-                      {proximityHighlights && Object.keys(proximityHighlights).length > 0 && (
-                        <Button
-                          size="small"
-                          onClick={() => {
-                            setProximityHighlights({});
-                            setLastDroppedEventId(null);
-                          }}
-                          startIcon={<RemoveIcon />}
-                          sx={{ fontSize: "0.75rem" }}
-                        >
-                          Clear Proximity
-                        </Button>
-                      )}
+                      {proximityHighlights &&
+                        Object.keys(proximityHighlights).length > 0 && (
+                          <Button
+                            size="small"
+                            onClick={() => {
+                              setProximityHighlights({});
+                              setLastDroppedEventId(null);
+                            }}
+                            startIcon={<RemoveIcon />}
+                            sx={{ fontSize: "0.75rem" }}
+                          >
+                            Clear Proximity
+                          </Button>
+                        )}
                     </Box>
                   }
                 />
@@ -2292,7 +2373,8 @@ const EnhancedTourEditForm = () => {
                                           : "grey.400",
                                   color: "white",
                                   border:
-                                    item.type === "empty" || item.type === "from_office"
+                                    item.type === "empty" ||
+                                    item.type === "from_office"
                                       ? "2px solid"
                                       : item.isOverlapping
                                         ? "3px solid"
@@ -2453,7 +2535,9 @@ const EnhancedTourEditForm = () => {
                                     {/* NEW: Proximity calculation button */}
                                     <IconButton
                                       size="small"
-                                      onClick={() => handleCalculateProximity(item.event)}
+                                      onClick={() =>
+                                        handleCalculateProximity(item.event)
+                                      }
                                       color="primary"
                                       sx={{ width: 24, height: 24 }}
                                       title="Show closest available events to this location"
@@ -2462,7 +2546,9 @@ const EnhancedTourEditForm = () => {
                                     </IconButton>
                                     <IconButton
                                       size="small"
-                                      onClick={() => reorderEvent(item.event.id, "up")}
+                                      onClick={() =>
+                                        reorderEvent(item.event.id, "up")
+                                      }
                                       color="default"
                                       sx={{ width: 24, height: 24 }}
                                       title="Move event earlier"
@@ -2471,7 +2557,9 @@ const EnhancedTourEditForm = () => {
                                     </IconButton>
                                     <IconButton
                                       size="small"
-                                      onClick={() => reorderEvent(item.event.id, "down")}
+                                      onClick={() =>
+                                        reorderEvent(item.event.id, "down")
+                                      }
                                       color="default"
                                       sx={{ width: 24, height: 24 }}
                                       title="Move event later"
@@ -2489,7 +2577,13 @@ const EnhancedTourEditForm = () => {
                                       <RemoveIcon sx={{ fontSize: 16 }} />
                                     </IconButton>
                                   </Box>
-                                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 0.5,
+                                    }}
+                                  >
                                     <Typography
                                       variant="caption"
                                       color="text.secondary"
@@ -2503,7 +2597,12 @@ const EnhancedTourEditForm = () => {
                                           key={d}
                                           size="small"
                                           variant="text"
-                                          onClick={() => adjustEventDuration(item.event.id, d)}
+                                          onClick={() =>
+                                            adjustEventDuration(
+                                              item.event.id,
+                                              d,
+                                            )
+                                          }
                                           sx={{
                                             fontSize: "0.55rem",
                                             minWidth: "auto",
@@ -2511,11 +2610,15 @@ const EnhancedTourEditForm = () => {
                                             py: 0,
                                             lineHeight: 1,
                                             height: 16,
-                                            color: d < 0 ? "error.main" : "success.main",
+                                            color:
+                                              d < 0
+                                                ? "error.main"
+                                                : "success.main",
                                           }}
                                           title={`${d > 0 ? "+" : ""}${d}min duration`}
                                         >
-                                          {d > 0 ? "+" : ""}{d}′
+                                          {d > 0 ? "+" : ""}
+                                          {d}′
                                         </Button>
                                       ))}
                                     </Box>
@@ -2678,7 +2781,13 @@ const EnhancedTourEditForm = () => {
                               )}
                               {item.type === "travel" && (
                                 <Box>
-                                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
+                                    }}
+                                  >
                                     <Typography
                                       variant="body2"
                                       color="text.secondary"
@@ -2686,35 +2795,36 @@ const EnhancedTourEditForm = () => {
                                       🚗 Travel: {item.fromLocation} →{" "}
                                       {item.toLocation}
                                     </Typography>
-                                    {item.currentEventId && item.nextEventId && (
-                                      <Box sx={{ display: "flex", gap: 0.5 }}>
-                                        {[5, 10, 15].map((gap) => (
-                                          <Button
-                                            key={gap}
-                                            size="small"
-                                            variant="outlined"
-                                            color="info"
-                                            onClick={() =>
-                                              setGapBetweenEvents(
-                                                item.currentEventId,
-                                                item.nextEventId,
-                                                gap,
-                                              )
-                                            }
-                                            sx={{
-                                              fontSize: "0.55rem",
-                                              py: 0,
-                                              px: 0.5,
-                                              minWidth: "auto",
-                                              lineHeight: 1,
-                                              height: 18,
-                                            }}
-                                          >
-                                            +{gap}′
-                                          </Button>
-                                        ))}
-                                      </Box>
-                                    )}
+                                    {item.currentEventId &&
+                                      item.nextEventId && (
+                                        <Box sx={{ display: "flex", gap: 0.5 }}>
+                                          {[5, 10, 15].map((gap) => (
+                                            <Button
+                                              key={gap}
+                                              size="small"
+                                              variant="outlined"
+                                              color="info"
+                                              onClick={() =>
+                                                setGapBetweenEvents(
+                                                  item.currentEventId,
+                                                  item.nextEventId,
+                                                  gap,
+                                                )
+                                              }
+                                              sx={{
+                                                fontSize: "0.55rem",
+                                                py: 0,
+                                                px: 0.5,
+                                                minWidth: "auto",
+                                                lineHeight: 1,
+                                                height: 18,
+                                              }}
+                                            >
+                                              +{gap}′
+                                            </Button>
+                                          ))}
+                                        </Box>
+                                      )}
                                   </Box>
                                   <Typography
                                     variant="caption"
@@ -2729,7 +2839,8 @@ const EnhancedTourEditForm = () => {
                                       const segment =
                                         validationState.travelSegments.find(
                                           (s) =>
-                                            s.from_event_id === item.currentEventId &&
+                                            s.from_event_id ===
+                                              item.currentEventId &&
                                             s.to_event_id === item.nextEventId,
                                         );
                                       return segment
@@ -2752,14 +2863,16 @@ const EnhancedTourEditForm = () => {
                                     variant="caption"
                                     color="text.secondary"
                                   >
-                                    {record?.office_address || "Office"} → first patient
+                                    {record?.office_address || "Office"} → first
+                                    patient
                                   </Typography>
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
                                     display="block"
                                   >
-                                    {item.startTime} - {item.endTime} • {item.duration} min
+                                    {item.startTime} - {item.endTime} •{" "}
+                                    {item.duration} min
                                   </Typography>
                                 </Box>
                               )}
@@ -2781,12 +2894,22 @@ const EnhancedTourEditForm = () => {
                                     {item.canRemove &&
                                       item.currentEventId &&
                                       item.nextEventId && (
-                                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                                        <Box
+                                          sx={{
+                                            display: "flex",
+                                            gap: 0.5,
+                                            flexWrap: "wrap",
+                                          }}
+                                        >
                                           {[0, 5, 10, 15, 30].map((gap) => (
                                             <Button
                                               key={gap}
                                               size="small"
-                                              variant={gap === 0 ? "contained" : "outlined"}
+                                              variant={
+                                                gap === 0
+                                                  ? "contained"
+                                                  : "outlined"
+                                              }
                                               color="warning"
                                               onClick={() =>
                                                 setGapBetweenEvents(
@@ -2830,11 +2953,29 @@ const EnhancedTourEditForm = () => {
                                     </Typography>
                                   )}
                                   {item.duration >= 15 && (
-                                    <Box sx={{ display: "flex", gap: 0.5, mt: 0.5 }}>
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        gap: 0.5,
+                                        mt: 0.5,
+                                      }}
+                                    >
                                       {[
-                                        { label: "☕ 15′", type: "REST", dur: 15 },
-                                        { label: "🍽️ 30′", type: "LUNCH", dur: 30 },
-                                        { label: "🍽️ 45′", type: "LUNCH", dur: 45 },
+                                        {
+                                          label: "☕ 15′",
+                                          type: "REST",
+                                          dur: 15,
+                                        },
+                                        {
+                                          label: "🍽️ 30′",
+                                          type: "LUNCH",
+                                          dur: 30,
+                                        },
+                                        {
+                                          label: "🍽️ 45′",
+                                          type: "LUNCH",
+                                          dur: 45,
+                                        },
                                       ]
                                         .filter((b) => b.dur <= item.duration)
                                         .map((b) => (
@@ -2843,7 +2984,13 @@ const EnhancedTourEditForm = () => {
                                             size="small"
                                             variant="outlined"
                                             color="secondary"
-                                            onClick={() => addBreak(item.startTime, b.dur, b.type)}
+                                            onClick={() =>
+                                              addBreak(
+                                                item.startTime,
+                                                b.dur,
+                                                b.type,
+                                              )
+                                            }
                                             sx={{
                                               fontSize: "0.6rem",
                                               py: 0.25,
@@ -2894,13 +3041,19 @@ const EnhancedTourEditForm = () => {
                         }}
                       >
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: "bold" }}
+                          >
                             {b.break_type === "LUNCH" ? "🍽️" : "☕"}{" "}
                             {b.break_type} break
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}
-                            {b.duration_minutes ? ` • ${b.duration_minutes}min` : ""}
+                            {b.start_time?.slice(0, 5)} -{" "}
+                            {b.end_time?.slice(0, 5)}
+                            {b.duration_minutes
+                              ? ` • ${b.duration_minutes}min`
+                              : ""}
                           </Typography>
                         </Box>
                         <IconButton
@@ -2942,7 +3095,8 @@ const EnhancedTourEditForm = () => {
                         ⚠️ Tour date/times have changed!
                       </Typography>
                       <Typography variant="caption">
-                        Click "Update Events List" button above to refresh available events
+                        Click "Update Events List" button above to refresh
+                        available events
                       </Typography>
                     </Alert>
                   )}
@@ -2973,8 +3127,12 @@ const EnhancedTourEditForm = () => {
                   {selectedTourType && (
                     <Alert severity="info" sx={{ mb: 1, py: 0 }}>
                       <Typography variant="caption">
-                        Filtered by tour type <strong>{selectedTourType.name}</strong>
-                        {" "}({selectedTourType.long_term_packages.map((pkg) => pkg.code).join(", ")})
+                        Filtered by tour type{" "}
+                        <strong>{selectedTourType.name}</strong> (
+                        {selectedTourType.long_term_packages
+                          .map((pkg) => pkg.code)
+                          .join(", ")}
+                        )
                       </Typography>
                     </Alert>
                   )}
@@ -3079,19 +3237,20 @@ const EnhancedTourEditForm = () => {
                             </Box>
                             {/* NEW: Proximity badge for available events */}
                             {proximityHighlights[event.id] && (
-                              <Box 
-                                sx={{ 
+                              <Box
+                                sx={{
                                   display: "flex",
                                   alignItems: "center",
                                   gap: 0.5,
-                                  mr: 1
+                                  mr: 1,
                                 }}
                               >
                                 <Chip
                                   label={proximityHighlights[event.id].rank}
                                   size="small"
                                   sx={{
-                                    backgroundColor: proximityHighlights[event.id].color,
+                                    backgroundColor:
+                                      proximityHighlights[event.id].color,
                                     color: "white",
                                     fontWeight: "bold",
                                     minWidth: 20,
@@ -3112,7 +3271,10 @@ const EnhancedTourEditForm = () => {
                                   }}
                                   title={`${proximityHighlights[event.id].distance.toFixed(1)}km drive • ${proximityHighlights[event.id].duration}min travel • starts ${proximityHighlights[event.id].timeGap >= 0 ? `${proximityHighlights[event.id].timeGap}min after` : `${Math.abs(proximityHighlights[event.id].timeGap)}min before`}`}
                                 >
-                                  {proximityHighlights[event.id].distance.toFixed(1)}km
+                                  {proximityHighlights[
+                                    event.id
+                                  ].distance.toFixed(1)}
+                                  km
                                   <br />
                                   {proximityHighlights[event.id].timeGap >= 0
                                     ? `+${proximityHighlights[event.id].timeGap}′`

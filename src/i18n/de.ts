@@ -42,8 +42,7 @@ export const de = {
       time_end: "Endzeit",
       time_end_helper:
         "Endzeit (automatisch vorgeschlagen anhand von Leistungen und Aktionen)",
-      next_hint:
-        "Weiter: Hinzufügen der benötigten Leistungen und Mengen",
+      next_hint: "Weiter: Hinzufügen der benötigten Leistungen und Mengen",
     },
     care_items: {
       section: "Leistungen & Mengen",
@@ -63,8 +62,7 @@ export const de = {
       guideline_endtime:
         "Endzeit wird aus Startzeit + gesamter Tagesdauer vorgeschlagen",
       guideline_quantity: "Standardmenge 1 für neue Einträge",
-      guideline_cns:
-        "CNS-Filter greift, wenn ein Pflegeplan verknüpft ist",
+      guideline_cns: "CNS-Filter greift, wenn ein Pflegeplan verknüpft ist",
     },
     actions: {
       section: "Individuelle Aktionen",
@@ -98,7 +96,7 @@ export const de = {
     generating_pdf: "Erstellen...",
     no_details: "Keine Details für diesen Pflegeplan.",
     no_details_hint:
-      "👆 Klicken Sie oben auf „Neues Detail\", um Details, Wiederholungen und Leistungen hinzuzufügen.",
+      '👆 Klicken Sie oben auf „Neues Detail", um Details, Wiederholungen und Leistungen hinzuzufügen.',
     start_time: "Startzeit",
     end_time: "Endzeit",
     care_actions: "Pflegeaktionen",
@@ -325,7 +323,7 @@ export const de = {
       days_of_month: "Tage des Monats",
       add_day: "+ Tag hinzufügen",
       days_help:
-        "Chips anklicken zum Entfernen, „+ Tag hinzufügen\" klicken zum Hinzufügen.",
+        'Chips anklicken zum Entfernen, „+ Tag hinzufügen" klicken zum Hinzufügen.',
       specific: "Bestimmte Datum/Zeit (ISO-Format)",
       specific_placeholder: "JJJJ-MM-TTTHH:MM:SS",
       add_datetime: "Datum/Zeit hinzufügen",

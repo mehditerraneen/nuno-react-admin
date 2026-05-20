@@ -51,41 +51,92 @@ describe("parseHours", () => {
 
 describe("classifyShift", () => {
   it("excludes DES with category OFF and 0h (seed config)", () => {
-    const r = classifyShift({ shift_code: "DES", shift_category: "OFF", hours: 0 });
+    const r = classifyShift({
+      shift_code: "DES",
+      shift_category: "OFF",
+      hours: 0,
+    });
     expect(r.included).toBe(false);
     expect(r.reason).toBe("category OFF");
   });
 
   it("excludes DES even when category was misresolved to OTHER and hours > 0 (PROD bug case)", () => {
-    const r = classifyShift({ shift_code: "DES", shift_category: "OTHER", hours: 8 });
+    const r = classifyShift({
+      shift_code: "DES",
+      shift_category: "OTHER",
+      hours: 8,
+    });
     expect(r.included).toBe(false);
     expect(r.hours).toBe(8);
     expect(r.reason).toBe("code DES excluded");
   });
 
   it("excludes DES variants like DES1, DES*", () => {
-    expect(classifyShift({ shift_code: "DES1", shift_category: "OTHER", hours: 8 }).included).toBe(false);
-    expect(classifyShift({ shift_code: "DES*", shift_category: "OTHER", hours: 8 }).included).toBe(false);
+    expect(
+      classifyShift({ shift_code: "DES1", shift_category: "OTHER", hours: 8 })
+        .included,
+    ).toBe(false);
+    expect(
+      classifyShift({ shift_code: "DES*", shift_category: "OTHER", hours: 8 })
+        .included,
+    ).toBe(false);
   });
 
   it("counts standard work shifts (M, S, N codes with category MORNING/EVENING/NIGHT)", () => {
-    expect(classifyShift({ shift_code: "M6.5-15", shift_category: "MORNING", hours: 8 }).included).toBe(true);
-    expect(classifyShift({ shift_code: "S13.5-22", shift_category: "EVENING", hours: 8.5 }).included).toBe(true);
-    expect(classifyShift({ shift_code: "N22-7", shift_category: "NIGHT", hours: 9 }).included).toBe(true);
+    expect(
+      classifyShift({
+        shift_code: "M6.5-15",
+        shift_category: "MORNING",
+        hours: 8,
+      }).included,
+    ).toBe(true);
+    expect(
+      classifyShift({
+        shift_code: "S13.5-22",
+        shift_category: "EVENING",
+        hours: 8.5,
+      }).included,
+    ).toBe(true);
+    expect(
+      classifyShift({ shift_code: "N22-7", shift_category: "NIGHT", hours: 9 })
+        .included,
+    ).toBe(true);
   });
 
   it("counts LEAVE (CP/CONG) as paid hours", () => {
-    expect(classifyShift({ shift_code: "CP8", shift_category: "LEAVE", hours: 8 }).included).toBe(true);
-    expect(classifyShift({ shift_code: "CP6.4", shift_category: "LEAVE", hours: 6.4 }).included).toBe(true);
-    expect(classifyShift({ shift_code: "CONG", shift_category: "LEAVE", hours: 8 }).included).toBe(true);
+    expect(
+      classifyShift({ shift_code: "CP8", shift_category: "LEAVE", hours: 8 })
+        .included,
+    ).toBe(true);
+    expect(
+      classifyShift({
+        shift_code: "CP6.4",
+        shift_category: "LEAVE",
+        hours: 6.4,
+      }).included,
+    ).toBe(true);
+    expect(
+      classifyShift({ shift_code: "CONG", shift_category: "LEAVE", hours: 8 })
+        .included,
+    ).toBe(true);
   });
 
   it("counts TRAINING as paid hours", () => {
-    expect(classifyShift({ shift_code: "cours", shift_category: "TRAINING", hours: 8 }).included).toBe(true);
+    expect(
+      classifyShift({
+        shift_code: "cours",
+        shift_category: "TRAINING",
+        hours: 8,
+      }).included,
+    ).toBe(true);
   });
 
   it("excludes shifts with 0 hours even if category is not OFF", () => {
-    const r = classifyShift({ shift_code: "X", shift_category: "OTHER", hours: 0 });
+    const r = classifyShift({
+      shift_code: "X",
+      shift_category: "OTHER",
+      hours: 0,
+    });
     expect(r.included).toBe(false);
     expect(r.reason).toBe("zero hours");
   });
@@ -97,7 +148,11 @@ describe("classifyShift", () => {
   });
 
   it("handles string-typed hours from the API", () => {
-    const r = classifyShift({ shift_code: "M", shift_category: "MORNING", hours: "8.5" as any });
+    const r = classifyShift({
+      shift_code: "M",
+      shift_category: "MORNING",
+      hours: "8.5" as any,
+    });
     expect(r.included).toBe(true);
     expect(r.hours).toBe(8.5);
   });

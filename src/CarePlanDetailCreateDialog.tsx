@@ -46,7 +46,9 @@ export const CarePlanDetailCreateDialog: React.FC<
   const translate = useTranslate();
   const [isSaving, setIsSaving] = React.useState(false);
   const [cnsItemIds, setCnsItemIds] = useState<number[]>([]);
-  const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<Record<string, string>>({});
+  const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<
+    Record<string, string>
+  >({});
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -194,7 +196,8 @@ export const CarePlanDetailCreateDialog: React.FC<
             const n = typeof raw === "number" ? raw : Number(raw);
             return {
               action_text: (a.action_text ?? "").trim(),
-              duration_minutes: Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0,
+              duration_minutes:
+                Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0,
               order: a.order ?? idx,
             };
           }),

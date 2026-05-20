@@ -50,7 +50,10 @@ interface OutcomeDraft {
   note: string;
 }
 
-const OUTCOME_OPTIONS: { value: CarePlanObjectiveOutcomeStatus; label: string }[] = [
+const OUTCOME_OPTIONS: {
+  value: CarePlanObjectiveOutcomeStatus;
+  label: string;
+}[] = [
   { value: "achieved", label: "Atteint" },
   { value: "partially_achieved", label: "Partiellement atteint" },
   { value: "unchanged", label: "Inchangé" },
@@ -193,7 +196,11 @@ export const CarePlanRevisionDialog: React.FC<CarePlanRevisionDialogProps> = ({
         <Typography variant="subtitle2" gutterBottom>
           Motifs de la révision
         </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", mb: 1 }}
+        >
           Optionnel — chute, prescription, plan CNS, hospitalisation, etc.
         </Typography>
         <Box sx={{ mt: 1 }}>
@@ -204,7 +211,8 @@ export const CarePlanRevisionDialog: React.FC<CarePlanRevisionDialogProps> = ({
             onRemovePending={(item) =>
               setPending((cur) =>
                 cur.filter(
-                  (p) => !(p.kind === item.kind && p.source_id === item.source_id),
+                  (p) =>
+                    !(p.kind === item.kind && p.source_id === item.source_id),
                 ),
               )
             }
@@ -246,7 +254,9 @@ export const CarePlanRevisionDialog: React.FC<CarePlanRevisionDialogProps> = ({
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                       🎯 {obj.title}
                     </Typography>
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+                    <Box
+                      sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}
+                    >
                       <FormControl size="small" sx={{ minWidth: 180 }}>
                         <InputLabel id={`outcome-status-${obj.id}`}>
                           Statut

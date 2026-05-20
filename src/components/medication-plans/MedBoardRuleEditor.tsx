@@ -74,7 +74,8 @@ export const MedBoardRuleEditor: React.FC<MedBoardRuleEditorProps> = ({
         borderRadius: 1,
         p: 1.5,
         mb: 1.5,
-        backgroundColor: rule.is_active === false ? "action.hover" : "background.paper",
+        backgroundColor:
+          rule.is_active === false ? "action.hover" : "background.paper",
       }}
     >
       {/* Kind + active + delete row */}
@@ -126,7 +127,9 @@ export const MedBoardRuleEditor: React.FC<MedBoardRuleEditorProps> = ({
             type="number"
             value={rule.dose ?? ""}
             onChange={(e) =>
-              onChange({ dose: e.target.value === "" ? 0 : Number(e.target.value) })
+              onChange({
+                dose: e.target.value === "" ? 0 : Number(e.target.value),
+              })
             }
             inputProps={{ step: 0.01, min: 0 }}
             sx={{ width: 120 }}
@@ -164,7 +167,11 @@ export const MedBoardRuleEditor: React.FC<MedBoardRuleEditorProps> = ({
         <PrnEditor rule={rule} onChange={onChange} disabled={disabled} />
       )}
       {rule.schedule_kind === "glycemia_scale" && (
-        <GlycemiaScaleEditor rule={rule} onChange={onChange} disabled={disabled} />
+        <GlycemiaScaleEditor
+          rule={rule}
+          onChange={onChange}
+          disabled={disabled}
+        />
       )}
 
       {/* Validity dates + notes */}
@@ -260,7 +267,11 @@ const TimesEditor: React.FC<{
               disabled={disabled}
               sx={{ width: 120 }}
             />
-            <IconButton size="small" onClick={() => remove(i)} disabled={disabled}>
+            <IconButton
+              size="small"
+              onClick={() => remove(i)}
+              disabled={disabled}
+            >
               <CloseIcon fontSize="small" />
             </IconButton>
           </Box>
@@ -379,10 +390,7 @@ const SpecificEditor: React.FC<{
   };
   const add = () =>
     onChange({
-      specific_datetimes: [
-        ...items,
-        new Date().toISOString().slice(0, 16),
-      ],
+      specific_datetimes: [...items, new Date().toISOString().slice(0, 16)],
     });
   return (
     <Stack spacing={0.5}>
@@ -395,7 +403,11 @@ const SpecificEditor: React.FC<{
             onChange={(e) => setAt(i, e.target.value)}
             disabled={disabled}
           />
-          <IconButton size="small" onClick={() => remove(i)} disabled={disabled}>
+          <IconButton
+            size="small"
+            onClick={() => remove(i)}
+            disabled={disabled}
+          >
             <CloseIcon fontSize="small" />
           </IconButton>
         </Stack>
@@ -562,14 +574,16 @@ const GlycemiaScaleEditor: React.FC<{
             type="number"
             label="Dose (U)"
             value={entry.dose}
-            onChange={(e) =>
-              setAt(i, { dose: Number(e.target.value) || 0 })
-            }
+            onChange={(e) => setAt(i, { dose: Number(e.target.value) || 0 })}
             inputProps={{ min: 0, step: 0.5 }}
             sx={{ width: 120 }}
             disabled={disabled}
           />
-          <IconButton size="small" onClick={() => remove(i)} disabled={disabled}>
+          <IconButton
+            size="small"
+            onClick={() => remove(i)}
+            disabled={disabled}
+          >
             <CloseIcon fontSize="small" />
           </IconButton>
         </Stack>

@@ -27,8 +27,18 @@ import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { useDataProvider, useNotify, useRefresh, useTranslate } from "react-admin";
-import type { Medication, ScheduleRule, ScheduleKind, PartOfDay } from "../../types/medicationPlans";
+import {
+  useDataProvider,
+  useNotify,
+  useRefresh,
+  useTranslate,
+} from "react-admin";
+import type {
+  Medication,
+  ScheduleRule,
+  ScheduleKind,
+  PartOfDay,
+} from "../../types/medicationPlans";
 
 interface ScheduleRulesDialogProps {
   open: boolean;
@@ -70,21 +80,30 @@ interface RuleFormData {
   prn_min_interval_hours: string;
 }
 
-const SCHEDULE_KIND_OPTIONS: { value: ScheduleKind; labelKey: string; icon: string }[] = [
+const SCHEDULE_KIND_OPTIONS: {
+  value: ScheduleKind;
+  labelKey: string;
+  icon: string;
+}[] = [
   { value: "parts", labelKey: "med_schedule_rules.kind.parts", icon: "🌅" },
   { value: "times", labelKey: "med_schedule_rules.kind.times", icon: "🕐" },
   { value: "weekly", labelKey: "med_schedule_rules.kind.weekly", icon: "📅" },
   { value: "monthly", labelKey: "med_schedule_rules.kind.monthly", icon: "📆" },
-  { value: "specific", labelKey: "med_schedule_rules.kind.specific", icon: "📌" },
+  {
+    value: "specific",
+    labelKey: "med_schedule_rules.kind.specific",
+    icon: "📌",
+  },
   { value: "prn", labelKey: "med_schedule_rules.kind.prn", icon: "💊" },
 ];
 
-const PARTS_OF_DAY_OPTIONS: { value: PartOfDay; key: string; emoji: string }[] = [
-  { value: "morning", key: "med_schedule_rules.part.morning", emoji: "🌅" },
-  { value: "noon", key: "med_schedule_rules.part.noon", emoji: "☀️" },
-  { value: "evening", key: "med_schedule_rules.part.evening", emoji: "🌇" },
-  { value: "night", key: "med_schedule_rules.part.night", emoji: "🌙" },
-];
+const PARTS_OF_DAY_OPTIONS: { value: PartOfDay; key: string; emoji: string }[] =
+  [
+    { value: "morning", key: "med_schedule_rules.part.morning", emoji: "🌅" },
+    { value: "noon", key: "med_schedule_rules.part.noon", emoji: "☀️" },
+    { value: "evening", key: "med_schedule_rules.part.evening", emoji: "🌇" },
+    { value: "night", key: "med_schedule_rules.part.night", emoji: "🌙" },
+  ];
 
 const WEEKDAY_OPTIONS: { value: number; key: string }[] = [
   { value: 0, key: "med_schedule_rules.weekday.monday" },
@@ -132,7 +151,9 @@ export const ScheduleRulesDialog = ({
   const [loading, setLoading] = useState(false);
   const [editingRule, setEditingRule] = useState<ScheduleRule | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState<RuleFormData>(getDefaultFormData(medication));
+  const [formData, setFormData] = useState<RuleFormData>(
+    getDefaultFormData(medication),
+  );
 
   useEffect(() => {
     if (open && medication.id) {
@@ -147,7 +168,9 @@ export const ScheduleRulesDialog = ({
       setRules(result.data || []);
     } catch (error) {
       console.error("Failed to fetch schedule rules:", error);
-      notify(translate("med_schedule_rules.notify.load_failed"), { type: "error" });
+      notify(translate("med_schedule_rules.notify.load_failed"), {
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -175,7 +198,7 @@ export const ScheduleRulesDialog = ({
       case "times":
         return {
           ...baseData,
-          exact_times: data.exact_times.filter(t => t.trim() !== ""),
+          exact_times: data.exact_times.filter((t) => t.trim() !== ""),
         };
       case "weekly":
         return {
@@ -192,14 +215,20 @@ export const ScheduleRulesDialog = ({
       case "specific":
         return {
           ...baseData,
-          specific_datetimes: data.specific_datetimes.filter(dt => dt.trim() !== ""),
+          specific_datetimes: data.specific_datetimes.filter(
+            (dt) => dt.trim() !== "",
+          ),
         };
       case "prn":
         return {
           ...baseData,
           prn_condition: data.prn_condition,
-          prn_max_doses_per_day: data.prn_max_doses_per_day ? parseInt(data.prn_max_doses_per_day) : null,
-          prn_min_interval_hours: data.prn_min_interval_hours ? parseFloat(data.prn_min_interval_hours) : null,
+          prn_max_doses_per_day: data.prn_max_doses_per_day
+            ? parseInt(data.prn_max_doses_per_day)
+            : null,
+          prn_min_interval_hours: data.prn_min_interval_hours
+            ? parseFloat(data.prn_min_interval_hours)
+            : null,
         };
       default:
         return baseData;
@@ -210,7 +239,9 @@ export const ScheduleRulesDialog = ({
     try {
       const submitData = prepareDataForSubmit(formData);
       await dataProvider.createScheduleRule(planId, medication.id, submitData);
-      notify(translate("med_schedule_rules.notify.created"), { type: "success" });
+      notify(translate("med_schedule_rules.notify.created"), {
+        type: "success",
+      });
       fetchRules();
       setShowForm(false);
       resetForm();
@@ -228,8 +259,15 @@ export const ScheduleRulesDialog = ({
 
     try {
       const submitData = prepareDataForSubmit(formData);
-      await dataProvider.updateScheduleRule(planId, medication.id, editingRule.id, submitData);
-      notify(translate("med_schedule_rules.notify.updated"), { type: "success" });
+      await dataProvider.updateScheduleRule(
+        planId,
+        medication.id,
+        editingRule.id,
+        submitData,
+      );
+      notify(translate("med_schedule_rules.notify.updated"), {
+        type: "success",
+      });
       fetchRules();
       setEditingRule(null);
       setShowForm(false);
@@ -248,7 +286,9 @@ export const ScheduleRulesDialog = ({
 
     try {
       await dataProvider.deleteScheduleRule(planId, medication.id, ruleId);
-      notify(translate("med_schedule_rules.notify.deleted"), { type: "success" });
+      notify(translate("med_schedule_rules.notify.deleted"), {
+        type: "success",
+      });
       fetchRules();
       refresh();
     } catch (error: any) {
@@ -291,7 +331,10 @@ export const ScheduleRulesDialog = ({
   const togglePartOfDay = (part: PartOfDay) => {
     const current = formData.parts_of_day;
     if (current.includes(part)) {
-      setFormData({ ...formData, parts_of_day: current.filter(p => p !== part) });
+      setFormData({
+        ...formData,
+        parts_of_day: current.filter((p) => p !== part),
+      });
     } else {
       setFormData({ ...formData, parts_of_day: [...current, part] });
     }
@@ -300,7 +343,7 @@ export const ScheduleRulesDialog = ({
   const toggleWeekday = (day: number) => {
     const current = formData.weekdays;
     if (current.includes(day)) {
-      setFormData({ ...formData, weekdays: current.filter(d => d !== day) });
+      setFormData({ ...formData, weekdays: current.filter((d) => d !== day) });
     } else {
       setFormData({ ...formData, weekdays: [...current, day].sort() });
     }
@@ -310,12 +353,22 @@ export const ScheduleRulesDialog = ({
     setFormData({ ...formData, [field]: [...formData[field], ""] });
   };
 
-  const removeArrayItem = (field: "exact_times" | "specific_datetimes", index: number) => {
+  const removeArrayItem = (
+    field: "exact_times" | "specific_datetimes",
+    index: number,
+  ) => {
     const newArray = formData[field].filter((_, i) => i !== index);
-    setFormData({ ...formData, [field]: newArray.length > 0 ? newArray : [""] });
+    setFormData({
+      ...formData,
+      [field]: newArray.length > 0 ? newArray : [""],
+    });
   };
 
-  const updateArrayItem = (field: "exact_times" | "specific_datetimes", index: number, value: string) => {
+  const updateArrayItem = (
+    field: "exact_times" | "specific_datetimes",
+    index: number,
+    value: string,
+  ) => {
     const newArray = [...formData[field]];
     newArray[index] = value;
     setFormData({ ...formData, [field]: newArray });
@@ -324,12 +377,20 @@ export const ScheduleRulesDialog = ({
   const addDayOfMonth = () => {
     const newDay = 1;
     if (!formData.days_of_month.includes(newDay)) {
-      setFormData({ ...formData, days_of_month: [...formData.days_of_month, newDay].sort((a, b) => a - b) });
+      setFormData({
+        ...formData,
+        days_of_month: [...formData.days_of_month, newDay].sort(
+          (a, b) => a - b,
+        ),
+      });
     }
   };
 
   const removeDayOfMonth = (day: number) => {
-    setFormData({ ...formData, days_of_month: formData.days_of_month.filter(d => d !== day) });
+    setFormData({
+      ...formData,
+      days_of_month: formData.days_of_month.filter((d) => d !== day),
+    });
   };
 
   const getScheduleDescription = (rule: ScheduleRule): string => {
@@ -350,9 +411,7 @@ export const ScheduleRulesDialog = ({
       case "weekly": {
         const days =
           rule.weekdays
-            ?.map((d) =>
-              translate(WEEKDAY_OPTIONS[d]?.key ?? "").slice(0, 3),
-            )
+            ?.map((d) => translate(WEEKDAY_OPTIONS[d]?.key ?? "").slice(0, 3))
             .join(", ") || "";
         return `${doseStr} - ${days} ${tAt} ${rule.weekly_time}`;
       }
@@ -374,7 +433,13 @@ export const ScheduleRulesDialog = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <Typography variant="h6">
             {translate("med_schedule_rules.title", {
               name: medication.medicine_abbreviated_name,
@@ -400,11 +465,20 @@ export const ScheduleRulesDialog = ({
             {rules.map((rule) => (
               <Card key={rule.id} variant="outlined" sx={{ mb: 2 }}>
                 <CardContent>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Typography variant="subtitle2">
-                        {SCHEDULE_KIND_OPTIONS.find(o => o.value === rule.schedule_kind)?.icon}
-                        {" "}
+                        {
+                          SCHEDULE_KIND_OPTIONS.find(
+                            (o) => o.value === rule.schedule_kind,
+                          )?.icon
+                        }{" "}
                         {new Date(rule.valid_from || "").toLocaleDateString()}
                         {" - "}
                         {rule.valid_until
@@ -423,7 +497,11 @@ export const ScheduleRulesDialog = ({
                       <IconButton size="small" onClick={() => startEdit(rule)}>
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(rule.id!)}>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDelete(rule.id!)}
+                      >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
@@ -432,7 +510,11 @@ export const ScheduleRulesDialog = ({
                     {getScheduleDescription(rule)}
                   </Typography>
                   {rule.notes && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block", mt: 1 }}
+                    >
                       📝 {rule.notes}
                     </Typography>
                   )}
@@ -455,10 +537,17 @@ export const ScheduleRulesDialog = ({
             <Grid container spacing={2} sx={{ mb: 2 }}>
               <Grid size={12}>
                 <FormControl fullWidth size="small">
-                  <InputLabel>{translate("med_schedule_rules.form.type")}</InputLabel>
+                  <InputLabel>
+                    {translate("med_schedule_rules.form.type")}
+                  </InputLabel>
                   <Select
                     value={formData.schedule_kind}
-                    onChange={(e) => setFormData({ ...formData, schedule_kind: e.target.value as ScheduleKind })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        schedule_kind: e.target.value as ScheduleKind,
+                      })
+                    }
                     label={translate("med_schedule_rules.form.type")}
                   >
                     {SCHEDULE_KIND_OPTIONS.map((opt) => (
@@ -475,7 +564,9 @@ export const ScheduleRulesDialog = ({
                   label={translate("med_schedule_rules.form.dose")}
                   type="number"
                   value={formData.dose}
-                  onChange={(e) => setFormData({ ...formData, dose: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, dose: e.target.value })
+                  }
                   fullWidth
                   size="small"
                   inputProps={{ min: 0, step: 0.5 }}
@@ -485,7 +576,9 @@ export const ScheduleRulesDialog = ({
                 <TextField
                   label={translate("med_schedule_rules.form.unit")}
                   value={formData.dose_unit}
-                  onChange={(e) => setFormData({ ...formData, dose_unit: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, dose_unit: e.target.value })
+                  }
                   fullWidth
                   size="small"
                 />
@@ -496,7 +589,9 @@ export const ScheduleRulesDialog = ({
                   label={translate("med_schedule_rules.form.valid_from")}
                   type="date"
                   value={formData.valid_from}
-                  onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, valid_from: e.target.value })
+                  }
                   InputLabelProps={{ shrink: true }}
                   fullWidth
                   size="small"
@@ -507,7 +602,9 @@ export const ScheduleRulesDialog = ({
                   label={translate("med_schedule_rules.form.valid_until")}
                   type="date"
                   value={formData.valid_until}
-                  onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, valid_until: e.target.value })
+                  }
                   InputLabelProps={{ shrink: true }}
                   fullWidth
                   size="small"
@@ -519,7 +616,12 @@ export const ScheduleRulesDialog = ({
                   control={
                     <Switch
                       checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          is_active: e.target.checked,
+                        })
+                      }
                     />
                   }
                   label={translate("med_schedule_rules.form.active")}
@@ -541,8 +643,16 @@ export const ScheduleRulesDialog = ({
                       key={opt.value}
                       label={`${translate(opt.key)} ${opt.emoji}`}
                       onClick={() => togglePartOfDay(opt.value)}
-                      color={formData.parts_of_day.includes(opt.value) ? "primary" : "default"}
-                      variant={formData.parts_of_day.includes(opt.value) ? "filled" : "outlined"}
+                      color={
+                        formData.parts_of_day.includes(opt.value)
+                          ? "primary"
+                          : "default"
+                      }
+                      variant={
+                        formData.parts_of_day.includes(opt.value)
+                          ? "filled"
+                          : "outlined"
+                      }
                     />
                   ))}
                 </Box>
@@ -558,17 +668,28 @@ export const ScheduleRulesDialog = ({
                   <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
                     <TextField
                       value={time}
-                      onChange={(e) => updateArrayItem("exact_times", index, e.target.value)}
-                      placeholder={translate("med_schedule_rules.form.exact_times_placeholder")}
+                      onChange={(e) =>
+                        updateArrayItem("exact_times", index, e.target.value)
+                      }
+                      placeholder={translate(
+                        "med_schedule_rules.form.exact_times_placeholder",
+                      )}
                       size="small"
                       fullWidth
                     />
-                    <IconButton size="small" onClick={() => removeArrayItem("exact_times", index)}>
+                    <IconButton
+                      size="small"
+                      onClick={() => removeArrayItem("exact_times", index)}
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </Box>
                 ))}
-                <Button size="small" startIcon={<AddIcon />} onClick={() => addArrayItem("exact_times")}>
+                <Button
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => addArrayItem("exact_times")}
+                >
                   {translate("med_schedule_rules.form.add_time")}
                 </Button>
               </Box>
@@ -585,16 +706,28 @@ export const ScheduleRulesDialog = ({
                       key={opt.value}
                       label={translate(opt.key)}
                       onClick={() => toggleWeekday(opt.value)}
-                      color={formData.weekdays.includes(opt.value) ? "primary" : "default"}
-                      variant={formData.weekdays.includes(opt.value) ? "filled" : "outlined"}
+                      color={
+                        formData.weekdays.includes(opt.value)
+                          ? "primary"
+                          : "default"
+                      }
+                      variant={
+                        formData.weekdays.includes(opt.value)
+                          ? "filled"
+                          : "outlined"
+                      }
                     />
                   ))}
                 </Box>
                 <TextField
                   label={translate("med_schedule_rules.form.time_field")}
                   value={formData.weekly_time}
-                  onChange={(e) => setFormData({ ...formData, weekly_time: e.target.value })}
-                  placeholder={translate("med_schedule_rules.form.time_placeholder")}
+                  onChange={(e) =>
+                    setFormData({ ...formData, weekly_time: e.target.value })
+                  }
+                  placeholder={translate(
+                    "med_schedule_rules.form.time_placeholder",
+                  )}
                   size="small"
                   fullWidth
                 />
@@ -624,7 +757,9 @@ export const ScheduleRulesDialog = ({
                 <TextField
                   label={translate("med_schedule_rules.form.time_field")}
                   value={formData.monthly_time}
-                  onChange={(e) => setFormData({ ...formData, monthly_time: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, monthly_time: e.target.value })
+                  }
                   placeholder="08:00"
                   size="small"
                   fullWidth
@@ -644,17 +779,34 @@ export const ScheduleRulesDialog = ({
                   <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
                     <TextField
                       value={datetime}
-                      onChange={(e) => updateArrayItem("specific_datetimes", index, e.target.value)}
-                      placeholder={translate("med_schedule_rules.form.specific_placeholder")}
+                      onChange={(e) =>
+                        updateArrayItem(
+                          "specific_datetimes",
+                          index,
+                          e.target.value,
+                        )
+                      }
+                      placeholder={translate(
+                        "med_schedule_rules.form.specific_placeholder",
+                      )}
                       size="small"
                       fullWidth
                     />
-                    <IconButton size="small" onClick={() => removeArrayItem("specific_datetimes", index)}>
+                    <IconButton
+                      size="small"
+                      onClick={() =>
+                        removeArrayItem("specific_datetimes", index)
+                      }
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </Box>
                 ))}
-                <Button size="small" startIcon={<AddIcon />} onClick={() => addArrayItem("specific_datetimes")}>
+                <Button
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => addArrayItem("specific_datetimes")}
+                >
                   {translate("med_schedule_rules.form.add_datetime")}
                 </Button>
                 <FormHelperText>
@@ -669,8 +821,15 @@ export const ScheduleRulesDialog = ({
                   <TextField
                     label={translate("med_schedule_rules.form.condition")}
                     value={formData.prn_condition}
-                    onChange={(e) => setFormData({ ...formData, prn_condition: e.target.value })}
-                    placeholder={translate("med_schedule_rules.form.condition_placeholder")}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        prn_condition: e.target.value,
+                      })
+                    }
+                    placeholder={translate(
+                      "med_schedule_rules.form.condition_placeholder",
+                    )}
                     fullWidth
                     size="small"
                   />
@@ -680,7 +839,12 @@ export const ScheduleRulesDialog = ({
                     label={translate("med_schedule_rules.form.max_per_day")}
                     type="number"
                     value={formData.prn_max_doses_per_day}
-                    onChange={(e) => setFormData({ ...formData, prn_max_doses_per_day: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        prn_max_doses_per_day: e.target.value,
+                      })
+                    }
                     fullWidth
                     size="small"
                     inputProps={{ min: 1 }}
@@ -691,7 +855,12 @@ export const ScheduleRulesDialog = ({
                     label={translate("med_schedule_rules.form.min_interval")}
                     type="number"
                     value={formData.prn_min_interval_hours}
-                    onChange={(e) => setFormData({ ...formData, prn_min_interval_hours: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        prn_min_interval_hours: e.target.value,
+                      })
+                    }
                     fullWidth
                     size="small"
                     inputProps={{ min: 0.5, step: 0.5 }}
@@ -705,7 +874,9 @@ export const ScheduleRulesDialog = ({
             <TextField
               label={translate("med_schedule_rules.form.notes")}
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
               multiline
               rows={2}
               fullWidth
@@ -747,7 +918,9 @@ export const ScheduleRulesDialog = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>{translate("med_schedule_rules.close")}</Button>
+        <Button onClick={onClose}>
+          {translate("med_schedule_rules.close")}
+        </Button>
       </DialogActions>
     </Dialog>
   );

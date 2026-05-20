@@ -16,17 +16,24 @@ import {
   ShowButton,
   EditButton,
   DeleteButton,
-} from 'react-admin';
-import { Chip, Box } from '@mui/material';
-import { STATUS_LABELS, type WoundStatus, BODY_AREAS } from '../../types/wounds';
-import { WriteOnly } from '../auth/WriteOnly';
+} from "react-admin";
+import { Chip, Box } from "@mui/material";
+import {
+  STATUS_LABELS,
+  type WoundStatus,
+  BODY_AREAS,
+} from "../../types/wounds";
+import { WriteOnly } from "../auth/WriteOnly";
 
 // Color mapping for status badges
-const statusColors: Record<WoundStatus, 'warning' | 'success' | 'error' | 'default'> = {
-  ACTIVE: 'warning',
-  HEALED: 'success',
-  INFECTED: 'error',
-  ARCHIVED: 'default',
+const statusColors: Record<
+  WoundStatus,
+  "warning" | "success" | "error" | "default"
+> = {
+  ACTIVE: "warning",
+  HEALED: "success",
+  INFECTED: "error",
+  ARCHIVED: "default",
 };
 
 // List actions toolbar
@@ -43,19 +50,27 @@ const WoundListActions = () => (
 const woundFilters = [
   <ReferenceInput source="patient" reference="patients" alwaysOn key="patient">
     <AutocompleteInput
-      optionText={(record) => `${record.name} ${record.first_name} (${record.code_sn})`}
+      optionText={(record) =>
+        `${record.name} ${record.first_name} (${record.code_sn})`
+      }
       label="Patient"
     />
   </ReferenceInput>,
   <SelectInput
     source="status"
-    choices={Object.entries(STATUS_LABELS).map(([value, label]) => ({ id: value, name: label }))}
+    choices={Object.entries(STATUS_LABELS).map(([value, label]) => ({
+      id: value,
+      name: label,
+    }))}
     key="status"
     label="Statut"
   />,
   <SelectInput
     source="body_area"
-    choices={Object.entries(BODY_AREAS).map(([code, label]) => ({ id: code, name: label }))}
+    choices={Object.entries(BODY_AREAS).map(([code, label]) => ({
+      id: code,
+      name: label,
+    }))}
     key="body_area"
     label="Zone corporelle"
   />,
@@ -78,24 +93,29 @@ export const WoundList = () => (
   <List
     filters={woundFilters}
     actions={<WoundListActions />}
-    sort={{ field: 'date_created', order: 'DESC' }}
+    sort={{ field: "date_created", order: "DESC" }}
     perPage={25}
   >
     <Datagrid
       rowClick="show"
       bulkActionButtons={false}
       sx={{
-        '& .RaDatagrid-rowCell': {
-          padding: '12px 16px',
+        "& .RaDatagrid-rowCell": {
+          padding: "12px 16px",
         },
       }}
     >
       <TextField source="id" label="ID" />
 
-      <ReferenceField source="patient" reference="patients" label="Patient" link="show">
+      <ReferenceField
+        source="patient"
+        reference="patients"
+        label="Patient"
+        link="show"
+      >
         <FunctionField
           render={(record: any) =>
-            record ? `${record.name} ${record.first_name || ''}` : '-'
+            record ? `${record.name} ${record.first_name || ""}` : "-"
           }
         />
       </ReferenceField>
@@ -103,12 +123,20 @@ export const WoundList = () => (
       <FunctionField
         label="Zone corporelle"
         render={(record: any) => {
-          const bodyArea = BODY_AREAS[record.body_area as keyof typeof BODY_AREAS];
+          const bodyArea =
+            BODY_AREAS[record.body_area as keyof typeof BODY_AREAS];
           return (
             <Box>
-              <div style={{ fontWeight: 500 }}>{bodyArea || record.body_area}</div>
-              <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                Vue: {record.body_view === 'FRONT' ? 'Face' : record.body_view === 'BACK' ? 'Dos' : 'Latérale'}
+              <div style={{ fontWeight: 500 }}>
+                {bodyArea || record.body_area}
+              </div>
+              <div style={{ fontSize: "0.875rem", color: "#666" }}>
+                Vue:{" "}
+                {record.body_view === "FRONT"
+                  ? "Face"
+                  : record.body_view === "BACK"
+                    ? "Dos"
+                    : "Latérale"}
               </div>
             </Box>
           );
@@ -136,7 +164,7 @@ export const WoundList = () => (
             label={record.evolution_count || 0}
             size="small"
             variant="outlined"
-            color={record.evolution_count > 0 ? 'primary' : 'default'}
+            color={record.evolution_count > 0 ? "primary" : "default"}
           />
         )}
       />

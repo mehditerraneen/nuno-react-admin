@@ -30,7 +30,9 @@ export const i18nProvider = polyglotI18nProvider(
     } catch {
       // ignore
     }
-    return dictionaries[locale as SupportedLocale] ?? dictionaries[DEFAULT_LOCALE];
+    return (
+      dictionaries[locale as SupportedLocale] ?? dictionaries[DEFAULT_LOCALE]
+    );
   },
   readInitialLocale(),
   [

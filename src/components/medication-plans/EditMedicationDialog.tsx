@@ -82,10 +82,18 @@ export const EditMedicationDialog = ({
     }
   };
 
-  const title = medication.medicine_abbreviated_name || medication.medicine_name || "Médicament";
+  const title =
+    medication.medicine_abbreviated_name ||
+    medication.medicine_name ||
+    "Médicament";
 
   return (
-    <Dialog open={open} onClose={busy ? undefined : onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={busy ? undefined : onClose}
+      maxWidth="sm"
+      fullWidth
+    >
       <DialogTitle sx={{ display: "flex", alignItems: "center", pr: 1 }}>
         <Box sx={{ flexGrow: 1 }}>Modifier — {title}</Box>
         <Tooltip title="Fermer" arrow>

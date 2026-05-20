@@ -59,18 +59,32 @@ const carePlanFilters = [
   >
     <AutocompleteInput
       optionText={(choice) =>
-        choice
-          ? `${choice.name} ${choice.first_name} (${choice.code_sn})`
-          : ""
+        choice ? `${choice.name} ${choice.first_name} (${choice.code_sn})` : ""
       }
       filterToQuery={(searchText) => ({ q: searchText, has_careplan: "true" })}
     />
   </ReferenceInput>,
-  <BooleanInput key="patient_is_active" source="patient_is_active" label="Active Patients Only" />,
+  <BooleanInput
+    key="patient_is_active"
+    source="patient_is_active"
+    label="Active Patients Only"
+  />,
   <NumberInput key="plan_number" source="plan_number" label="Plan Number" />,
-  <DateInput key="plan_start_date_gte" source="plan_start_date_gte" label="Start Date From" />,
-  <DateInput key="plan_start_date_lte" source="plan_start_date_lte" label="Start Date To" />,
-  <BooleanInput key="last_valid_plan" source="last_valid_plan" label="Last Valid Plan Only" />,
+  <DateInput
+    key="plan_start_date_gte"
+    source="plan_start_date_gte"
+    label="Start Date From"
+  />,
+  <DateInput
+    key="plan_start_date_lte"
+    source="plan_start_date_lte"
+    label="Start Date To"
+  />,
+  <BooleanInput
+    key="last_valid_plan"
+    source="last_valid_plan"
+    label="Last Valid Plan Only"
+  />,
 ];
 
 const TRIGGER_KIND_ICON: Record<string, string> = {
@@ -137,7 +151,11 @@ const TriggerSummaryField = ({ record }: { record: any }) => {
               </Typography>
             ))}
             {g.summaries.length > 8 && (
-              <Typography variant="caption" component="div" sx={{ opacity: 0.7 }}>
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ opacity: 0.7 }}
+              >
                 … +{g.summaries.length - 8}
               </Typography>
             )}
@@ -236,9 +254,7 @@ const PlanRevisionsTimeline = () => {
   if (revisions.length === 0) {
     return (
       <Box sx={{ px: 3, py: 2, color: "text.secondary" }}>
-        <Typography variant="body2">
-          Aucune révision pour ce plan.
-        </Typography>
+        <Typography variant="body2">Aucune révision pour ce plan.</Typography>
       </Box>
     );
   }
@@ -247,7 +263,12 @@ const PlanRevisionsTimeline = () => {
     <Box sx={{ px: 3, py: 2, backgroundColor: "background.default" }}>
       <Typography
         variant="caption"
-        sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}
+        sx={{
+          fontWeight: 700,
+          color: "text.secondary",
+          display: "block",
+          mb: 1,
+        }}
       >
         Évolution — {revisions.length} révision{revisions.length > 1 ? "s" : ""}
       </Typography>
@@ -286,7 +307,14 @@ const PlanRevisionsTimeline = () => {
               },
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                flexWrap: "wrap",
+              }}
+            >
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {formatRevisionDate(r.revised_on)}
               </Typography>
@@ -307,7 +335,11 @@ const PlanRevisionsTimeline = () => {
             )}
             {/* Motifs */}
             {r.triggers.length > 0 && (
-              <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
+              <Stack
+                direction="row"
+                spacing={0.5}
+                sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.5 }}
+              >
                 {r.triggers.map((t, idx) => (
                   <Tooltip key={idx} title={t.summary || t.kind} arrow>
                     <Chip
@@ -326,12 +358,20 @@ const PlanRevisionsTimeline = () => {
             )}
             {/* Outcomes */}
             {r.outcomes.length > 0 && (
-              <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
+              <Stack
+                direction="row"
+                spacing={0.5}
+                sx={{ flexWrap: "wrap", gap: 0.5, mt: 0.5 }}
+              >
                 {r.outcomes.map((o) => {
-                  const title = o.objective_title || `Objectif #${o.objective_id}`;
+                  const title =
+                    o.objective_title || `Objectif #${o.objective_id}`;
                   const tooltip = (
                     <Box sx={{ minWidth: 200 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, display: "block" }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 600, display: "block" }}
+                      >
                         🎯 {title}
                       </Typography>
                       <Typography variant="caption" sx={{ display: "block" }}>
@@ -340,7 +380,11 @@ const PlanRevisionsTimeline = () => {
                       {o.note && (
                         <Typography
                           variant="caption"
-                          sx={{ display: "block", mt: 0.5, fontStyle: "italic" }}
+                          sx={{
+                            display: "block",
+                            mt: 0.5,
+                            fontStyle: "italic",
+                          }}
                         >
                           "{o.note}"
                         </Typography>

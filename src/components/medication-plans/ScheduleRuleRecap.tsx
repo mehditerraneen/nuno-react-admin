@@ -71,14 +71,18 @@ export const ScheduleRuleRecap: React.FC<{ rule: ScheduleRule }> = ({
               "saturday",
               "sunday",
             ];
-            return translate(`med_schedule_rules.weekday.${keys[d]}`).slice(0, 3);
+            return translate(`med_schedule_rules.weekday.${keys[d]}`).slice(
+              0,
+              3,
+            );
           })
           .join(", ") || "";
       detail = `${days} ${tAt} ${rule.weekly_time ?? ""}`.trim();
       break;
     }
     case "monthly":
-      detail = `${tDay} ${(rule.days_of_month ?? []).join(", ")} ${tAt} ${rule.monthly_time ?? ""}`.trim();
+      detail =
+        `${tDay} ${(rule.days_of_month ?? []).join(", ")} ${tAt} ${rule.monthly_time ?? ""}`.trim();
       break;
     case "specific": {
       const n = (rule.specific_datetimes ?? []).length;
@@ -109,10 +113,7 @@ export const ScheduleRuleRecap: React.FC<{ rule: ScheduleRule }> = ({
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <Typography
-          variant="subtitle2"
-          sx={{ fontWeight: 700, flexGrow: 1 }}
-        >
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, flexGrow: 1 }}>
           <span style={{ marginRight: 6 }}>{icon}</span>
           {validityLine}
         </Typography>

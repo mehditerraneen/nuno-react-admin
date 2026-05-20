@@ -12,15 +12,15 @@ import {
   Paper,
   CircularProgress,
   TextField,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Delete as DeleteIcon,
   ZoomIn as ZoomInIcon,
   CloudUpload as UploadIcon,
   Close as CloseIcon,
-} from '@mui/icons-material';
-import { useState, useEffect } from 'react';
-import { useDataProvider, useNotify, useRefresh } from 'react-admin';
+} from "@mui/icons-material";
+import { useState, useEffect } from "react";
+import { useDataProvider, useNotify, useRefresh } from "react-admin";
 
 interface WoundImageGalleryProps {
   woundId: number;
@@ -46,14 +46,17 @@ interface WoundImage {
  * - Link images to specific evolutions
  * - Chronological ordering
  */
-export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalleryProps) => {
+export const WoundImageGallery = ({
+  woundId,
+  readonly = false,
+}: WoundImageGalleryProps) => {
   const [images, setImages] = useState<WoundImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<WoundImage | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadComment, setUploadComment] = useState('');
+  const [uploadComment, setUploadComment] = useState("");
 
   const dataProvider = useDataProvider();
   const notify = useNotify();
@@ -71,7 +74,9 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
       const response = await dataProvider.getWoundImages(woundId);
       setImages(Array.isArray(response) ? response : response.data || []);
     } catch (error: any) {
-      notify(error.message || 'Erreur lors du chargement des images', { type: 'error' });
+      notify(error.message || "Erreur lors du chargement des images", {
+        type: "error",
+      });
       setImages([]);
     } finally {
       setLoading(false);
@@ -79,15 +84,17 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
   };
 
   const handleDelete = async (imageId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette image ?')) return;
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette image ?")) return;
 
     try {
       await dataProvider.deleteWoundImage(woundId, imageId);
-      notify('Image supprimée avec succès', { type: 'success' });
+      notify("Image supprimée avec succès", { type: "success" });
       loadImages();
       refresh();
     } catch (error: any) {
-      notify(error.message || 'Erreur lors de la suppression', { type: 'error' });
+      notify(error.message || "Erreur lors de la suppression", {
+        type: "error",
+      });
     }
   };
 
@@ -95,14 +102,16 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
     const file = event.target.files?.[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        notify('Veuillez sélectionner un fichier image', { type: 'error' });
+      if (!file.type.startsWith("image/")) {
+        notify("Veuillez sélectionner un fichier image", { type: "error" });
         return;
       }
 
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        notify('La taille du fichier ne doit pas dépasser 10 MB', { type: 'error' });
+        notify("La taille du fichier ne doit pas dépasser 10 MB", {
+          type: "error",
+        });
         return;
       }
 
@@ -112,7 +121,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      notify('Veuillez sélectionner un fichier', { type: 'error' });
+      notify("Veuillez sélectionner un fichier", { type: "error" });
       return;
     }
 
@@ -122,16 +131,18 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
         woundId,
         selectedFile,
         undefined, // evolution ID (can be added later)
-        uploadComment || undefined
+        uploadComment || undefined,
       );
-      notify('Image téléchargée avec succès', { type: 'success' });
+      notify("Image téléchargée avec succès", { type: "success" });
       setUploadDialogOpen(false);
       setSelectedFile(null);
-      setUploadComment('');
+      setUploadComment("");
       loadImages();
       refresh();
     } catch (error: any) {
-      notify(error.message || 'Erreur lors du téléchargement', { type: 'error' });
+      notify(error.message || "Erreur lors du téléchargement", {
+        type: "error",
+      });
     } finally {
       setUploading(false);
     }
@@ -139,7 +150,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -147,7 +158,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
 
   if (images.length === 0 && readonly) {
     return (
-      <Paper sx={{ p: 3, textAlign: 'center' }}>
+      <Paper sx={{ p: 3, textAlign: "center" }}>
         <Typography color="text.secondary">
           Aucune image disponible pour cette plaie.
         </Typography>
@@ -159,7 +170,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
     <Box>
       {/* Upload button */}
       {!readonly && (
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
           <Button
             variant="contained"
             startIcon={<UploadIcon />}
@@ -172,7 +183,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
 
       {/* Image grid */}
       {images.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
+        <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography color="text.secondary">
             Aucune image n'a encore été ajoutée.
           </Typography>
@@ -183,35 +194,37 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
           )}
         </Paper>
       ) : (
-        <ImageList cols={3} gap={8} sx={{ width: '100%', m: 0 }}>
+        <ImageList cols={3} gap={8} sx={{ width: "100%", m: 0 }}>
           {images.map((image) => (
             <ImageListItem key={image.id}>
               <img
                 src={image.image}
-                alt={image.comment || 'Photo de plaie'}
+                alt={image.comment || "Photo de plaie"}
                 loading="lazy"
                 style={{
-                  width: '100%',
+                  width: "100%",
                   height: 200,
-                  objectFit: 'cover',
-                  cursor: 'pointer',
+                  objectFit: "cover",
+                  cursor: "pointer",
                 }}
                 onClick={() => setSelectedImage(image)}
               />
               <ImageListItemBar
-                title={new Date(image.date_uploaded).toLocaleDateString('fr-FR')}
+                title={new Date(image.date_uploaded).toLocaleDateString(
+                  "fr-FR",
+                )}
                 subtitle={image.comment}
                 actionIcon={
                   <Box>
                     <IconButton
-                      sx={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                      sx={{ color: "rgba(255, 255, 255, 0.9)" }}
                       onClick={() => setSelectedImage(image)}
                     >
                       <ZoomInIcon />
                     </IconButton>
                     {!readonly && (
                       <IconButton
-                        sx={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                        sx={{ color: "rgba(255, 255, 255, 0.9)" }}
                         onClick={() => handleDelete(image.id)}
                       >
                         <DeleteIcon />
@@ -232,34 +245,37 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
         maxWidth="lg"
         fullWidth
       >
-        <DialogContent sx={{ p: 0, position: 'relative' }}>
+        <DialogContent sx={{ p: 0, position: "relative" }}>
           {selectedImage && (
             <>
               <IconButton
                 onClick={() => setSelectedImage(null)}
                 sx={{
-                  position: 'absolute',
+                  position: "absolute",
                   right: 8,
                   top: 8,
-                  bgcolor: 'rgba(0, 0, 0, 0.5)',
-                  color: '#fff',
-                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                  bgcolor: "rgba(0, 0, 0, 0.5)",
+                  color: "#fff",
+                  "&:hover": { bgcolor: "rgba(0, 0, 0, 0.7)" },
                 }}
               >
                 <CloseIcon />
               </IconButton>
               <img
                 src={selectedImage.image}
-                alt={selectedImage.comment || 'Photo de plaie'}
-                style={{ width: '100%', display: 'block' }}
+                alt={selectedImage.comment || "Photo de plaie"}
+                style={{ width: "100%", display: "block" }}
               />
               {selectedImage.comment && (
-                <Box sx={{ p: 2, bgcolor: 'grey.100' }}>
+                <Box sx={{ p: 2, bgcolor: "grey.100" }}>
                   <Typography variant="body2">
                     <strong>Commentaire:</strong> {selectedImage.comment}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Téléchargée le {new Date(selectedImage.date_uploaded).toLocaleString('fr-FR')}
+                    Téléchargée le{" "}
+                    {new Date(selectedImage.date_uploaded).toLocaleString(
+                      "fr-FR",
+                    )}
                   </Typography>
                 </Box>
               )}
@@ -269,7 +285,12 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
       </Dialog>
 
       {/* Upload dialog */}
-      <Dialog open={uploadDialogOpen} onClose={() => !uploading && setUploadDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={uploadDialogOpen}
+        onClose={() => !uploading && setUploadDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogContent>
           <Typography variant="h6" gutterBottom>
             Télécharger une image
@@ -277,7 +298,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
 
           <input
             accept="image/*"
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
             id="wound-image-upload"
             type="file"
             onChange={handleFileSelect}
@@ -290,7 +311,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
               startIcon={<UploadIcon />}
               sx={{ mb: 2 }}
             >
-              {selectedFile ? selectedFile.name : 'Sélectionner une image'}
+              {selectedFile ? selectedFile.name : "Sélectionner une image"}
             </Button>
           </label>
 
@@ -305,7 +326,10 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setUploadDialogOpen(false)} disabled={uploading}>
+          <Button
+            onClick={() => setUploadDialogOpen(false)}
+            disabled={uploading}
+          >
             Annuler
           </Button>
           <Button
@@ -314,7 +338,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
             disabled={!selectedFile || uploading}
             startIcon={uploading ? <CircularProgress size={20} /> : null}
           >
-            {uploading ? 'Téléchargement...' : 'Télécharger'}
+            {uploading ? "Téléchargement..." : "Télécharger"}
           </Button>
         </DialogActions>
       </Dialog>

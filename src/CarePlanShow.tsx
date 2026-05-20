@@ -348,10 +348,7 @@ const CarePlanRevisionsPanel: React.FC = () => {
                     : "▸ Voir les changements"}
                 </Button>
                 {diffOpenFor[r.id] && (
-                  <RevisionDiffPanel
-                    carePlanId={record.id}
-                    revisionId={r.id}
-                  />
+                  <RevisionDiffPanel carePlanId={record.id} revisionId={r.id} />
                 )}
               </Box>
             </Box>
@@ -522,7 +519,11 @@ const CarePlanDetails = () => {
         </Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
           {details.length > 0 && (
-            <CarePlanPrintButton record={record} patient={patient} details={details} />
+            <CarePlanPrintButton
+              record={record}
+              patient={patient}
+              details={details}
+            />
           )}
           <WriteOnly>
             <Button
@@ -557,180 +558,192 @@ const CarePlanDetails = () => {
             const itemCount = detail.longtermcareitemquantity_set.length;
             const actionCount = detail.actions?.length ?? 0;
             return (
-            <Accordion
-              key={detail.id}
-              sx={{ mb: 2, maxWidth: 800 }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                sx={{
-                  "& .MuiAccordionSummary-content": {
-                    alignItems: "center",
-                    gap: 2,
-                    flexWrap: "wrap",
-                  },
-                }}
-              >
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {detail.name}
-                </Typography>
-                <Chip
-                  label={timeRange}
-                  size="small"
-                  variant="outlined"
-                  color="primary"
-                />
-                <Chip
-                  label={`${itemCount} ${translate("care_plan_show.care_items").toLowerCase()}`}
-                  size="small"
-                  variant="outlined"
-                />
-                {actionCount > 0 && (
-                  <Chip
-                    label={`${actionCount} ${translate("care_plan_show.actions").toLowerCase()}`}
-                    size="small"
-                    variant="outlined"
-                    color="warning"
-                  />
-                )}
-                {Array.isArray(detail.objective_ids) &&
-                  detail.objective_ids.length > 0 &&
-                  (() => {
-                    const planObjectives = (record?.objectives ?? []) as CarePlanObjective[];
-                    return detail.objective_ids.map((oid: number) => {
-                      const obj = planObjectives.find((o) => o.id === oid);
-                      const title = obj?.title ?? `Objectif #${oid}`;
-                      return (
-                        <Chip
-                          key={`obj-${oid}`}
-                          label={`🎯 ${title.length > 28 ? title.slice(0, 28) + "…" : title}`}
-                          size="small"
-                          color="primary"
-                          variant="filled"
-                          sx={{ maxWidth: 280 }}
-                        />
-                      );
-                    });
-                  })()}
-                {detail.responsible_role && (
-                  <Chip
-                    label={detail.responsible_role_label || detail.responsible_role}
-                    size="small"
-                    variant="outlined"
-                    color="secondary"
-                  />
-                )}
-                <Box sx={{ flexGrow: 1 }} />
-                <WriteOnly>
-                  <IconButton
-                    component="span"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEditDialog(detail);
-                    }}
-                    size="small"
-                  >
-                    <EditIcon />
-                  </IconButton>
-                </WriteOnly>
-              </AccordionSummary>
-              <AccordionDetails>
-              <Box sx={{ display: "flex", gap: 4, mb: 2 }}>
-                <TextField
-                  record={detail}
-                  source="time_start"
-                  label={translate("care_plan_show.start_time")}
-                />
-                <TextField
-                  record={detail}
-                  source="time_end"
-                  label={translate("care_plan_show.end_time")}
-                />
-              </Box>
-              <TextField
-                record={detail}
-                source="care_actions"
-                label={translate("care_plan_show.care_actions")}
-                fullWidth
-              />
-
-              <Typography variant="subtitle2" sx={{ mt: 2 }}>
-                {translate("care_plan_show.occurrences")}:
-              </Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-                {detail.params_occurrence.map((occ: CareOccurrence) => (
-                  <Chip key={occ.id} label={`${occ.str_name}: ${occ.value}`} />
-                ))}
-              </Box>
-
-              <Typography variant="subtitle2">
-                {translate("care_plan_show.care_items")}:
-              </Typography>
-              <ArrayField record={detail} source="longtermcareitemquantity_set">
-                <Datagrid bulkActionButtons={false} optimized rowClick={false}>
-                  <TextField
-                    source="long_term_care_item.code"
-                    label={translate("care_plan_show.item_code")}
-                  />
-                  <ItemDescriptionField
-                    label={translate("care_plan_show.item_description")}
-                  />
-                  <NumberField
-                    source="quantity"
-                    label={translate("care_plan_show.quantity")}
-                  />
-                  <PackageDurationField
-                    label={translate("care_plan_show.package_duration")}
-                  />
-                </Datagrid>
-              </ArrayField>
-
-              {/* Free-text actions */}
-              {detail.actions && detail.actions.length > 0 && (
-                <>
-                  <Typography variant="subtitle2" sx={{ mt: 2 }}>
-                    {translate("care_plan_show.actions")}:
+              <Accordion key={detail.id} sx={{ mb: 2, maxWidth: 800 }}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    "& .MuiAccordionSummary-content": {
+                      alignItems: "center",
+                      gap: 2,
+                      flexWrap: "wrap",
+                    },
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {detail.name}
                   </Typography>
-                  <TableContainer
-                    component={Paper}
+                  <Chip
+                    label={timeRange}
+                    size="small"
                     variant="outlined"
-                    sx={{ mb: 2 }}
-                  >
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow sx={{ backgroundColor: "warning.light" }}>
-                          <TableCell sx={{ fontWeight: 600 }}>
-                            {translate("care_plan_show.action")}
-                          </TableCell>
-                          <TableCell
-                            align="right"
-                            sx={{ fontWeight: 600, width: 140 }}
-                          >
-                            {translate("care_plan_show.duration_min")}
-                          </TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {detail.actions.map((a) => (
-                          <TableRow key={a.id}>
-                            <TableCell sx={{ whiteSpace: "pre-wrap" }}>
-                              {a.action_text}
-                            </TableCell>
-                            <TableCell align="right">
-                              {a.duration_minutes}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </>
-              )}
+                    color="primary"
+                  />
+                  <Chip
+                    label={`${itemCount} ${translate("care_plan_show.care_items").toLowerCase()}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                  {actionCount > 0 && (
+                    <Chip
+                      label={`${actionCount} ${translate("care_plan_show.actions").toLowerCase()}`}
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                    />
+                  )}
+                  {Array.isArray(detail.objective_ids) &&
+                    detail.objective_ids.length > 0 &&
+                    (() => {
+                      const planObjectives = (record?.objectives ??
+                        []) as CarePlanObjective[];
+                      return detail.objective_ids.map((oid: number) => {
+                        const obj = planObjectives.find((o) => o.id === oid);
+                        const title = obj?.title ?? `Objectif #${oid}`;
+                        return (
+                          <Chip
+                            key={`obj-${oid}`}
+                            label={`🎯 ${title.length > 28 ? title.slice(0, 28) + "…" : title}`}
+                            size="small"
+                            color="primary"
+                            variant="filled"
+                            sx={{ maxWidth: 280 }}
+                          />
+                        );
+                      });
+                    })()}
+                  {detail.responsible_role && (
+                    <Chip
+                      label={
+                        detail.responsible_role_label || detail.responsible_role
+                      }
+                      size="small"
+                      variant="outlined"
+                      color="secondary"
+                    />
+                  )}
+                  <Box sx={{ flexGrow: 1 }} />
+                  <WriteOnly>
+                    <IconButton
+                      component="span"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditDialog(detail);
+                      }}
+                      size="small"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </WriteOnly>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Box sx={{ display: "flex", gap: 4, mb: 2 }}>
+                    <TextField
+                      record={detail}
+                      source="time_start"
+                      label={translate("care_plan_show.start_time")}
+                    />
+                    <TextField
+                      record={detail}
+                      source="time_end"
+                      label={translate("care_plan_show.end_time")}
+                    />
+                  </Box>
+                  <TextField
+                    record={detail}
+                    source="care_actions"
+                    label={translate("care_plan_show.care_actions")}
+                    fullWidth
+                  />
 
-              {/* Duration Summary for this detail */}
-              <DurationSummary detail={detail} />
-              </AccordionDetails>
-            </Accordion>
+                  <Typography variant="subtitle2" sx={{ mt: 2 }}>
+                    {translate("care_plan_show.occurrences")}:
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}
+                  >
+                    {detail.params_occurrence.map((occ: CareOccurrence) => (
+                      <Chip
+                        key={occ.id}
+                        label={`${occ.str_name}: ${occ.value}`}
+                      />
+                    ))}
+                  </Box>
+
+                  <Typography variant="subtitle2">
+                    {translate("care_plan_show.care_items")}:
+                  </Typography>
+                  <ArrayField
+                    record={detail}
+                    source="longtermcareitemquantity_set"
+                  >
+                    <Datagrid
+                      bulkActionButtons={false}
+                      optimized
+                      rowClick={false}
+                    >
+                      <TextField
+                        source="long_term_care_item.code"
+                        label={translate("care_plan_show.item_code")}
+                      />
+                      <ItemDescriptionField
+                        label={translate("care_plan_show.item_description")}
+                      />
+                      <NumberField
+                        source="quantity"
+                        label={translate("care_plan_show.quantity")}
+                      />
+                      <PackageDurationField
+                        label={translate("care_plan_show.package_duration")}
+                      />
+                    </Datagrid>
+                  </ArrayField>
+
+                  {/* Free-text actions */}
+                  {detail.actions && detail.actions.length > 0 && (
+                    <>
+                      <Typography variant="subtitle2" sx={{ mt: 2 }}>
+                        {translate("care_plan_show.actions")}:
+                      </Typography>
+                      <TableContainer
+                        component={Paper}
+                        variant="outlined"
+                        sx={{ mb: 2 }}
+                      >
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: "warning.light" }}>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                {translate("care_plan_show.action")}
+                              </TableCell>
+                              <TableCell
+                                align="right"
+                                sx={{ fontWeight: 600, width: 140 }}
+                              >
+                                {translate("care_plan_show.duration_min")}
+                              </TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {detail.actions.map((a) => (
+                              <TableRow key={a.id}>
+                                <TableCell sx={{ whiteSpace: "pre-wrap" }}>
+                                  {a.action_text}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {a.duration_minutes}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </>
+                  )}
+
+                  {/* Duration Summary for this detail */}
+                  <DurationSummary detail={detail} />
+                </AccordionDetails>
+              </Accordion>
             );
           })}
 

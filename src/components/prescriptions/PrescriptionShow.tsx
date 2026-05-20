@@ -44,8 +44,7 @@ const FileSection = () => {
   const fileThumb = record?.file_thumbnail ?? record?.thumbnail_img ?? null;
   const fileHash = record?.md5hash ?? record?.file_hash ?? null;
   const fileName =
-    record?.file_name ??
-    (fileUrl ? fileUrl.split("/").pop() ?? null : null);
+    record?.file_name ?? (fileUrl ? (fileUrl.split("/").pop() ?? null) : null);
 
   const handleFileUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,10 +107,13 @@ const FileSection = () => {
               }}
             >
               <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+                >
                   <AttachFileIcon color="primary" />
                   <Typography variant="body1" fontWeight="bold">
-                    {fileName || translate("prescription_show.file.filename_fallback")}
+                    {fileName ||
+                      translate("prescription_show.file.filename_fallback")}
                   </Typography>
                 </Box>
 
@@ -196,7 +198,12 @@ const FileSection = () => {
               />
             </Button>
           </WriteOnly>
-          <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
+          <Typography
+            variant="caption"
+            display="block"
+            color="text.secondary"
+            sx={{ mt: 1 }}
+          >
             {translate("prescription_show.file.supported")}
           </Typography>
         </Paper>
@@ -361,7 +368,11 @@ const LinkedMedicationsSection = () => {
               )}
 
               <Grid size={12}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
+                >
                   {translate("prescription_show.linked.schedule")}
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>

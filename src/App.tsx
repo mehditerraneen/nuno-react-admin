@@ -208,7 +208,10 @@ export const App = () => (
     <CustomRoutes>
       <Route path="/tours-dashboard" element={<EnhancedToursDashboard />} />
       <Route path="/careplan-overlaps" element={<CarePlanOverlapView />} />
-      <Route path="/planning/:id/audit-log" element={<PlanningAuditLogPage />} />
+      <Route
+        path="/planning/:id/audit-log"
+        element={<PlanningAuditLogPage />}
+      />
       <Route path="/medication-plans/:id/board" element={<MedicationBoard />} />
       <Route path="/sticky-test" element={<StickyTest />} />
       <Route path="/ag-grid-test" element={<StickyTestAgGrid />} />

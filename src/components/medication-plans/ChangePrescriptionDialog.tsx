@@ -47,7 +47,10 @@ interface ChangePrescriptionDialogProps {
   onChanged: () => void;
 }
 
-const fmtPrescriptionLabel = (p: PatientPrescription, translate: (k: string) => string): string => {
+const fmtPrescriptionLabel = (
+  p: PatientPrescription,
+  translate: (k: string) => string,
+): string => {
   const dateStr = p.date ? new Date(p.date).toLocaleDateString("fr-FR") : "—";
   const docFirst = p.prescriptor_first_name || p.prescriptor?.first_name || "";
   const docLast = p.prescriptor_name || p.prescriptor?.name || "";
@@ -91,12 +94,10 @@ export const ChangePrescriptionDialog = ({
         const list: PatientPrescription[] = Array.isArray(result)
           ? (result as PatientPrescription[])
           : Array.isArray((result as { data?: unknown })?.data)
-            ? ((result as { data: PatientPrescription[] }).data)
+            ? (result as { data: PatientPrescription[] }).data
             : [];
         // Exclude the current one.
-        setPrescriptions(
-          list.filter((p) => p.id !== currentPrescriptionId),
-        );
+        setPrescriptions(list.filter((p) => p.id !== currentPrescriptionId));
       })
       .catch(() => {
         if (!cancelled) setPrescriptions([]);
@@ -174,10 +175,10 @@ export const ChangePrescriptionDialog = ({
       <DialogTitle>Changer la prescription</DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>
-          Rattachez les médicaments ci-dessous à une autre prescription du patient
-          (par exemple un renouvellement). Vous pouvez aussi ajuster les dates
-          de début / fin — elles seront appliquées à tous les médicaments du
-          groupe.
+          Rattachez les médicaments ci-dessous à une autre prescription du
+          patient (par exemple un renouvellement). Vous pouvez aussi ajuster les
+          dates de début / fin — elles seront appliquées à tous les médicaments
+          du groupe.
         </DialogContentText>
 
         <Stack spacing={2}>
