@@ -112,13 +112,16 @@ import ShiftHistoryPopover from './components/planning/ShiftHistoryPopover';
 import { WriteOnly } from './components/auth/WriteOnly';
 import { useIsReadOnly } from './hooks/useIsReadOnly';
 import {
-    classifyShift,
-    computeTotalHours,
-    type ShiftBreakdownEntry,
+  classifyShift,
+  computeTotalHours,
+  type ShiftBreakdownEntry,
 } from './utils/planningHours';
+import { toPlanningEmailErrorMessage } from './utils/planningEmail';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
+const PDF_URL_CLEANUP_DELAY_MS = 60_000;
+const UNKNOWN_EMAIL_PLACEHOLDER = '(non renseignée)';
 
 const statusChoices = [
     { id: 'DRAFT', name: 'Brouillon' },
@@ -635,6 +638,8 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const [hiddenEmployees, setHiddenEmployees] = useState<Set<number>>(new Set());
     const [togglingVisibility, setTogglingVisibility] = useState<number | null>(null);
     const [sendingEmail, setSendingEmail] = useState<number | null>(null);
+    const [sendingAllEmails, setSendingAllEmails] = useState(false);
+    const [previewingEmailPdf, setPreviewingEmailPdf] = useState<number | null>(null);
 
     // Hours-calc debug detail (hidden — enabled via ?debug=hours URL param or
     // localStorage 'planning.debugHours' = '1'). When enabled, a small bug icon
@@ -1408,6 +1413,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         }
     };
 
+    const getResponseDetail = async (response: Response) => {
+        try {
+            const errorData = await response.json();
+            return errorData?.detail || errorData?.message || `HTTP ${response.status}`;
+        } catch {
+            return `HTTP ${response.status}`;
+        }
+    };
+
     // Toggle employee visibility
     const handleToggleEmployeeVisibility = async (employeeId: number) => {
         try {
@@ -1438,8 +1452,44 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         }
     };
 
+    const handlePreviewPlanningPdf = async (employeeId: number, employeeName: string) => {
+        try {
+            setPreviewingEmailPdf(employeeId);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const previewUrl = `${apiUrl}/planning/monthly-planning/${planningId}/send-employee-planning/${employeeId}?preview=true`;
+            const response = await authenticatedFetch(previewUrl, { method: 'GET' });
+
+            if (!response.ok) {
+                const detail = await getResponseDetail(response);
+                throw new Error(toPlanningEmailErrorMessage(detail));
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const opened = window.open(url, '_blank', 'noopener,noreferrer');
+            if (!opened) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `planning_${employeeName}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+            window.setTimeout(() => window.URL.revokeObjectURL(url), PDF_URL_CLEANUP_DELAY_MS);
+        } catch (error: any) {
+            console.error('Error previewing planning PDF:', error);
+            notify(`Erreur PDF: ${error.message}`, { type: 'error' });
+        } finally {
+            setPreviewingEmailPdf(null);
+        }
+    };
+
     // Send planning email
-    const handleSendPlanningEmail = async (employeeId: number, employeeName: string) => {
+    const handleSendPlanningEmail = async (employeeId: number, employeeName: string, employeeEmail?: string) => {
+        const targetEmail = employeeEmail || UNKNOWN_EMAIL_PLACEHOLDER;
+        const confirmed = window.confirm(`Envoyer le planning de ${employeeName} à ${targetEmail} ?`);
+        if (!confirmed) return;
+
         try {
             setSendingEmail(employeeId);
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
@@ -1447,17 +1497,55 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             const response = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/send-employee-planning/${employeeId}`, { method: 'POST' });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Échec de l\'envoi');
+                const detail = await getResponseDetail(response);
+                throw new Error(toPlanningEmailErrorMessage(detail));
             }
 
             const result = await response.json();
-            notify(`Planning envoyé à ${result.email}`, { type: 'success' });
+            notify(`Planning envoyé à ${result.email || targetEmail}`, { type: 'success' });
         } catch (error: any) {
             console.error('Error sending planning email:', error);
             notify(`Erreur: ${error.message}`, { type: 'error' });
         } finally {
             setSendingEmail(null);
+        }
+    };
+
+    const handleSendAllPlanningEmails = async () => {
+        const employeeCount = rowData.length;
+        if (employeeCount === 0) {
+            notify('Aucun employé à envoyer.', { type: 'warning' });
+            return;
+        }
+
+        const confirmed = window.confirm(`Envoyer le planning à ${employeeCount} employé(s) ?`);
+        if (!confirmed) return;
+
+        try {
+            setSendingAllEmails(true);
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const sendAllUrl = `${apiUrl}/planning/monthly-planning/${planningId}/send-employees-planning`;
+            const response = await authenticatedFetch(sendAllUrl, { method: 'POST' });
+            if (!response.ok) {
+                const detail = await getResponseDetail(response);
+                throw new Error(toPlanningEmailErrorMessage(detail));
+            }
+
+            const result = await response.json();
+            // Keep backward compatibility across API payload variants.
+            const sentCount = result.sent_count ?? result.sent ?? 0;
+            const failedCount = result.failed_count ?? result.failed ?? 0;
+            notify(
+                failedCount > 0
+                    ? `Envoi terminé: ${sentCount} envoyé(s), ${failedCount} échec(s).`
+                    : `Envoi terminé: ${sentCount} planning(s) envoyé(s).`,
+                { type: failedCount > 0 ? 'warning' : 'success' },
+            );
+        } catch (error: any) {
+            console.error('Error sending planning emails:', error);
+            notify(`Erreur: ${error.message}`, { type: 'error' });
+        } finally {
+            setSendingAllEmails(false);
         }
     };
 
@@ -1539,6 +1627,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             const row: any = {
                 employee_id: emp.employee_id,
                 employee_name: emp.name,
+                employee_email: emp.email,
                 employee_abbr: emp.abbreviation,
                 job_position: emp.job_position,
                 job_type: emp.job_type,
@@ -1981,7 +2070,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             employee_name, employee_abbr, job_position,
             avatar_url, color_cell, color_text, hours_exceeded,
             consecutive_days_violation, max_consecutive_days, evening_to_morning_violation,
-            evening_to_morning_violations, is_hidden, is_inactive, employee_id
+            evening_to_morning_violations, is_hidden, is_inactive, employee_id, employee_email
         } = data;
         // Ensure numeric values for toFixed()
         const total_hours = typeof data.total_hours === 'number' ? data.total_hours : parseFloat(data.total_hours) || 0;
@@ -2021,7 +2110,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                         <Tooltip title="Envoyer planning par email">
                             <IconButton
                                 size="small"
-                                onClick={(e) => { e.stopPropagation(); handleSendPlanningEmail(employee_id, employee_name); }}
+                                onClick={(e) => { e.stopPropagation(); handleSendPlanningEmail(employee_id, employee_name, employee_email); }}
                                 disabled={sendingEmail === employee_id}
                                 sx={{ padding: 0.15 }}
                                 color="primary"
@@ -2030,6 +2119,21 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                     <CircularProgress size={12} />
                                 ) : (
                                     <EmailIcon sx={{ fontSize: 12 }} />
+                                )}
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Voir le PDF employé">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); handlePreviewPlanningPdf(employee_id, employee_name); }}
+                                disabled={previewingEmailPdf === employee_id}
+                                sx={{ padding: 0.15 }}
+                                color="secondary"
+                            >
+                                {previewingEmailPdf === employee_id ? (
+                                    <CircularProgress size={12} />
+                                ) : (
+                                    <PictureAsPdfIcon sx={{ fontSize: 12 }} />
                                 )}
                             </IconButton>
                         </Tooltip>
@@ -2158,7 +2262,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 </Box>
             </Box>
         );
-    }, [togglingVisibility, sendingEmail, handleToggleEmployeeVisibility, handleSendPlanningEmail, debugHoursEnabled]);
+    }, [togglingVisibility, sendingEmail, previewingEmailPdf, handleToggleEmployeeVisibility, handleSendPlanningEmail, handlePreviewPlanningPdf, debugHoursEnabled]);
 
     // Custom header component for day columns
     const DayHeaderComponent = useCallback((props: any) => {
@@ -2497,6 +2601,14 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                             </span>
                         </Tooltip>
                         <Button startIcon={<AssessmentIcon />} onClick={handleAnalyzePlanning} disabled={analyzing} label={analyzing ? "..." : "Analyser"} />
+                        <Button
+                            startIcon={sendingAllEmails ? <CircularProgress size={16} /> : <EmailIcon />}
+                            onClick={handleSendAllPlanningEmails}
+                            color="primary"
+                            variant="outlined"
+                            disabled={sendingAllEmails || rowData.length === 0}
+                            label={sendingAllEmails ? 'Envoi...' : 'Envoyer à tous'}
+                        />
                         <Button startIcon={exportingPdf ? <CircularProgress size={16} /> : <PictureAsPdfIcon />} onClick={handleExportPdf} color="error" variant="outlined" disabled={exportingPdf} label="PDF" />
                         {planning.status !== 'DRAFT' && (
                             <Button startIcon={<HistoryIcon />} component={RouterLink} to={`/planning/${planningId}/audit-log`} label="Historique" />
