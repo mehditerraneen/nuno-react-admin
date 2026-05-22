@@ -1452,7 +1452,18 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             }
 
             const result = await response.json();
-            notify(`Planning envoyé à ${result.email}`, { type: 'success' });
+            // Build a clear notification: primary recipient (To) + any CC.
+            // The backend now uses the Google social-account email as the
+            // primary recipient when available; the personal/login email is
+            // CC'd so we don't lose the alternative inbox.
+            const to: string = result.to || result.email || '';
+            const cc: string[] = Array.isArray(result.cc) ? result.cc : [];
+            const sourceLabel = result.source === 'google_social' ? ' (compte Google)' : '';
+            const ccPart = cc.length > 0 ? ` · CC: ${cc.join(', ')}` : '';
+            notify(`Planning envoyé à ${to}${sourceLabel}${ccPart}`, {
+                type: 'success',
+                autoHideDuration: 8000,
+            });
         } catch (error: any) {
             console.error('Error sending planning email:', error);
             notify(`Erreur: ${error.message}`, { type: 'error' });
