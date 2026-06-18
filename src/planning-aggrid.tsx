@@ -3356,25 +3356,78 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     {/* Previous runs */}
                     {batchRuns.length > 1 && (
                         <Box mt={3}>
-                            <Typography variant="subtitle2" gutterBottom>Historique des runs:</Typography>
-                            {batchRuns.filter(r => r.id !== activeBatchRun?.id).slice(0, 5).map(r => (
-                                <Chip
-                                    key={r.id}
-                                    label={`#${r.id} ${r.preset} - ${r.status} (score: ${r.best_score?.toFixed(0) || 'N/A'})`}
-                                    size="small"
-                                    sx={{ mr: 0.5, mb: 0.5, cursor: 'pointer' }}
-                                    color={r.status === 'COMPLETED' ? 'success' : 'default'}
-                                    onClick={async () => {
-                                        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
-                                        const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${r.id}`);
-                                        if (response.ok) {
-                                            const data = await response.json();
-                                            setActiveBatchRun(data);
-                                            setBatchTopTrials(data.top_trials || []);
-                                        }
-                                    }}
-                                />
-                            ))}
+                            <Typography variant="subtitle2" gutterBottom>Historique des runs</Typography>
+                            <TableContainer>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>#</TableCell>
+                                            <TableCell>Preset</TableCell>
+                                            <TableCell>Statut</TableCell>
+                                            <TableCell align="right">Meilleur score</TableCell>
+                                            <TableCell align="center">Essais</TableCell>
+                                            <TableCell align="right">Durée</TableCell>
+                                            <TableCell>Date</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {batchRuns.filter(r => r.id !== activeBatchRun?.id).slice(0, 6).map(r => {
+                                            const statusColor = r.status === 'COMPLETED' ? 'success'
+                                                : r.status === 'FAILED' ? 'error'
+                                                : (r.status === 'RUNNING' || r.status === 'PENDING') ? 'warning'
+                                                : 'default';
+                                            const dur = r.duration_seconds != null
+                                                ? (r.duration_seconds >= 60
+                                                    ? `${Math.floor(r.duration_seconds / 60)}m${String(Math.round(r.duration_seconds % 60)).padStart(2, '0')}s`
+                                                    : `${Math.round(r.duration_seconds)}s`)
+                                                : '—';
+                                            const dateStr = r.created_at
+                                                ? new Date(r.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                                                : '—';
+                                            const statusChip = (
+                                                <Chip label={r.status} size="small" color={statusColor as any} variant="outlined" />
+                                            );
+                                            return (
+                                                <TableRow
+                                                    key={r.id}
+                                                    hover
+                                                    sx={{ cursor: 'pointer' }}
+                                                    onClick={async () => {
+                                                        const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+                                                        const response = await authenticatedFetch(`${apiUrl}/planning/batch-optimize/${r.id}`);
+                                                        if (response.ok) {
+                                                            const data = await response.json();
+                                                            setActiveBatchRun(data);
+                                                            setBatchTopTrials(data.top_trials || []);
+                                                        }
+                                                    }}
+                                                >
+                                                    <TableCell>#{r.id}</TableCell>
+                                                    <TableCell>{r.preset}</TableCell>
+                                                    <TableCell>
+                                                        {r.status === 'FAILED' && r.error_message
+                                                            ? <Tooltip title={r.error_message}><span>{statusChip}</span></Tooltip>
+                                                            : statusChip}
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {r.best_score != null ? r.best_score.toFixed(0) : '—'}
+                                                    </TableCell>
+                                                    <TableCell align="center">
+                                                        <Typography variant="caption" color="success.main" component="span">{r.completed_trials ?? 0}✓</Typography>
+                                                        <Typography variant="caption" color="text.secondary" component="span"> / </Typography>
+                                                        <Typography variant="caption" color="error.main" component="span">{r.failed_trials ?? 0}✗</Typography>
+                                                        {r.total_trials
+                                                            ? <Typography variant="caption" color="text.secondary" component="span"> /{r.total_trials}</Typography>
+                                                            : null}
+                                                    </TableCell>
+                                                    <TableCell align="right">{dur}</TableCell>
+                                                    <TableCell>{dateStr}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
                         </Box>
                     )}
                 </DialogContent>
