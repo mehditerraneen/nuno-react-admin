@@ -2,7 +2,7 @@
  * AG Grid Planning View
  * Full-featured planning with pinned employee column using AG Grid
  */
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
     List,
     Datagrid,
@@ -119,6 +119,94 @@ import {
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+// =============== INLINE SHIFT CELL EDITOR ===============
+// Synthetic option that clears the cell (delete). Always sorts last (group 'Action').
+const CLEAR_SHIFT_OPTION = { code: '', name: 'Vide (supprimer)', color_code: 'transparent', hours: 0, group: 'Action', recommended: false };
+
+// Lightweight popup editor for fast inline shift editing (DRAFT mode), replacing
+// the heavy MUI Dialog round-trip. It's a free-text MUI Autocomplete: single click
+// opens it, type a code/name to filter, ↑/↓ to move, Enter/click commits, Esc cancels.
+// Options arrive already ranked (contract-matching shifts first) via cellEditorParams.
+// The committed shift_code (or '' to clear) is read back by AG Grid through getValue().
+const ShiftCellEditor = forwardRef((props: any, ref) => {
+    const options: any[] = props.options || [];
+    const valueRef = useRef<string>(props.value || '');
+    // The option currently highlighted in the list (kept in sync via onHighlightChange).
+    const highlightRef = useRef<any>(null);
+    const [value, setValue] = useState<any>(
+        () => options.find((o) => o.code && o.code === props.value) || null
+    );
+
+    // AG Grid reads the final value from here when editing stops.
+    useImperativeHandle(ref, () => ({
+        getValue: () => valueRef.current,
+    }));
+
+    const commit = useCallback((opt: any) => {
+        valueRef.current = opt && typeof opt === 'object' ? (opt.code || '') : '';
+        props.stopEditing();
+    }, [props]);
+
+    return (
+        <Paper elevation={6} sx={{ width: 250, p: 0.5 }}>
+            <Autocomplete
+                open
+                autoHighlight
+                openOnFocus
+                size="small"
+                value={value}
+                options={options}
+                groupBy={(o: any) => o.group}
+                getOptionLabel={(o: any) => (typeof o === 'string' ? o : (o.code || ''))}
+                isOptionEqualToValue={(o: any, v: any) => o.code === v?.code}
+                filterOptions={(opts, state) => {
+                    const f = state.inputValue.trim().toUpperCase();
+                    if (!f) return opts;
+                    return opts.filter((o: any) =>
+                        o.code === '' || // keep the clear action available
+                        (o.code || '').toUpperCase().includes(f) ||
+                        (o.name || '').toUpperCase().includes(f)
+                    );
+                }}
+                onChange={(_e, newVal) => {
+                    setValue(newVal);
+                    commit(newVal);
+                }}
+                onHighlightChange={(_e, opt) => { highlightRef.current = opt; }}
+                onKeyDown={(e) => {
+                    if (e.key === 'Escape') { e.preventDefault(); props.stopEditing(true); }
+                    // Tab commits the highlighted option, then lets AG Grid move to the
+                    // next cell. We set valueRef synchronously (before AG Grid's Tab
+                    // handler reads getValue) and do NOT preventDefault so navigation works.
+                    else if (e.key === 'Tab' && highlightRef.current && typeof highlightRef.current === 'object') {
+                        valueRef.current = highlightRef.current.code || '';
+                    }
+                }}
+                renderInput={(params) => (
+                    <MuiTextField {...params} autoFocus placeholder="Code ou nom…" variant="outlined" />
+                )}
+                renderOption={(liProps, o: any) => {
+                    const { key, ...rest } = liProps as React.HTMLAttributes<HTMLLIElement> & { key?: React.Key };
+                    return (
+                        <Box component="li" {...rest} key={key ?? (o.code || '__clear__')} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 16, height: 16, borderRadius: 1, flexShrink: 0, backgroundColor: o.color_code || '#ccc', border: '1px solid rgba(0,0,0,0.15)' }} />
+                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{o.code || '—'}</Typography>
+                            {o.name && (
+                                <Typography variant="caption" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {o.name}
+                                </Typography>
+                            )}
+                            {!!o.hours && (
+                                <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', flexShrink: 0 }}>{o.hours}h</Typography>
+                            )}
+                        </Box>
+                    );
+                }}
+            />
+        </Paper>
+    );
+});
 
 const statusChoices = [
     { id: 'DRAFT', name: 'Brouillon' },
@@ -1624,7 +1712,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     }, [gridApi, cellsWithHistory]);
 
     // Handle shift delete
-    const handleShiftDelete = async (employeeId: number, day: number, comment?: string, requestedBy?: string) => {
+    const handleShiftDelete = useCallback(async (employeeId: number, day: number, comment?: string, requestedBy?: string) => {
         const isPublished = calendarData?.planning?.status === 'PUBLISHED';
 
         // Require comment in PUBLISHED mode
@@ -1659,10 +1747,10 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             console.error('Error deleting shift:', error);
             notify('Erreur lors de la suppression', { type: 'error' });
         }
-    };
+    }, [calendarData, planningId, notify, updateLocalShift]);
 
     // Handle shift save from edit mode
-    const handleShiftSave = async (employeeId: number, day: number, shiftCode: string, comment?: string, requestedBy?: string) => {
+    const handleShiftSave = useCallback(async (employeeId: number, day: number, shiftCode: string, comment?: string, requestedBy?: string) => {
         if (!shiftCode) return;
 
         const isPublished = calendarData?.planning?.status === 'PUBLISHED';
@@ -1706,10 +1794,10 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             console.error('Error updating shift:', error);
             notify('Erreur lors de la mise à jour', { type: 'error' });
         }
-    };
+    }, [calendarData, planningId, shiftTypes, notify, updateLocalShift]);
 
     // Handle drop
-    const handleShiftDrop = async (employeeId: number, day: number, dragData: any) => {
+    const handleShiftDrop = useCallback(async (employeeId: number, day: number, dragData: any) => {
         const isPublished = calendarData?.planning?.status === 'PUBLISHED';
 
         // In PUBLISHED mode, open edit dialog to require comment
@@ -1759,7 +1847,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             console.error('Error dropping shift:', error);
             notify('Erreur lors de la copie', { type: 'error' });
         }
-    };
+    }, [calendarData, planningId, shiftTypes, notify, updateLocalShift, setEditingShiftValue, setEditComment, setEditRequestedBy, setEditDialog]);
 
     // Shift cell renderer with history icon and drag-drop
     const ShiftCellRenderer = useCallback((params: any) => {
@@ -1803,17 +1891,22 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         // Handle delete
         const handleDelete = (e: React.MouseEvent) => {
             e.stopPropagation();
-            // Open edit dialog for deletion (with comment if published)
-            setEditingShiftValue('');
-            setEditComment('');
-            setEditRequestedBy('EMPLOYER');
-            setEditDialog({
-                open: true,
-                employeeId,
-                employeeName,
-                day,
-                currentShift: shiftCode || '',
-            });
+            // PUBLISHED: open dialog so the mandatory audit comment is captured.
+            if (status === 'PUBLISHED') {
+                setEditingShiftValue('');
+                setEditComment('');
+                setEditRequestedBy('EMPLOYER');
+                setEditDialog({
+                    open: true,
+                    employeeId,
+                    employeeName,
+                    day,
+                    currentShift: shiftCode || '',
+                });
+                return;
+            }
+            // DRAFT: delete inline, optimistically (no dialog).
+            handleShiftDelete(employeeId, day);
         };
 
         // Drag start handler
@@ -1908,7 +2001,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                     }
                                     size="small"
                                     onDelete={isEditable ? handleDelete : undefined}
-                                    deleteIcon={<CloseIcon style={{ fontSize: 12 }} />}
+                                    deleteIcon={<CloseIcon style={{ fontSize: 12 }} data-noedit="1" />}
                                     sx={{
                                         backgroundColor: color || '#e0e0e0',
                                         color: '#000',
@@ -1927,6 +2020,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                             <Tooltip title="Voir l'historique des modifications">
                                 <IconButton
                                     size="small"
+                                    data-noedit="1"
                                     onClick={handleHistoryClick}
                                     sx={{ p: 0.25, opacity: 0.7, '&:hover': { opacity: 1 }, color: 'info.main' }}
                                 >
@@ -1944,6 +2038,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                             <Tooltip title="Voir l'historique des modifications">
                                 <IconButton
                                     size="small"
+                                    data-noedit="1"
                                     onClick={handleHistoryClick}
                                     sx={{ p: 0.25, opacity: 0.5, '&:hover': { opacity: 1 }, color: 'info.main' }}
                                 >
@@ -1955,7 +2050,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 )}
             </Box>
         );
-    }, [calendarData, shiftTypes, cellsWithHistory, handleShiftDrop, setEditDialog, setEditingShiftValue, setEditComment, setEditRequestedBy, setHistoryPopover]);
+    }, [calendarData, shiftTypes, cellsWithHistory, handleShiftDrop, handleShiftDelete, setEditDialog, setEditingShiftValue, setEditComment, setEditRequestedBy, setHistoryPopover]);
 
     // Handle AG Grid cell click - opens edit dialog
     const onCellClicked = useCallback((event: any) => {
@@ -1968,21 +2063,33 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             return;
         }
 
+        // Ignore clicks landing on in-cell controls (chip delete, history icon) —
+        // they have their own handlers and must not open the editor/dialog.
+        const domTarget = event.event?.target as HTMLElement | undefined;
+        if (domTarget?.closest?.('[data-noedit="1"]')) return;
+
         const day = parseInt(field.replace('day_', ''));
         const employeeId = event.data.employee_id;
         const employeeName = event.data.employee_name;
         const currentShift = event.value || '';
 
-        setEditingShiftValue(currentShift);
-        setEditComment('');
-        setEditRequestedBy('EMPLOYER');
-        setEditDialog({
-            open: true,
-            employeeId,
-            employeeName,
-            day,
-            currentShift,
-        });
+        // PUBLISHED: keep the audit dialog (mandatory comment + requested-by).
+        if (status === 'PUBLISHED') {
+            setEditingShiftValue(currentShift);
+            setEditComment('');
+            setEditRequestedBy('EMPLOYER');
+            setEditDialog({
+                open: true,
+                employeeId,
+                employeeName,
+                day,
+                currentShift,
+            });
+            return;
+        }
+
+        // DRAFT (and any other editable status): fast inline edit, no dialog.
+        event.api.startEditingCell({ rowIndex: event.rowIndex, colKey: field });
     }, [calendarData, notify]);
 
     // Employee cell renderer
@@ -2245,6 +2352,55 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         );
     }, []);
 
+    // Per-employee ranked shift options for the inline editor, computed once and
+    // cached (memoized) per calendarData/shiftTypes change. "Matches the contract"
+    // means the shift's hours equal the employee's contractual daily_hours
+    // (backend: daily_hours=8 -> prefers 8h shifts). Shifts the employee already
+    // works this month are also surfaced as recommended. Result is a Map keyed by
+    // employee_id so the editor lookup at edit-start is O(1).
+    const editorOptionsByEmployee = useMemo(() => {
+        const cache = new Map<number, any[]>();
+        if (!Array.isArray(shiftTypes)) return cache;
+        const activeShifts = shiftTypes.filter((st: any) => st.is_active !== false);
+        const WORK_CATEGORIES = new Set(['MORNING', 'EVENING', 'NIGHT']);
+        const employees = calendarData?.employees || [];
+
+        employees.forEach((emp: any) => {
+            const dh = typeof emp.daily_hours === 'number' ? emp.daily_hours : parseFloat(emp.daily_hours) || 8;
+
+            // How often the employee already uses each shift code this month.
+            const usage = new Map<string, number>();
+            Object.values(emp.shifts || {}).forEach((s: any) => {
+                if (s?.shift_code) usage.set(s.shift_code, (usage.get(s.shift_code) || 0) + 1);
+            });
+
+            const recommended: any[] = [];
+            const others: any[] = [];
+            activeShifts.forEach((st: any) => {
+                const hours = typeof st.hours === 'number' ? st.hours : parseFloat(st.hours) || 0;
+                const isWork = WORK_CATEGORIES.has(st.shift_category) || hours > 0;
+                const matchesContract = isWork && Math.abs(hours - dh) < 0.5;
+                const used = usage.get(st.code) || 0;
+                if (matchesContract || used > 0) {
+                    recommended.push({ ...st, hours, group: 'Recommandés (contrat)', recommended: true, _used: used, _gap: Math.abs(hours - dh) });
+                } else {
+                    others.push({ ...st, hours, group: 'Autres', recommended: false });
+                }
+            });
+            // Most-used first, then closest to the contractual daily hours, then code.
+            recommended.sort((a, b) => (b._used - a._used) || (a._gap - b._gap) || String(a.code).localeCompare(String(b.code)));
+
+            cache.set(emp.employee_id, [...recommended, ...others, CLEAR_SHIFT_OPTION]);
+        });
+        return cache;
+    }, [calendarData, shiftTypes]);
+
+    // Fallback option list when an employee isn't found in the cache.
+    const fallbackEditorOptions = useMemo(
+        () => [...(Array.isArray(shiftTypes) ? shiftTypes : []).map((st: any) => ({ ...st, group: 'Autres', recommended: false })), CLEAR_SHIFT_OPTION],
+        [shiftTypes]
+    );
+
     const columnDefs = useMemo(() => {
         if (!calendarData?.planning || !Array.isArray(shiftTypes)) return [];
 
@@ -2255,6 +2411,10 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
 
         const daysInMonth = new Date(planning.year, planning.month, 0).getDate();
         const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+        // Fast inline editing is enabled for editable, non-published plannings.
+        // PUBLISHED keeps the audit dialog (mandatory comment); LOCKED is read-only.
+        const inlineEditable = planning.status !== 'LOCKED' && planning.status !== 'PUBLISHED';
 
         const cols: any[] = [
             {
@@ -2316,7 +2476,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 ),
                 width: 90,
                 cellRenderer: ShiftCellRenderer,
-                editable: false, // We handle editing ourselves
+                // Inline editing for DRAFT (started programmatically from onCellClicked,
+                // since suppressClickEdit is on). PUBLISHED/LOCKED handled separately.
+                editable: inlineEditable,
+                cellEditor: ShiftCellEditor,
+                cellEditorPopup: true,
+                // Per-employee ranked options (contract-matching shifts first).
+                cellEditorParams: (p: any) => ({
+                    options: editorOptionsByEmployee.get(p.data?.employee_id) || fallbackEditorOptions,
+                }),
                 headerClass: isToday ? 'ag-header-today' : isWeekend ? 'ag-header-weekend' : holiday ? 'ag-header-holiday' : '',
                 cellStyle: () => ({
                     backgroundColor: isToday ? '#BBDEFB' : isWeekend ? '#f5f5f5' : holiday ? '#E1BEE7' : 'transparent',
@@ -2326,7 +2494,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         });
 
         return cols;
-    }, [calendarData, shiftTypes, EmployeeCellRenderer, ShiftCellRenderer, DayHeaderComponent]);
+    }, [calendarData, shiftTypes, EmployeeCellRenderer, ShiftCellRenderer, DayHeaderComponent, editorOptionsByEmployee, fallbackEditorOptions]);
 
     const defaultColDef = useMemo(() => ({
         sortable: false,
@@ -2336,12 +2504,19 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     // Handle cell value change
     const onCellValueChanged = useCallback((event: any) => {
         const field = event.colDef.field;
+        if (!field?.startsWith('day_')) return;
         const day = parseInt(field.replace('day_', ''));
         const employeeId = event.data.employee_id;
-        const newValue = event.newValue;
+        const newValue = (event.newValue || '').trim();
+        const oldValue = (event.oldValue || '').trim();
+        if (newValue === oldValue) return; // no-op
 
-        handleShiftUpdate(employeeId, day, newValue);
-    }, [handleShiftUpdate]);
+        if (!newValue) {
+            handleShiftDelete(employeeId, day); // cleared cell -> delete (DRAFT, no comment needed)
+        } else {
+            handleShiftUpdate(employeeId, day, newValue);
+        }
+    }, [handleShiftUpdate, handleShiftDelete]);
 
     const onGridReady = useCallback((params: any) => {
         setGridApi(params.api);
