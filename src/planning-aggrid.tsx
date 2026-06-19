@@ -126,26 +126,32 @@ const CLEAR_SHIFT_OPTION = { code: '', name: 'Vide (supprimer)', color_code: 'tr
 
 // Lightweight popup editor for fast inline shift editing (DRAFT mode), replacing
 // the heavy MUI Dialog round-trip. It's a free-text MUI Autocomplete: single click
-// opens it, type a code/name to filter, ↑/↓ to move, Enter/click commits, Esc cancels.
-// Options arrive already ranked (contract-matching shifts first) via cellEditorParams.
-// The committed shift_code (or '' to clear) is read back by AG Grid through getValue().
+// opens it, type a code/name to filter, ↑/↓ to move, Enter/click commits, Tab commits
+// and moves on, Esc cancels. Options arrive already ranked (contract-matching shifts
+// first) via cellEditorParams.
+//
+// The save does NOT go through AG Grid's value plumbing: it calls onPick() directly
+// (then stopEditing). getValue() returns the original value so AG Grid never sees a
+// change and onCellValueChanged stays a no-op (no double save). This also sidesteps
+// the AG Grid popup-editor + MUI portal issue where clicking a portaled option counts
+// as a click-outside and cancels the edit — we render the list inline (disablePortal).
 const ShiftCellEditor = forwardRef((props: any, ref) => {
     const options: any[] = props.options || [];
-    const valueRef = useRef<string>(props.value || '');
     // The option currently highlighted in the list (kept in sync via onHighlightChange).
     const highlightRef = useRef<any>(null);
     const [value, setValue] = useState<any>(
         () => options.find((o) => o.code && o.code === props.value) || null
     );
 
-    // AG Grid reads the final value from here when editing stops.
+    // AG Grid reads this when editing stops — return the original value unchanged so
+    // the real save is owned by onPick() below (avoids a duplicate onCellValueChanged).
     useImperativeHandle(ref, () => ({
-        getValue: () => valueRef.current,
+        getValue: () => props.value,
     }));
 
-    const commit = useCallback((opt: any) => {
-        valueRef.current = opt && typeof opt === 'object' ? (opt.code || '') : '';
-        props.stopEditing();
+    const pick = useCallback((opt: any) => {
+        const code = opt && typeof opt === 'object' ? (opt.code || '') : '';
+        props.onPick?.(props.employeeId, props.day, code);
     }, [props]);
 
     return (
@@ -154,6 +160,7 @@ const ShiftCellEditor = forwardRef((props: any, ref) => {
                 open
                 autoHighlight
                 openOnFocus
+                disablePortal
                 size="small"
                 value={value}
                 options={options}
@@ -171,16 +178,16 @@ const ShiftCellEditor = forwardRef((props: any, ref) => {
                 }}
                 onChange={(_e, newVal) => {
                     setValue(newVal);
-                    commit(newVal);
+                    pick(newVal);
+                    props.stopEditing();
                 }}
                 onHighlightChange={(_e, opt) => { highlightRef.current = opt; }}
                 onKeyDown={(e) => {
                     if (e.key === 'Escape') { e.preventDefault(); props.stopEditing(true); }
-                    // Tab commits the highlighted option, then lets AG Grid move to the
-                    // next cell. We set valueRef synchronously (before AG Grid's Tab
-                    // handler reads getValue) and do NOT preventDefault so navigation works.
+                    // Tab saves the highlighted option, then lets AG Grid move to the next
+                    // cell (no preventDefault, no stopEditing — AG Grid handles navigation).
                     else if (e.key === 'Tab' && highlightRef.current && typeof highlightRef.current === 'object') {
-                        valueRef.current = highlightRef.current.code || '';
+                        pick(highlightRef.current);
                     }
                 }}
                 renderInput={(params) => (
@@ -2401,6 +2408,12 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         [shiftTypes]
     );
 
+    // Save handler the inline editor calls directly on pick (empty code -> delete).
+    const handleEditorPick = useCallback((employeeId: number, day: number, code: string) => {
+        if (code) handleShiftUpdate(employeeId, day, code);
+        else handleShiftDelete(employeeId, day);
+    }, [handleShiftUpdate, handleShiftDelete]);
+
     const columnDefs = useMemo(() => {
         if (!calendarData?.planning || !Array.isArray(shiftTypes)) return [];
 
@@ -2481,9 +2494,13 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 editable: inlineEditable,
                 cellEditor: ShiftCellEditor,
                 cellEditorPopup: true,
-                // Per-employee ranked options (contract-matching shifts first).
+                // Per-employee ranked options (contract-matching shifts first) + a direct
+                // save callback so the editor doesn't depend on AG Grid value plumbing.
                 cellEditorParams: (p: any) => ({
                     options: editorOptionsByEmployee.get(p.data?.employee_id) || fallbackEditorOptions,
+                    employeeId: p.data?.employee_id,
+                    day: parseInt(String(p.colDef.field).replace('day_', '')),
+                    onPick: handleEditorPick,
                 }),
                 headerClass: isToday ? 'ag-header-today' : isWeekend ? 'ag-header-weekend' : holiday ? 'ag-header-holiday' : '',
                 cellStyle: () => ({
@@ -2494,7 +2511,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         });
 
         return cols;
-    }, [calendarData, shiftTypes, EmployeeCellRenderer, ShiftCellRenderer, DayHeaderComponent, editorOptionsByEmployee, fallbackEditorOptions]);
+    }, [calendarData, shiftTypes, EmployeeCellRenderer, ShiftCellRenderer, DayHeaderComponent, editorOptionsByEmployee, fallbackEditorOptions, handleEditorPick]);
 
     const defaultColDef = useMemo(() => ({
         sortable: false,
