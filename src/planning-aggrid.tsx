@@ -1723,6 +1723,23 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     } | null>(null);
     const [bulkFilling, setBulkFilling] = useState(false);
 
+    // Track whether Shift is held — the native drop event's `shiftKey` is unreliable
+    // across browsers (notably Safari) during HTML5 drag-and-drop, so we read this ref
+    // instead. Updated on every key event; reset when the window loses focus.
+    const shiftHeldRef = useRef(false);
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => { shiftHeldRef.current = e.shiftKey; };
+        const onBlur = () => { shiftHeldRef.current = false; };
+        window.addEventListener('keydown', onKey, true);
+        window.addEventListener('keyup', onKey, true);
+        window.addEventListener('blur', onBlur);
+        return () => {
+            window.removeEventListener('keydown', onKey, true);
+            window.removeEventListener('keyup', onKey, true);
+            window.removeEventListener('blur', onBlur);
+        };
+    }, []);
+
     // State for history popover
     const [historyPopover, setHistoryPopover] = useState<{
         anchorEl: HTMLElement | null;
@@ -2037,7 +2054,8 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
             if (!isEditable) return;
 
             // Hold Shift while dropping to apply the shift to every open day of the month.
-            const bulk = e.shiftKey;
+            // Prefer the tracked ref over the (unreliable) native drop event flag.
+            const bulk = shiftHeldRef.current || e.shiftKey;
             try {
                 const data = e.dataTransfer.getData('text/plain');
                 if (data) {
