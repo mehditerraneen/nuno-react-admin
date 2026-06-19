@@ -114,6 +114,7 @@ import { useIsReadOnly } from './hooks/useIsReadOnly';
 import {
     classifyShift,
     computeTotalHours,
+    isNonWorkCode,
     type ShiftBreakdownEntry,
 } from './utils/planningHours';
 
@@ -123,6 +124,18 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 // =============== INLINE SHIFT CELL EDITOR ===============
 // Synthetic option that clears the cell (delete). Always sorts last (group 'Action').
 const CLEAR_SHIFT_OPTION = { code: '', name: 'Vide (supprimer)', color_code: 'transparent', hours: 0, group: 'Action', recommended: false };
+
+// Shift codes a bulk "apply to the whole month" fill must NOT overwrite:
+// off/rest (OFF, REPOS, DES*), leave (CP*, CONG) and training (FORM). An empty
+// cell is never protected (it's a free open day to fill).
+const isProtectedFromBulk = (code: string | null | undefined): boolean => {
+    if (!code) return false;
+    const c = code.toUpperCase();
+    if (isNonWorkCode(c)) return true;             // OFF, REPOS, DES*
+    if (c === 'CONG' || c.startsWith('CP')) return true; // leave
+    if (c === 'FORM') return true;                 // training
+    return false;
+};
 
 // Lightweight popup editor for fast inline shift editing (DRAFT mode), replacing
 // the heavy MUI Dialog round-trip. It's a free-text MUI Autocomplete: single click
@@ -1700,6 +1713,16 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const [editComment, setEditComment] = useState<string>('');
     const [editRequestedBy, setEditRequestedBy] = useState<'EMPLOYEE' | 'EMPLOYER' | 'OTHER'>('EMPLOYER');
 
+    // State for the Shift+drop "apply to every open day of the month" dialog.
+    const [bulkFillDialog, setBulkFillDialog] = useState<{
+        employeeId: number;
+        employeeName: string;
+        dragData: any;
+        toWrite: number[];      // open days that will get the shift
+        protectedDays: number[]; // open days kept (leave/training/off)
+    } | null>(null);
+    const [bulkFilling, setBulkFilling] = useState(false);
+
     // State for history popover
     const [historyPopover, setHistoryPopover] = useState<{
         anchorEl: HTMLElement | null;
@@ -1856,6 +1879,76 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         }
     }, [calendarData, planningId, shiftTypes, notify, updateLocalShift, setEditingShiftValue, setEditComment, setEditRequestedBy, setEditDialog]);
 
+    // Shift + drop: open the "apply to every open day of the month" confirm dialog.
+    // Computes the open days (Mon–Fri, no bank holiday) and splits them into days that
+    // will be (re)written vs days kept because they hold leave/training/off shifts.
+    const openBulkFill = useCallback((employeeId: number, employeeName: string, dragData: any) => {
+        const planning = calendarData?.planning;
+        if (!planning) return;
+        if (planning.status !== 'DRAFT') {
+            notify('Disponible uniquement pour les plannings en brouillon', { type: 'warning' });
+            return;
+        }
+        const holidays = calendarData.luxembourg_holidays || {};
+        const emp = calendarData.employees?.find((e: any) => e.employee_id === employeeId);
+        const shifts = emp?.shifts || {};
+        const daysInMonth = new Date(planning.year, planning.month, 0).getDate();
+
+        const toWrite: number[] = [];
+        const protectedDays: number[] = [];
+        for (let day = 1; day <= daysInMonth; day++) {
+            const d = new Date(planning.year, planning.month - 1, day);
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            if (isWeekend || holidays[day]) continue; // not an open day
+            const current = shifts[day]?.shift_code;
+            if (isProtectedFromBulk(current)) protectedDays.push(day);
+            else toWrite.push(day);
+        }
+        setBulkFillDialog({ employeeId, employeeName, dragData, toWrite, protectedDays });
+    }, [calendarData, notify]);
+
+    // Confirm handler: bulk-POST the shift to all open days, protecting locked cells
+    // server-side, then refresh.
+    const applyBulkFill = useCallback(async () => {
+        if (!bulkFillDialog) return;
+        const { employeeId, dragData, toWrite } = bulkFillDialog;
+        if (toWrite.length === 0) { setBulkFillDialog(null); return; }
+        const planning = calendarData?.planning;
+        if (!planning) return;
+
+        setBulkFilling(true);
+        try {
+            const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
+            const shiftType = shiftTypes.find(st => st.code === dragData.shift_code);
+            const assignments = toWrite.map((day) => ({
+                employee_id: employeeId,
+                date: `${planning.year}-${String(planning.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+                shift_type_id: dragData.shift_type_id ?? shiftType?.id ?? null,
+                shift_code: dragData.shift_code,
+                hours: dragData.hours ?? shiftType?.hours ?? 0,
+                source: 'MANUAL',
+            }));
+
+            const res = await authenticatedFetch(`${apiUrl}/planning/monthly-planning/${planningId}/assignments/bulk`, {
+                method: 'POST',
+                body: JSON.stringify({ assignments, protect_locked: true }),
+            });
+            if (!res.ok) throw new Error('Bulk update failed');
+            const result = await res.json().catch(() => ({} as any));
+
+            const applied = (result.created || 0) + (result.updated || 0) || toWrite.length;
+            const skippedMsg = result.skipped ? `, ${result.skipped} verrouillé(s) ignoré(s)` : '';
+            notify(`${dragData.shift_code} appliqué à ${applied} jour(s)${skippedMsg}`, { type: 'success' });
+            setBulkFillDialog(null);
+            loadData();
+        } catch (error) {
+            console.error('Error applying bulk fill:', error);
+            notify('Erreur lors de l\'application en masse', { type: 'error' });
+        } finally {
+            setBulkFilling(false);
+        }
+    }, [bulkFillDialog, calendarData, shiftTypes, planningId, notify, loadData]);
+
     // Shift cell renderer with history icon and drag-drop
     const ShiftCellRenderer = useCallback((params: any) => {
         const shiftCode = params.value;
@@ -1943,11 +2036,14 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
 
             if (!isEditable) return;
 
+            // Hold Shift while dropping to apply the shift to every open day of the month.
+            const bulk = e.shiftKey;
             try {
                 const data = e.dataTransfer.getData('text/plain');
                 if (data) {
                     const dragData = JSON.parse(data);
-                    handleShiftDrop(employeeId, day, dragData);
+                    if (bulk) openBulkFill(employeeId, employeeName, dragData);
+                    else handleShiftDrop(employeeId, day, dragData);
                 }
             } catch (error) {
                 console.error('Error handling drop:', error);
@@ -1984,7 +2080,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                         <Tooltip title={
                             optimizerOriginal
                                 ? `${shiftCode} (${hours}h) — modifié de ${optimizerOriginal.shift_code} (${optimizerOriginal.hours}h) proposé par l'optimiseur`
-                                : `${shiftCode} (${hours}h)${source ? ' - ' + sourceInfo.label : ''} | Glisser pour copier`
+                                : `${shiftCode} (${hours}h)${source ? ' - ' + sourceInfo.label : ''} | Glisser pour copier • Maj+glisser : tout le mois`
                         }>
                             <div
                                 draggable={isEditable}
@@ -2057,7 +2153,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                 )}
             </Box>
         );
-    }, [calendarData, shiftTypes, cellsWithHistory, handleShiftDrop, handleShiftDelete, setEditDialog, setEditingShiftValue, setEditComment, setEditRequestedBy, setHistoryPopover]);
+    }, [calendarData, shiftTypes, cellsWithHistory, handleShiftDrop, handleShiftDelete, openBulkFill, setEditDialog, setEditingShiftValue, setEditComment, setEditRequestedBy, setHistoryPopover]);
 
     // Handle AG Grid cell click - opens edit dialog
     const onCellClicked = useCallback((event: any) => {
@@ -2837,6 +2933,48 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     />
                 </Box>
             </Paper>
+
+            {/* Bulk fill (Shift+drop) confirm dialog */}
+            <Dialog open={!!bulkFillDialog} onClose={() => !bulkFilling && setBulkFillDialog(null)} maxWidth="xs" fullWidth>
+                <DialogTitle>Appliquer à tout le mois</DialogTitle>
+                <DialogContent>
+                    {bulkFillDialog && (
+                        <Box display="flex" flexDirection="column" gap={2} mt={1}>
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <Box sx={{ width: 18, height: 18, borderRadius: 1, backgroundColor: bulkFillDialog.dragData?.color || '#ccc', border: '1px solid rgba(0,0,0,0.15)' }} />
+                                <Typography>
+                                    Affecter <strong>{bulkFillDialog.dragData?.shift_code}</strong>
+                                    {bulkFillDialog.dragData?.hours ? ` (${bulkFillDialog.dragData.hours}h)` : ''} à{' '}
+                                    <strong>{bulkFillDialog.employeeName}</strong>
+                                </Typography>
+                            </Box>
+                            <Alert severity={bulkFillDialog.toWrite.length === 0 ? 'warning' : 'info'} sx={{ py: 0.5 }}>
+                                {bulkFillDialog.toWrite.length === 0 ? (
+                                    <>Aucun jour ouvré à remplir (tous protégés ou aucun jour ouvré).</>
+                                ) : (
+                                    <>
+                                        <strong>{bulkFillDialog.toWrite.length}</strong> jour(s) ouvré(s) (lun–ven, hors jours fériés) seront (re)définis.
+                                        {bulkFillDialog.protectedDays.length > 0 && (
+                                            <> <br />{bulkFillDialog.protectedDays.length} jour(s) conservés (congés / formation / repos). Les shifts verrouillés sont aussi préservés.</>
+                                        )}
+                                    </>
+                                )}
+                            </Alert>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setBulkFillDialog(null)} disabled={bulkFilling}>Annuler</MuiButton>
+                    <MuiButton
+                        variant="contained"
+                        onClick={applyBulkFill}
+                        disabled={bulkFilling || !bulkFillDialog || bulkFillDialog.toWrite.length === 0}
+                        startIcon={bulkFilling ? <CircularProgress size={16} /> : undefined}
+                    >
+                        Appliquer
+                    </MuiButton>
+                </DialogActions>
+            </Dialog>
 
             {/* Template Dialog */}
             <Dialog open={templateDialog} onClose={() => setTemplateDialog(false)} maxWidth="sm" fullWidth>
