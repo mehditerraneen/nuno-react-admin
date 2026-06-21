@@ -3,6 +3,16 @@
  * These styles use !important to override MUI's internal styles
  */
 
+/* Fix React Admin layout - remove overflow constraints that break sticky */
+.RaLayout-content,
+.RaLayout-contentWithSidebar,
+[class*="RaLayout-content"],
+main[class*="MuiBox-root"] {
+    overflow: visible !important;
+}
+
+/* The actual scroll container for planning */
+
 /* Scroll container */
 .planning-table-container {
     max-height: 70vh;
