@@ -100,6 +100,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 import EditIcon from '@mui/icons-material/Edit';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import SpeedIcon from '@mui/icons-material/Speed';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -117,6 +119,11 @@ import {
     isNonWorkCode,
     type ShiftBreakdownEntry,
 } from './utils/planningHours';
+import {
+    computeEfficiencyScore,
+    scoreColor,
+    type EfficiencyBreakdown,
+} from './utils/planningScore';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -677,6 +684,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     const [createShiftDialog, setCreateShiftDialog] = useState(false);
     const [csvImportDialog, setCsvImportDialog] = useState(false);
     const [analysisDialog, setAnalysisDialog] = useState(false);
+    const [scoreExplainDialog, setScoreExplainDialog] = useState(false);
     const [validationDialog, setValidationDialog] = useState(false);
     const [dayDetailView, setDayDetailView] = useState<{ day: number; date: string } | null>(null);
     const [aiChatOpen, setAiChatOpen] = useState(false);
@@ -2653,6 +2661,15 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         setGridApi(params.api);
     }, []);
 
+    // Live efficiency score — recomputed (cheap, pure JS over the loaded
+    // calendar) on every edit so the header badge updates au fur et a mesure.
+    const liveScore = useMemo<EfficiencyBreakdown | null>(() => {
+        if (!calendarData?.planning || !Array.isArray(calendarData.employees)) return null;
+        const { year, month } = calendarData.planning;
+        const daysInMonth = new Date(year, month, 0).getDate();
+        return computeEfficiencyScore(calendarData.employees, daysInMonth);
+    }, [calendarData]);
+
     if (loading) {
         return <Loading />;
     }
@@ -2740,6 +2757,24 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                                 </Tooltip>
                             );
                         })()}
+                        {liveScore && (
+                            <Box display="flex" alignItems="center">
+                                <Tooltip title="Score d'efficacité estimé en direct — se met à jour à chaque modification du planning">
+                                    <Chip
+                                        icon={<SpeedIcon />}
+                                        label={`Efficacité ${liveScore.score.toFixed(1)} %`}
+                                        color={scoreColor(liveScore.score)}
+                                        size="small"
+                                        sx={{ fontWeight: 'bold' }}
+                                    />
+                                </Tooltip>
+                                <Tooltip title="Expliquer le calcul du score">
+                                    <IconButton size="small" onClick={() => setScoreExplainDialog(true)} aria-label="Expliquer le calcul du score">
+                                        <HelpOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        )}
                     </Box>
                     <Box display="flex" gap={1} flexWrap="wrap">
                         <Button startIcon={<AddIcon />} onClick={() => setCreateShiftDialog(true)} color="secondary" variant="outlined" label="Créer shift" />
@@ -3863,6 +3898,115 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
                     )}
                 </DialogContent>
                 <DialogActions><MuiButton onClick={() => setAnalysisDialog(false)}>Fermer</MuiButton></DialogActions>
+            </Dialog>
+
+            {/* Score explanation Dialog */}
+            <Dialog open={scoreExplainDialog} onClose={() => setScoreExplainDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle><Box display="flex" alignItems="center" gap={1}><SpeedIcon /> Comment le score est-il calculé&nbsp;?</Box></DialogTitle>
+                <DialogContent>
+                    {liveScore && (
+                        <Box display="flex" flexDirection="column" gap={2} mt={1}>
+                            <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                                <CardContent>
+                                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                                        <Box>
+                                            <Typography variant="h3" fontWeight="bold">{liveScore.score.toFixed(1)} %</Typography>
+                                            <Typography variant="body2" sx={{ opacity: 0.9 }}>Score d'efficacité (mis à jour en direct)</Typography>
+                                        </Box>
+                                        <SpeedIcon sx={{ fontSize: 60, opacity: 0.3 }} />
+                                    </Box>
+                                </CardContent>
+                            </Card>
+
+                            <Typography variant="body2" color="text.secondary">
+                                On part de <strong>100</strong> points, puis on retranche trois pénalités.
+                                Le score est recalculé dans le navigateur à chaque modification, sur les{' '}
+                                <strong>{liveScore.evaluatedEmployees}</strong> employés évalués (employés actifs ayant au moins une affectation).
+                            </Typography>
+
+                            <TableContainer component={Paper} variant="outlined">
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Composant</TableCell>
+                                            <TableCell>Mesure</TableCell>
+                                            <TableCell align="right">Pénalité</TableCell>
+                                            <TableCell align="right">Plafond</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        <TableRow>
+                                            <TableCell>Base</TableCell>
+                                            <TableCell>Score de départ</TableCell>
+                                            <TableCell align="right">+{liveScore.base}</TableCell>
+                                            <TableCell align="right">—</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell>Employés sous-utilisés</TableCell>
+                                            <TableCell>{liveScore.underutilization.count} employé(s) · −5 chacun</TableCell>
+                                            <TableCell align="right" sx={{ color: 'error.main' }}>−{liveScore.underutilization.penalty}</TableCell>
+                                            <TableCell align="right">−{liveScore.underutilization.cap}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell>Jours sous-couverts</TableCell>
+                                            <TableCell>{liveScore.lowCoverage.count} jour(s) avec &lt; 3 soignants · −2 chacun</TableCell>
+                                            <TableCell align="right" sx={{ color: 'error.main' }}>−{liveScore.lowCoverage.penalty}</TableCell>
+                                            <TableCell align="right">−{liveScore.lowCoverage.cap}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell>Déséquilibre de charge</TableCell>
+                                            <TableCell>écart-type d'utilisation {liveScore.imbalance.stdDev.toFixed(1)} % (moy. {liveScore.imbalance.avg.toFixed(0)} %)</TableCell>
+                                            <TableCell align="right" sx={{ color: 'error.main' }}>−{liveScore.imbalance.penalty.toFixed(1)}</TableCell>
+                                            <TableCell align="right">−{liveScore.imbalance.cap}</TableCell>
+                                        </TableRow>
+                                        <TableRow sx={{ '& td': { fontWeight: 'bold', borderTop: '2px solid', borderColor: 'divider' } }}>
+                                            <TableCell>Total</TableCell>
+                                            <TableCell>100 − pénalités (borné 0–100)</TableCell>
+                                            <TableCell align="right">{liveScore.score.toFixed(1)}</TableCell>
+                                            <TableCell align="right">—</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+
+                            {liveScore.underutilization.employees.length > 0 && (
+                                <Box>
+                                    <Typography variant="subtitle2" gutterBottom>Employés sous-utilisés</Typography>
+                                    <Box display="flex" flexDirection="column" gap={0.5}>
+                                        {liveScore.underutilization.employees.slice(0, 8).map((e) => (
+                                            <Typography key={e.employee_id} variant="body2" color="text.secondary">
+                                                <strong>{e.abbreviation}</strong> — {e.reason}
+                                            </Typography>
+                                        ))}
+                                        {liveScore.underutilization.employees.length > 8 && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                … et {liveScore.underutilization.employees.length - 8} autre(s)
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {liveScore.lowCoverage.days.length > 0 && (
+                                <Box>
+                                    <Typography variant="subtitle2" gutterBottom>Jours sous-couverts</Typography>
+                                    <Box display="flex" gap={0.5} flexWrap="wrap">
+                                        {liveScore.lowCoverage.days.map((d) => (
+                                            <Chip key={d.day} size="small" color="warning" variant="outlined" label={`J${d.day} · ${d.staff} soignant(s)`} />
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
+
+                            <Alert severity="info" variant="outlined">
+                                Estimation côté client, reproduisant la logique du serveur (<code>calculate_efficiency_score</code>).
+                                Pour la valeur de référence du serveur, utilisez le bouton « Analyse ». Le score de l'optimiseur
+                                (objectif du solveur) est distinct et n'est mis à jour qu'après une optimisation.
+                            </Alert>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions><MuiButton onClick={() => setScoreExplainDialog(false)}>Fermer</MuiButton></DialogActions>
             </Dialog>
 
             {/* Validation Dialog */}
