@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -54,15 +54,19 @@ export const WeeklyTourCalendar: React.FC<WeeklyTourCalendarProps> = ({
   const dataProvider = useDataProvider();
   const notify = useNotify();
 
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Start week on Monday
-  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
+  // Memoized for stable identity (Date objects recréés sinon à chaque rendu),
+  // afin de pouvoir figurer dans les dépendances de loadWeeklyData/effet.
+  const weekStart = useMemo(
+    () => startOfWeek(currentWeek, { weekStartsOn: 1 }), // Start week on Monday
+    [currentWeek],
+  );
+  const weekEnd = useMemo(
+    () => endOfWeek(currentWeek, { weekStartsOn: 1 }),
+    [currentWeek],
+  );
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
-  useEffect(() => {
-    loadWeeklyData();
-  }, [currentWeek]);
-
-  const loadWeeklyData = async () => {
+  const loadWeeklyData = useCallback(async () => {
     setLoading(true);
     try {
       const [toursResponse, employeesResponse] = await Promise.all([
@@ -88,7 +92,11 @@ export const WeeklyTourCalendar: React.FC<WeeklyTourCalendarProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [weekStart, weekEnd, dataProvider, notify]);
+
+  useEffect(() => {
+    loadWeeklyData();
+  }, [loadWeeklyData]);
 
   const navigateWeek = (direction: "prev" | "next") => {
     const newWeek =

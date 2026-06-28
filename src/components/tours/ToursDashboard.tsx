@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -91,7 +91,7 @@ export const ToursDashboard = () => {
     setActiveTab(newValue);
   };
 
-  const loadTours = async () => {
+  const loadTours = useCallback(async () => {
     setLoading(true);
     try {
       const result = await dataProvider.getList("tours", {
@@ -105,9 +105,9 @@ export const ToursDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dataProvider, notify, selectedEmployee]);
 
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
     try {
       const result = await dataProvider.getList("employees", {
         pagination: { page: 1, perPage: 100 },
@@ -118,12 +118,12 @@ export const ToursDashboard = () => {
     } catch (error) {
       notify("Failed to load employees", { type: "error" });
     }
-  };
+  }, [dataProvider, notify]);
 
   useEffect(() => {
     loadEmployees();
     loadTours();
-  }, [selectedEmployee]);
+  }, [loadEmployees, loadTours]);
 
   const handleCreateTour = () => {
     navigate("/tours/create");

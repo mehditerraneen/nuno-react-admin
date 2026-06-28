@@ -69,22 +69,22 @@ const PlanningCalendarGrid = ({ planningId }: { planningId: string }) => {
     const [editDialog, setEditDialog] = useState<any>(null);
 
     useEffect(() => {
+        // Loader défini dans l'effet (usage unique) : déps complètes, pas de warning.
+        const loadCalendarData = async () => {
+            try {
+                setLoading(true);
+                const { data } = await dataProvider.getOne('planning/monthly-planning', {
+                    id: `${planningId}/calendar_data`,
+                });
+                setCalendarData(data);
+            } catch (error) {
+                notify('Error loading calendar data', { type: 'error' });
+            } finally {
+                setLoading(false);
+            }
+        };
         loadCalendarData();
-    }, [planningId]);
-
-    const loadCalendarData = async () => {
-        try {
-            setLoading(true);
-            const { data } = await dataProvider.getOne('planning/monthly-planning', {
-                id: `${planningId}/calendar_data`,
-            });
-            setCalendarData(data);
-        } catch (error) {
-            notify('Error loading calendar data', { type: 'error' });
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [planningId, dataProvider, notify]);
 
     if (loading) return <Loading />;
     if (!calendarData) return <Typography>No data available</Typography>;

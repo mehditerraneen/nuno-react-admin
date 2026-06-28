@@ -171,24 +171,24 @@ export const BodyMapViewer: React.FC<BodyMapViewerProps> = ({
     };
 
     // Handle zoom controls
-    const handleZoomIn = () => {
+    const handleZoomIn = useCallback(() => {
         setZoom(Math.min(maxZoom, zoom * 1.2));
-    };
+    }, [zoom, maxZoom]);
 
-    const handleZoomOut = () => {
+    const handleZoomOut = useCallback(() => {
         setZoom(Math.max(minZoom, zoom / 1.2));
-    };
+    }, [zoom, minZoom]);
 
-    const handleZoomReset = () => {
+    const handleZoomReset = useCallback(() => {
         setZoom(1);
         setPanX(0);
         setPanY(0);
-    };
+    }, []);
 
     // Toggle drag mode
-    const toggleDragMode = () => {
+    const toggleDragMode = useCallback(() => {
         setDragMode(!dragMode);
-    };
+    }, [dragMode]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -209,7 +209,7 @@ export const BodyMapViewer: React.FC<BodyMapViewerProps> = ({
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [zoom, dragMode]);
+    }, [toggleDragMode, handleZoomIn, handleZoomOut, handleZoomReset]);
 
     // Filter wounds by current body view
     const visibleWounds = existingWounds.filter(

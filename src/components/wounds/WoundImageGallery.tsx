@@ -19,7 +19,7 @@ import {
   CloudUpload as UploadIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useDataProvider, useNotify, useRefresh } from 'react-admin';
 
 interface WoundImageGalleryProps {
@@ -59,13 +59,7 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
   const notify = useNotify();
   const refresh = useRefresh();
 
-  useEffect(() => {
-    if (woundId) {
-      loadImages();
-    }
-  }, [woundId]);
-
-  const loadImages = async () => {
+  const loadImages = useCallback(async () => {
     setLoading(true);
     try {
       const response = await dataProvider.getWoundImages(woundId);
@@ -76,7 +70,13 @@ export const WoundImageGallery = ({ woundId, readonly = false }: WoundImageGalle
     } finally {
       setLoading(false);
     }
-  };
+  }, [woundId, dataProvider, notify]);
+
+  useEffect(() => {
+    if (woundId) {
+      loadImages();
+    }
+  }, [woundId, loadImages]);
 
   const handleDelete = async (imageId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette image ?')) return;

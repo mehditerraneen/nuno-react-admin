@@ -1238,6 +1238,9 @@ const PlanningCalendar = ({ planningId }: { planningId: number }) => {
 
     useEffect(() => {
         loadData();
+        // loadData : loader volumineux, aussi appelé par les handlers (refresh après
+        // édition). Rechargement volontaire au seul changement de planningId.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [planningId]);
 
     // Load hidden employees on mount

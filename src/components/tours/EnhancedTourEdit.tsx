@@ -209,6 +209,7 @@ const EnhancedTourEditForm = () => {
   const refresh = useRefresh();
 
   // Debounced validation function
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- closure de debounce volontaire (IIFE, timeoutId persistant) ; ne dépend que de record
   const debouncedValidate = useCallback(
     (() => {
       let timeoutId: NodeJS.Timeout;
@@ -246,6 +247,7 @@ const EnhancedTourEditForm = () => {
       });
       setNeedsRefresh(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- (ré)initialisation au seul chargement du record ; loaders & tourMode ne doivent pas re-déclencher
   }, [record]);
 
   // Trigger validation when assigned events change
@@ -290,6 +292,7 @@ const EnhancedTourEditForm = () => {
     const interval = setInterval(checkForChanges, 500);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- polling par interval ; getCurrentFormValues lit les valeurs courantes via closure, pas une dép réactive
   }, [formContext, originalFormValues, record]);
 
   const getCurrentFormValues = () => {

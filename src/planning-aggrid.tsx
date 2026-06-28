@@ -840,6 +840,9 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     useEffect(() => {
         loadData();
         loadBatchRuns();
+        // loadBatchRuns : loader non mémoïsé, aussi appelé par les handlers ;
+        // déclenché volontairement avec loadData (changement de planning).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadData]);
 
     // Load hidden employees
@@ -1525,7 +1528,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
     };
 
     // Toggle employee visibility
-    const handleToggleEmployeeVisibility = async (employeeId: number) => {
+    const handleToggleEmployeeVisibility = useCallback(async (employeeId: number) => {
         try {
             setTogglingVisibility(employeeId);
             const isCurrentlyHidden = hiddenEmployees.has(employeeId);
@@ -1552,10 +1555,10 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         } finally {
             setTogglingVisibility(null);
         }
-    };
+    }, [hiddenEmployees, planningId, notify]);
 
     // Send planning email
-    const handleSendPlanningEmail = async (employeeId: number, employeeName: string) => {
+    const handleSendPlanningEmail = useCallback(async (employeeId: number, employeeName: string) => {
         try {
             setSendingEmail(employeeId);
             const apiUrl = import.meta.env.VITE_SIMPLE_REST_URL;
@@ -1586,7 +1589,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         } finally {
             setSendingEmail(null);
         }
-    };
+    }, [planningId, notify]);
 
     // Create shift type
     const calculateWorkedHours = (startTime: string, endTime: string, breakMinutes: number) => {
@@ -2633,7 +2636,7 @@ const PlanningAgGridCalendar = ({ planningId }: { planningId: number }) => {
         });
 
         return cols;
-    }, [calendarData, shiftTypes, EmployeeCellRenderer, ShiftCellRenderer, DayHeaderComponent, editorOptionsByEmployee, fallbackEditorOptions, handleEditorPick]);
+    }, [calendarData, shiftTypes, EmployeeCellRenderer, ShiftCellRenderer, DayHeaderComponent, PrevWeekCellRenderer, editorOptionsByEmployee, fallbackEditorOptions, handleEditorPick]);
 
     const defaultColDef = useMemo(() => ({
         sortable: false,

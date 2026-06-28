@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography, Chip, Paper, Alert } from "@mui/material";
 import { AccessTime as TimeIcon } from "@mui/icons-material";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -26,8 +26,13 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
   // Watch form values for real-time calculation
   const timeStart = useWatch({ name: "time_start" });
   const timeEnd = useWatch({ name: "time_end" });
-  const occurrenceIds = useWatch({ name: "params_occurrence_ids" }) || [];
-  const careItems = useWatch({ name: "long_term_care_items" }) || [];
+  const occurrenceIdsRaw = useWatch({ name: "params_occurrence_ids" });
+  const occurrenceIds = useMemo(
+    () => occurrenceIdsRaw || [],
+    [occurrenceIdsRaw],
+  );
+  const careItemsRaw = useWatch({ name: "long_term_care_items" });
+  const careItems = useMemo(() => careItemsRaw || [], [careItemsRaw]);
   const actions = useWatch({ name: "actions" }) || [];
   const actionsDailyDuration = calculateActionsDuration(actions);
 

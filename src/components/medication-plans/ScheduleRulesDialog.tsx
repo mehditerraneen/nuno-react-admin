@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -134,13 +134,7 @@ export const ScheduleRulesDialog = ({
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<RuleFormData>(getDefaultFormData(medication));
 
-  useEffect(() => {
-    if (open && medication.id) {
-      fetchRules();
-    }
-  }, [open, medication.id]);
-
-  const fetchRules = async () => {
+  const fetchRules = useCallback(async () => {
     setLoading(true);
     try {
       const result = await dataProvider.getScheduleRules(planId, medication.id);
@@ -151,7 +145,13 @@ export const ScheduleRulesDialog = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [dataProvider, planId, medication.id, notify, translate]);
+
+  useEffect(() => {
+    if (open && medication.id) {
+      fetchRules();
+    }
+  }, [open, medication.id, fetchRules]);
 
   const prepareDataForSubmit = (data: RuleFormData): any => {
     const baseData = {

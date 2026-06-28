@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { Map, MapOutlined } from '@mui/icons-material';
 
@@ -59,7 +59,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
         setIsDragging(true);
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging || !miniMapRef.current) return;
 
         const rect = miniMapRef.current.getBoundingClientRect();
@@ -71,11 +71,11 @@ export const MiniMap: React.FC<MiniMapProps> = ({
         const newPanY = -(y * 5.12 - 512) * zoom;
 
         onNavigate(newPanX, newPanY);
-    };
+    }, [isDragging, zoom, onNavigate]);
 
-    const handleMouseUp = () => {
+    const handleMouseUp = useCallback(() => {
         setIsDragging(false);
-    };
+    }, []);
 
     React.useEffect(() => {
         if (isDragging) {
@@ -87,7 +87,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
                 window.removeEventListener('mouseup', handleMouseUp);
             };
         }
-    }, [isDragging]);
+    }, [isDragging, handleMouseMove, handleMouseUp]);
 
     return (
         <>

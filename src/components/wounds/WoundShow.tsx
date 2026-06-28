@@ -30,7 +30,7 @@ import {
   TrendingFlat as TrendingFlatIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { WoundEvolutionDialog } from './WoundEvolutionDialog';
 import { WoundImageGallery } from './WoundImageGallery';
 import { WriteOnly } from '../auth/WriteOnly';
@@ -102,13 +102,7 @@ export const WoundShow = () => {
 
   const dataProvider = useDataProvider();
 
-  useEffect(() => {
-    if (record?.id) {
-      loadEvolutions();
-    }
-  }, [record?.id]);
-
-  const loadEvolutions = async () => {
+  const loadEvolutions = useCallback(async () => {
     setLoadingEvolutions(true);
     try {
       const response = await dataProvider.getWoundEvolutions(record.id);
@@ -124,7 +118,13 @@ export const WoundShow = () => {
     } finally {
       setLoadingEvolutions(false);
     }
-  };
+  }, [record?.id, dataProvider]);
+
+  useEffect(() => {
+    if (record?.id) {
+      loadEvolutions();
+    }
+  }, [record?.id, loadEvolutions]);
 
   const handleEvolutionSuccess = () => {
     loadEvolutions();

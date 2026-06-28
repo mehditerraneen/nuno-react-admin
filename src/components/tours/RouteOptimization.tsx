@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -50,7 +50,7 @@ export const RouteOptimization: React.FC<RouteOptimizationProps> = ({
   const dataProvider = useDataProvider();
   const notify = useNotify();
 
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
     try {
       const { data } = await dataProvider.getList("employees", {
         pagination: { page: 1, perPage: 100 },
@@ -61,9 +61,9 @@ export const RouteOptimization: React.FC<RouteOptimizationProps> = ({
     } catch (error) {
       notify("Failed to load employees", { type: "error" });
     }
-  };
+  }, [dataProvider, notify]);
 
-  const loadTourEvents = async () => {
+  const loadTourEvents = useCallback(async () => {
     if (!selectedEmployee) return;
 
     try {
@@ -78,7 +78,7 @@ export const RouteOptimization: React.FC<RouteOptimizationProps> = ({
     } catch (error) {
       notify("Failed to load tour events", { type: "error" });
     }
-  };
+  }, [selectedEmployee, selectedDate, dataProvider, notify]);
 
   const handleOptimize = async () => {
     if (!selectedEmployee) {
@@ -112,11 +112,11 @@ export const RouteOptimization: React.FC<RouteOptimizationProps> = ({
 
   useEffect(() => {
     loadEmployees();
-  }, []);
+  }, [loadEmployees]);
 
   useEffect(() => {
     loadTourEvents();
-  }, [selectedEmployee, selectedDate]);
+  }, [loadTourEvents]);
 
   const calculateTourStats = () => {
     if (tourEvents.length === 0) return null;

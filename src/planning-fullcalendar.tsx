@@ -591,6 +591,9 @@ const PlanningFCCalendar: React.FC<PlanningFCCalendarProps> = ({ planningId }) =
 
     useEffect(() => {
         loadData();
+        // loadData : loader volumineux, aussi appelé par les handlers (refresh après
+        // édition) et passé en onUpdate. Rechargement volontaire au seul planningId.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [planningId]);
 
     const loadData = async () => {

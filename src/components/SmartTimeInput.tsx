@@ -197,6 +197,10 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
       setShowSuggestion(false);
       setMatchStatus(null);
     }
+    // Dépendances volontaires sur les clés sérialisées (careItemsKey/actionsKey =
+    // JSON de careItems/actions ; actionsDurationTotal dérive de actions) pour éviter
+    // de relancer à chaque rendu sur une nouvelle identité d'array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeStart, careItemsKey, actionsKey, allCareItems, autoSuggest, source, timeEnd]);
 
   const handleApplySuggestion = () => {
