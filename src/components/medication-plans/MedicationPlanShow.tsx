@@ -385,6 +385,14 @@ const MedicationsSection = () => {
   const [scheduleDialogFor, setScheduleDialogFor] = useState<Medication | null>(
     null,
   );
+  // ⚠️ Tous les hooks doivent être appelés inconditionnellement, AVANT tout
+  // early return — sinon le nombre de hooks change quand les médicaments se
+  // chargent (liste vide → non vide) et React lève l'erreur #310.
+  const [printing, setPrinting] = useState(false);
+  const [changeRxFor, setChangeRxFor] = useState<{
+    prescriptionId: number | null;
+    medications: Medication[];
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -438,12 +446,6 @@ const MedicationsSection = () => {
       </Box>
     );
   }
-
-  const [printing, setPrinting] = useState(false);
-  const [changeRxFor, setChangeRxFor] = useState<{
-    prescriptionId: number | null;
-    medications: Medication[];
-  } | null>(null);
 
   const handlePrint = async () => {
     if (!record?.id) return;
