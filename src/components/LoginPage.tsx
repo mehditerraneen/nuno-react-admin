@@ -16,9 +16,9 @@ import {
   Visibility,
   VisibilityOff,
   Login as LoginIcon,
-  MedicalServices,
 } from "@mui/icons-material";
 import opefitooLogo from "../assets/logo-opefitoo.png";
+import nunoPlanningIcon from "../assets/nuno-planning-icon.svg";
 
 interface Branding {
   company_name?: string;
@@ -103,23 +103,14 @@ export const LoginPage: React.FC = () => {
               />
             ) : (
               <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 64,
-                  height: 64,
-                  borderRadius: "50%",
-                  backgroundColor: "primary.main",
-                  color: "white",
-                  mb: 2,
-                }}
-              >
-                <MedicalServices fontSize="large" />
-              </Box>
+                component="img"
+                src={nunoPlanningIcon}
+                alt="Nuno Care Planning"
+                sx={{ height: 96, width: 96, mb: 2 }}
+              />
             )}
             <Typography variant="h4" component="h1" gutterBottom>
-              {branding?.company_name || "Care Plan Admin"}
+              {branding?.company_name || "Nuno Care Planning"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {branding?.company_tagline ||
