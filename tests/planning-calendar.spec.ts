@@ -197,4 +197,22 @@ test.describe("Planning calendar", () => {
     await expect(dialog.getByText(/Modifier l'événement/i)).toBeVisible();
     await expect(dialog.getByText(/Codes AEV/i)).toHaveCount(0);
   });
+
+  test("adds a free-duration task (add_generic)", async ({ page }) => {
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await dialog.getByText(/Codes AEV/i).click();
+    await dialog.getByLabel("Tâche").fill("Transmission");
+    await dialog.getByLabel("min").fill("15");
+
+    const call = page.waitForRequest(/\/events\/\d+\/aev-mutate/);
+    await dialog.getByRole("button", { name: /Ajouter tâche/i }).click();
+    const req = await call;
+    expect(req.postDataJSON()).toMatchObject({
+      action: "add_generic",
+      label: "Transmission",
+      minutes: 15,
+    });
+  });
 });

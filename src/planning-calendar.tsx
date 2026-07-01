@@ -469,6 +469,8 @@ const AevPanel: React.FC<{
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [addQty, setAddQty] = useState<Record<number, number>>({});
+  const [newGenLabel, setNewGenLabel] = useState("");
+  const [newGenMin, setNewGenMin] = useState<number | "">("");
 
   const load = useCallback(() => {
     setLoading(true);
@@ -691,6 +693,78 @@ const AevPanel: React.FC<{
             )}
           </Box>
         ))}
+            </Stack>
+
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="caption" color="text.secondary">
+              Tâches (durée libre)
+            </Typography>
+            <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+              {plan.generic.map((g) => (
+                <Box
+                  key={g.id}
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <Typography variant="caption" sx={{ flex: 1 }}>
+                    {g.label}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={`${g.minutes} min`}
+                  />
+                  <Button
+                    size="small"
+                    color="error"
+                    disabled={busy}
+                    onClick={() =>
+                      mutate({ action: "remove_generic", id: g.id })
+                    }
+                  >
+                    Retirer
+                  </Button>
+                </Box>
+              ))}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <TextField
+                  size="small"
+                  label="Tâche"
+                  value={newGenLabel}
+                  onChange={(e) => setNewGenLabel(e.target.value)}
+                  sx={{ flex: 1 }}
+                />
+                <TextField
+                  size="small"
+                  type="number"
+                  label="min"
+                  value={newGenMin}
+                  onChange={(e) =>
+                    setNewGenMin(
+                      e.target.value === ""
+                        ? ""
+                        : Math.max(0, Number(e.target.value) || 0),
+                    )
+                  }
+                  inputProps={{ min: 0 }}
+                  sx={{ width: 74 }}
+                />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  disabled={busy || !newGenLabel.trim()}
+                  onClick={async () => {
+                    await mutate({
+                      action: "add_generic",
+                      label: newGenLabel.trim(),
+                      minutes: typeof newGenMin === "number" ? newGenMin : 0,
+                    });
+                    setNewGenLabel("");
+                    setNewGenMin("");
+                  }}
+                >
+                  Ajouter tâche
+                </Button>
+              </Box>
             </Stack>
           </>
         )}
