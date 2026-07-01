@@ -107,8 +107,8 @@ async function mockApi(page: Page) {
     route.fulfill({
       json: {
         data: [
-          { id: 1, name: "Dupont Jean" },
-          { id: 2, name: "Durand Marie" },
+          { id: 1, name: "Dupont Jean", encodes_clinical_data: true },
+          { id: 2, name: "Durand Marie", encodes_clinical_data: false },
         ],
         total: 2,
       },
@@ -480,9 +480,14 @@ test.describe("Planning calendar", () => {
   test("vital-parameters wizard hidden for non-clinical staff", async ({
     page,
   }) => {
+    // event assigned to employee 2 (Durand Marie, non-clinical)
     await page.route(/\/events\/\d+(\?|$)/, (route) =>
       route.fulfill({
-        json: { ...singleEvent, employee_encodes_clinical_data: false },
+        json: {
+          ...singleEvent,
+          employee_id: 2,
+          employee_encodes_clinical_data: false,
+        },
       }),
     );
     await page.goto("/#/planning/calendar");
@@ -490,6 +495,22 @@ test.describe("Planning calendar", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByText(/Modifier l'événement/i)).toBeVisible();
     await expect(dialog.getByText(/Paramètres vitaux requis/i)).toHaveCount(0);
+  });
+
+  test("param zone reacts to the selected employee (with notification)", async ({
+    page,
+  }) => {
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    // employee 1 (Dupont Jean) is clinical → zone visible
+    await expect(dialog.getByText(/Paramètres vitaux requis/i)).toBeVisible();
+    // switch to Durand Marie (non-clinical)
+    await dialog.getByLabel("Employé").click();
+    await page.getByRole("option", { name: "Durand Marie" }).click();
+    // zone hidden + notification explaining the change
+    await expect(dialog.getByText(/Paramètres vitaux requis/i)).toHaveCount(0);
+    await expect(page.getByText(/masqué/i)).toBeVisible();
   });
 
   test("collaborators show a 🤝 marker on the event", async ({ page }) => {

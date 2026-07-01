@@ -261,6 +261,7 @@ export const PlanningCalendar: React.FC = () => {
         .map((e) => ({
           id: e.id as number,
           name: (e.name as string) || (e.abbreviation as string) || `#${e.id}`,
+          encodesClinical: (e.encodes_clinical_data as boolean) ?? true,
         }))
         .sort((a, b) => a.name.localeCompare(b.name)),
     [employees],
@@ -730,6 +731,7 @@ export const PlanningCalendar: React.FC = () => {
 interface EmployeeChoice {
   id: number;
   name: string;
+  encodesClinical: boolean;
 }
 
 interface PatientOption {
@@ -1272,6 +1274,25 @@ const EventEditDialog: React.FC<{
     }
   };
 
+  // Reactive "soignant" gating: the vital-parameters zone follows the currently
+  // selected employee (falls back to the event's loaded flag when none).
+  const selectedEmp = employeeChoices.find((c) => c.id === form.employee_id);
+  const showParamZone = selectedEmp ? selectedEmp.encodesClinical : encodesClinical;
+
+  const onEmployeePicked = (value: number | "") => {
+    const emp = employeeChoices.find((c) => c.id === value);
+    const nextShow = emp ? emp.encodesClinical : encodesClinical;
+    set("employee_id", value);
+    if (nextShow !== showParamZone) {
+      notify(
+        nextShow
+          ? "Employé soignant : la zone « Paramètres vitaux requis » devient disponible."
+          : "Employé non‑clinique : la zone « Paramètres vitaux requis » est masquée (validation des paramètres vitaux ignorée pour cet employé).",
+        { type: "info", autoHideDuration: 5000 },
+      );
+    }
+  };
+
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: "flex", alignItems: "center", pr: 1 }}>
@@ -1355,8 +1376,7 @@ const EventEditDialog: React.FC<{
                   label="Employé"
                   value={form.employee_id}
                   onChange={(e) =>
-                    set(
-                      "employee_id",
+                    onEmployeePicked(
                       e.target.value === "" ? "" : Number(e.target.value),
                     )
                   }
@@ -1509,7 +1529,7 @@ const EventEditDialog: React.FC<{
               </Box>
             )}
 
-            {encodesClinical && (
+            {showParamZone && (
               <Box sx={{ mt: 2 }}>
                 <Accordion
                   disableGutters
