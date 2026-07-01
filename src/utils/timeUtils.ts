@@ -285,7 +285,8 @@ export function formatDurationDisplay(totalMinutes: number): string {
 
   const hours = Math.floor(rounded / 60);
   const mins = rounded % 60;
-  const hoursText = mins === 0 ? `${hours}h` : `${hours}h${String(mins).padStart(2, "0")}`;
+  const hoursText =
+    mins === 0 ? `${hours}h` : `${hours}h${String(mins).padStart(2, "0")}`;
 
   return `${rounded} min (${hoursText})`;
 }
@@ -325,6 +326,26 @@ export function calculateCareItemsDailyDuration(
 }
 
 /**
+ * Detect whether an occurrence record represents "every day" / daily.
+ * Relies on the same str_name/value string matching used across the app
+ * (there is no numeric day-index field on CareOccurrence).
+ */
+export function isEveryDayOccurrence(
+  occ: { str_name?: string; value?: string } | null | undefined,
+): boolean {
+  if (!occ) return false;
+  const name = occ.str_name?.toLowerCase() ?? "";
+  const value = occ.value?.toLowerCase() ?? "";
+  return (
+    name.includes("tous les jours") ||
+    name.includes("daily") ||
+    value.includes("daily") ||
+    occ.str_name === "*" ||
+    occ.value === "*"
+  );
+}
+
+/**
  * Calculate actual days per week based on occurrence data
  * @param occurrences - Array of occurrence objects or simple count
  * @returns Number of days per week (7 if "tous les jours" is found, otherwise array length)
@@ -338,14 +359,7 @@ export function calculateActualDaysPerWeek(
   }
 
   // Check if any occurrence represents "tous les jours" / daily
-  const hasTousLesJours = occurrences.some(
-    (occ) =>
-      occ.str_name?.toLowerCase().includes("tous les jours") ||
-      occ.str_name?.toLowerCase().includes("daily") ||
-      occ.value?.toLowerCase().includes("daily") ||
-      occ.str_name === "*" ||
-      occ.value === "*",
-  );
+  const hasTousLesJours = occurrences.some(isEveryDayOccurrence);
 
   if (hasTousLesJours) {
     console.log('📊 Found "tous les jours" occurrence, using 7 days/week');
@@ -415,6 +429,169 @@ export function calculatePlannedWeeklyDuration(
 ): number {
   const careItemsWeeklyDuration = calculateCareItemsWeeklyDuration(careItems);
   return careItemsWeeklyDuration * (occurrenceCount / 7); // Normalize based on actual occurrences
+}
+
+// ---------------------------------------------------------------------------
+// Weekly-budget model
+//
+// `weekly_package` is a WEEKLY budget of minutes for a care item (e.g. a
+// "forfait ménage" of 180 min/week). A session (CarePlanDetail) has a single
+// clock duration (time_end - time_start) that may run on one or several days.
+// Attribution rule chosen by the product owner: "1 séance = 1 forfait" — the
+// full session duration counts toward each care item it contains. A care item
+// is allowed to be split across several days/sessions; we sum the minutes
+// planned for it across the whole week and flag when the total exceeds its
+// weekly_package (the raw package, NOT multiplied by quantity).
+// ---------------------------------------------------------------------------
+
+/** Minutes already planned for one care item on one specific day. */
+export interface WeeklyBudgetDayUsage {
+  dayName: string;
+  minutes: number;
+}
+
+/** Weekly-budget status for a single care item (by code). */
+export interface WeeklyItemBudget {
+  code: string;
+  description?: string;
+  /** weekly_package in minutes (0 when not configured). */
+  weeklyPackage: number;
+  hasBudget: boolean;
+  /** Minutes this (current) session contributes (duration × its day count). */
+  minutesHere: number;
+  /** Minutes planned for this item on OTHER sessions of the same care plan. */
+  minutesElsewhere: number;
+  totalMinutes: number;
+  /** weeklyPackage - totalMinutes (negative when over budget). */
+  remaining: number;
+  /** true when a budget exists and the weekly total exceeds it. */
+  over: boolean;
+  /** Per-day breakdown of the minutes planned elsewhere (for the warning). */
+  elsewhereByDay: WeeklyBudgetDayUsage[];
+}
+
+/** A sibling session used to accumulate weekly usage. */
+export interface SiblingSessionUsage {
+  minutes: number;
+  occurrences: Array<{ str_name?: string; value?: string }>;
+  itemCodes: string[];
+}
+
+/**
+ * Number of times a session runs per week, additively over its occurrences
+ * (an "every day" occurrence counts as 7). Mirrors calculateActualDaysPerWeek
+ * for the common single-mode cases but keeps a per-occurrence breakdown usable.
+ */
+export function weekMultiplier(
+  occurrences: Array<{ str_name?: string; value?: string }>,
+): number {
+  if (!occurrences || occurrences.length === 0) return 0;
+  return occurrences.reduce(
+    (total, occ) => total + (isEveryDayOccurrence(occ) ? 7 : 1),
+    0,
+  );
+}
+
+/** Merge day-usage entries that share the same day name, summing minutes. */
+function mergeDayUsage(
+  entries: WeeklyBudgetDayUsage[],
+): WeeklyBudgetDayUsage[] {
+  const byDay = new Map<string, number>();
+  for (const entry of entries) {
+    byDay.set(entry.dayName, (byDay.get(entry.dayName) ?? 0) + entry.minutes);
+  }
+  return Array.from(byDay.entries()).map(([dayName, minutes]) => ({
+    dayName,
+    minutes,
+  }));
+}
+
+/**
+ * Compute the weekly-budget status of every care item in the current session,
+ * accumulating minutes planned for the same item across sibling sessions.
+ */
+export function calculateItemWeeklyBudgets(input: {
+  currentItems: Array<{
+    code: string;
+    weekly_package?: number;
+    description?: string;
+  }>;
+  currentSessionMinutes: number;
+  currentOccurrences: Array<{ str_name?: string; value?: string }>;
+  siblingSessions: SiblingSessionUsage[];
+}): WeeklyItemBudget[] {
+  const {
+    currentItems,
+    currentSessionMinutes,
+    currentOccurrences,
+    siblingSessions,
+  } = input;
+
+  // A session with no day selected still consumes its slot once.
+  const currentDays = Math.max(1, weekMultiplier(currentOccurrences));
+
+  return currentItems.map((item) => {
+    const weeklyPackage = item.weekly_package || 0;
+    const minutesHere = currentSessionMinutes * currentDays;
+
+    const rawDays: WeeklyBudgetDayUsage[] = [];
+    let minutesElsewhere = 0;
+    for (const sib of siblingSessions) {
+      if (!sib.itemCodes.includes(item.code)) continue;
+      const occs =
+        sib.occurrences && sib.occurrences.length > 0
+          ? sib.occurrences
+          : [{ str_name: "?", value: "" }];
+      for (const occ of occs) {
+        const weight = isEveryDayOccurrence(occ) ? 7 : 1;
+        const dayMinutes = sib.minutes * weight;
+        minutesElsewhere += dayMinutes;
+        rawDays.push({
+          dayName: occ.str_name || occ.value || "?",
+          minutes: dayMinutes,
+        });
+      }
+    }
+
+    const totalMinutes = minutesHere + minutesElsewhere;
+    return {
+      code: item.code,
+      description: item.description,
+      weeklyPackage,
+      hasBudget: weeklyPackage > 0,
+      minutesHere,
+      minutesElsewhere,
+      totalMinutes,
+      remaining: weeklyPackage - totalMinutes,
+      over: weeklyPackage > 0 && totalMinutes > weeklyPackage,
+      elsewhereByDay: mergeDayUsage(rawDays),
+    };
+  });
+}
+
+/**
+ * Total minutes the current session may still legitimately fill, summed over
+ * its care items' remaining weekly budgets (never negative). Used to drive the
+ * end-time suggestion and the per-session over-budget check.
+ */
+export function sumRemainingWeeklyBudget(budgets: WeeklyItemBudget[]): number {
+  return budgets.reduce(
+    (total, b) =>
+      total +
+      (b.hasBudget ? Math.max(0, b.weeklyPackage - b.minutesElsewhere) : 0),
+    0,
+  );
+}
+
+/**
+ * Human-readable list of where a care item's minutes are already planned,
+ * e.g. "180 min le Jeudi" or "90 min le Jeudi, 60 min le Vendredi".
+ */
+export function formatElsewhereByDay(entries: WeeklyBudgetDayUsage[]): string {
+  return entries
+    .filter((e) => e.minutes > 0)
+    .map((e) => `${formatDurationDisplay(e.minutes)} le ${e.dayName}`)
+    .join(", ");
 }
 
 /**
@@ -506,7 +683,8 @@ export function checkSessionDurationMatch(
 } {
   const actualDuration = calculateSessionDuration(startTime, endTime);
   const expectedDuration =
-    calculateCareItemsDailyDuration(careItems) + calculateActionsDuration(actions);
+    calculateCareItemsDailyDuration(careItems) +
+    calculateActionsDuration(actions);
   const suggestedEndTime = calculateSuggestedEndTime(
     startTime,
     careItems,

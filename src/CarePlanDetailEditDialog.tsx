@@ -50,6 +50,7 @@ import { SmartTimeInput } from "./components/SmartTimeInput";
 import { SmartOccurrenceInput } from "./components/SmartOccurrenceInput";
 import { LiveDurationCalculator } from "./components/LiveDurationCalculator";
 import { TabbedCareFormLayout } from "./components/TabbedCareFormLayout";
+import { WeeklyBudgetProvider } from "./components/WeeklyBudgetContext";
 
 // Interface for the structure of long_term_care_items from the form
 interface FormLongTermCareItem {
@@ -341,9 +342,31 @@ export const CarePlanDetailEditDialog: React.FC<
   };
   const [cnsItemIds, setCnsItemIds] = useState<number[]>([]);
   const [cnsCustomDescriptions, setCnsCustomDescriptions] = useState<Record<string, string>>({});
+  const [siblingDetails, setSiblingDetails] = useState<CarePlanDetail[]>([]);
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
+
+  // Fetch the OTHER sessions of this care plan so the weekly-budget check can
+  // accumulate minutes per care item across the whole week. Excludes the
+  // session currently being edited (its live form values are used instead).
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    dataProvider
+      .getCarePlanDetails(carePlanId)
+      .then((details) => {
+        if (cancelled) return;
+        setSiblingDetails(details.filter((d) => d.id !== detailToEdit.id));
+      })
+      .catch((error) => {
+        console.error("Failed to fetch sibling care plan details:", error);
+        if (!cancelled) setSiblingDetails([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, carePlanId, detailToEdit.id, dataProvider]);
 
   // Fetch CNS available item IDs when dialog opens
   useEffect(() => {
@@ -653,22 +676,24 @@ export const CarePlanDetailEditDialog: React.FC<
           </Alert>
         )}
 
-        <SimpleForm
-          onSubmit={handleSubmit}
-          record={initialValues} // Pre-fill form with existing data
-          toolbar={<></>} // Hide default toolbar
-          id="care-plan-edit-form"
-        >
-          <FormStateRelay onState={setFormStateInfo} />
-          {/* New Tabbed Layout */}
-          <TabbedCareFormLayout
-            mode="edit"
-            cnsItemIds={cnsItemIds}
-            cnsCustomDescriptions={cnsCustomDescriptions}
-            validationErrors={validationErrors}
-            objectives={objectives}
-          />
-        </SimpleForm>
+        <WeeklyBudgetProvider value={{ siblingDetails }}>
+          <SimpleForm
+            onSubmit={handleSubmit}
+            record={initialValues} // Pre-fill form with existing data
+            toolbar={<></>} // Hide default toolbar
+            id="care-plan-edit-form"
+          >
+            <FormStateRelay onState={setFormStateInfo} />
+            {/* New Tabbed Layout */}
+            <TabbedCareFormLayout
+              mode="edit"
+              cnsItemIds={cnsItemIds}
+              cnsCustomDescriptions={cnsCustomDescriptions}
+              validationErrors={validationErrors}
+              objectives={objectives}
+            />
+          </SimpleForm>
+        </WeeklyBudgetProvider>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button

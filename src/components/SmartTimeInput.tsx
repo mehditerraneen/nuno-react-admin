@@ -19,11 +19,17 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useGetList } from "react-admin";
 import { EnhancedTimeInput } from "./ReactAdminTimeInput";
 import {
-  calculateSuggestedEndTime,
-  checkSessionDurationMatch,
+  calculateSessionDuration,
+  calculateActionsDuration,
+  calculateItemWeeklyBudgets,
+  weekMultiplier,
+  formatElsewhereByDay,
   formatDurationDisplay,
+  parseTimeString,
+  createTimeString,
 } from "../utils/timeUtils";
-import { LongTermCareItem } from "../dataProvider";
+import { LongTermCareItem, CareOccurrence } from "../dataProvider";
+import { useSiblingSessions } from "./WeeklyBudgetContext";
 
 interface SmartTimeInputProps {
   source: string;
@@ -49,17 +55,25 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
   sx,
 }) => {
   const { setValue, watch } = useFormContext();
-  const { data: allCareItems } =
-    useGetList<LongTermCareItem>("longtermcareitems", {
+  const { data: allCareItems } = useGetList<LongTermCareItem>(
+    "longtermcareitems",
+    {
       pagination: { page: 1, perPage: 500 },
       sort: { field: "code", order: "ASC" },
-    });
+    },
+  );
 
   // Watch form values
   const timeStart = useWatch({ name: "time_start" });
   const timeEnd = useWatch({ name: "time_end" });
   const careItems = useWatch({ name: "long_term_care_items" }) || [];
   const actions = useWatch({ name: "actions" }) || [];
+  const occurrenceIds = useWatch({ name: "params_occurrence_ids" }) || [];
+
+  // Occurrence records + sibling sessions feed the weekly-budget check
+  const { data: occurrenceList } =
+    useGetList<CareOccurrence>("careoccurrences");
+  const siblingSessions = useSiblingSessions();
 
   const [suggestedTime, setSuggestedTime] = useState<string | null>(null);
   const [showSuggestion, setShowSuggestion] = useState(false);
@@ -77,6 +91,7 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
   const actionsKey = JSON.stringify(
     (actions || []).map((a: any) => Number(a?.duration_minutes) || 0),
   );
+  const occurrenceKey = JSON.stringify(occurrenceIds || []);
   const actionsDurationTotal = (actions || []).reduce(
     (sum: number, a: any) => sum + (Number(a?.duration_minutes) || 0),
     0,
@@ -111,71 +126,115 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
           careItemsCount: careItems.length,
         });
 
-        // Transform care items for calculation
-        const transformedItems = careItems.map((item: any) => {
-          const careItem = allCareItems.find(
-            (ci) => ci.id === item.long_term_care_item_id,
-          );
-          console.log("🔄 Transforming item:", {
-            itemId: item.long_term_care_item_id,
-            found: !!careItem,
-            weeklyPackage: careItem?.weekly_package,
-            quantity: item.quantity,
-          });
-          return {
-            long_term_care_item: careItem || { weekly_package: 0 },
-            quantity: typeof item.quantity === "number" ? item.quantity : 1,
-          };
-        });
+        // Resolve current care items (code + weekly budget) and occurrences
+        const currentItems = careItems
+          .map((item: any) => {
+            const ci = allCareItems.find(
+              (c) => c.id === item.long_term_care_item_id,
+            );
+            return ci
+              ? {
+                  code: ci.code,
+                  weekly_package: ci.weekly_package,
+                  description: ci.description,
+                }
+              : null;
+          })
+          .filter(Boolean) as Array<{
+          code: string;
+          weekly_package?: number;
+          description?: string;
+        }>;
 
-        // Convert timeStart to string format if it's a Date
+        const currentOccurrences = (occurrenceIds as number[])
+          .map((id) => occurrenceList?.find((o) => o.id === id))
+          .filter(Boolean) as CareOccurrence[];
+        const currentDays = Math.max(1, weekMultiplier(currentOccurrences));
+
+        // Convert start/end to "HH:MM" strings (end may be empty)
         let startTimeStr = "";
         if (timeStart instanceof Date) {
           startTimeStr = `${timeStart.getHours().toString().padStart(2, "0")}:${timeStart.getMinutes().toString().padStart(2, "0")}`;
         } else if (typeof timeStart === "string") {
           startTimeStr = timeStart;
         }
+        let endTimeStr = "";
+        if (timeEnd instanceof Date) {
+          endTimeStr = `${timeEnd.getHours().toString().padStart(2, "0")}:${timeEnd.getMinutes().toString().padStart(2, "0")}`;
+        } else if (typeof timeEnd === "string") {
+          endTimeStr = timeEnd;
+        }
 
-        console.log("🔄 Start time processed:", startTimeStr);
+        const actualDuration =
+          startTimeStr && endTimeStr
+            ? calculateSessionDuration(startTimeStr, endTimeStr)
+            : 0;
 
-        const hasValidCareItems = transformedItems.some(
-          (item) => (item.long_term_care_item.weekly_package || 0) > 0,
-        );
-        const hasValidActions = actionsDurationTotal > 0;
-        console.log("🔄 Has valid care items:", hasValidCareItems, "actions:", hasValidActions);
+        const budgets = calculateItemWeeklyBudgets({
+          currentItems,
+          currentSessionMinutes: actualDuration,
+          currentOccurrences,
+          siblingSessions,
+        });
+        const budgetedItems = budgets.filter((b) => b.hasBudget);
+        const actionsDuration = calculateActionsDuration(actions);
+
+        // The whole session counts against EACH forfait, so the binding limit
+        // is the smallest remaining weekly budget, spread over the days this
+        // session runs. Free-text actions add on top of the forfait time.
+        const minRemaining = budgetedItems.length
+          ? Math.max(
+              0,
+              Math.min(
+                ...budgetedItems.map(
+                  (b) => b.weeklyPackage - b.minutesElsewhere,
+                ),
+              ),
+            )
+          : 0;
+        const suggestedLength =
+          Math.floor(minRemaining / currentDays) + actionsDuration;
+
+        const hasValidCareItems = budgetedItems.length > 0;
+        const hasValidActions = actionsDuration > 0;
 
         if (startTimeStr && (hasValidCareItems || hasValidActions)) {
-          const suggested = calculateSuggestedEndTime(
-            startTimeStr,
-            transformedItems,
-            1,
-            actions,
-          );
-          console.log("🔄 Suggested time calculated:", suggested);
+          // Build the suggested end time from the recommended session length
+          let suggested: string | null = null;
+          const startParsed = parseTimeString(startTimeStr);
+          if (startParsed && suggestedLength > 0) {
+            const endMinutes =
+              startParsed.hours * 60 + startParsed.minutes + suggestedLength;
+            if (endMinutes < 24 * 60) {
+              suggested = createTimeString(
+                Math.floor(endMinutes / 60),
+                endMinutes % 60,
+              );
+            }
+          }
 
           setSuggestedTime(suggested);
           setShowSuggestion(!!suggested);
           setIsCalculating(false);
 
-          // Check if current end time matches expected duration
-          if (timeEnd) {
-            let endTimeStr = "";
-            if (timeEnd instanceof Date) {
-              endTimeStr = `${timeEnd.getHours().toString().padStart(2, "0")}:${timeEnd.getMinutes().toString().padStart(2, "0")}`;
-            } else if (typeof timeEnd === "string") {
-              endTimeStr = timeEnd;
-            }
-
-            if (endTimeStr) {
-              const match = checkSessionDurationMatch(
-                startTimeStr,
-                endTimeStr,
-                transformedItems,
-                actions,
-              );
-              setMatchStatus(match);
-              console.log("🔄 Match status:", match);
-            }
+          // Weekly-budget check against the current end time
+          if (endTimeStr) {
+            const overItem = budgets.find((b) => b.over) || null;
+            setMatchStatus({
+              matches: !overItem,
+              over: !!overItem,
+              actualDuration,
+              expectedDuration: suggestedLength,
+              difference: actualDuration - suggestedLength,
+              overItem: overItem
+                ? {
+                    code: overItem.code,
+                    overBy: overItem.totalMinutes - overItem.weeklyPackage,
+                    minutesHere: overItem.minutesHere,
+                    elsewhere: formatElsewhereByDay(overItem.elsewhereByDay),
+                  }
+                : null,
+            });
           }
         } else {
           console.log("🔄 No suggestion: missing requirements");
@@ -197,11 +256,22 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
       setShowSuggestion(false);
       setMatchStatus(null);
     }
-    // Dépendances volontaires sur les clés sérialisées (careItemsKey/actionsKey =
-    // JSON de careItems/actions ; actionsDurationTotal dérive de actions) pour éviter
-    // de relancer à chaque rendu sur une nouvelle identité d'array.
+    // Dépendances volontaires sur les clés sérialisées (careItemsKey/actionsKey/
+    // occurrenceKey = JSON de careItems/actions/occurrences) pour éviter de
+    // relancer à chaque rendu sur une nouvelle identité d'array.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeStart, careItemsKey, actionsKey, allCareItems, autoSuggest, source, timeEnd]);
+  }, [
+    timeStart,
+    careItemsKey,
+    actionsKey,
+    occurrenceKey,
+    allCareItems,
+    occurrenceList,
+    siblingSessions,
+    autoSuggest,
+    source,
+    timeEnd,
+  ]);
 
   const handleApplySuggestion = () => {
     if (suggestedTime) {
@@ -241,20 +311,22 @@ export const SmartTimeInput: React.FC<SmartTimeInputProps> = ({
 
   const getHelperText = () => {
     if (isAutoUpdated) {
-      return "✨ Auto-updated based on care package duration";
+      return "✨ Heure ajustée sur le budget du forfait";
     }
 
-    if (matchStatus?.matches) {
-      return `✅ Perfect match: ${formatDurationDisplay(matchStatus.expectedDuration)}`;
+    // Over one or more weekly forfait budgets
+    if (matchStatus?.over && matchStatus.overItem) {
+      const oi = matchStatus.overItem;
+      const elsewhere = oi.elsewhere ? ` — déjà ${oi.elsewhere}` : "";
+      return `⚠️ ${oi.code} dépasse le forfait hebdo de ${formatDurationDisplay(oi.overBy)}${elsewhere}`;
     }
 
-    if (matchStatus && !matchStatus.matches) {
-      const diff = matchStatus.difference;
-      const diffText =
-        diff > 0
-          ? `${formatDurationDisplay(diff)} longer`
-          : `${formatDurationDisplay(-diff)} shorter`;
-      return `⚠️ ${diffText} than care package (${formatDurationDisplay(matchStatus.expectedDuration)})`;
+    if (matchStatus?.matches && matchStatus.expectedDuration > 0) {
+      const diff = matchStatus.difference; // actual - recommended
+      if (diff <= -5) {
+        return `✓ Sous le forfait — reste ${formatDurationDisplay(-diff)} cette semaine`;
+      }
+      return `✅ Dans le forfait hebdo (séance recommandée : ${formatDurationDisplay(matchStatus.expectedDuration)})`;
     }
 
     return helperText;

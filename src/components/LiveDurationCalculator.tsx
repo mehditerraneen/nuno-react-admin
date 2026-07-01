@@ -1,18 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Typography, Chip, Paper, Alert } from "@mui/material";
+import { Box, Typography, Chip, Paper, Alert, Stack } from "@mui/material";
 import { AccessTime as TimeIcon } from "@mui/icons-material";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import { useGetList } from "react-admin";
 import {
   calculateSessionDuration,
   formatDurationDisplay,
-  calculateCareItemsDailyDuration,
-  calculateCareItemsActualWeeklyDuration,
   calculateActualDaysPerWeek,
   calculateActionsDuration,
+  calculateItemWeeklyBudgets,
+  formatElsewhereByDay,
+  type WeeklyItemBudget,
 } from "../utils/timeUtils";
 import { LongTermCareItem, CareOccurrence } from "../dataProvider";
-import { AutoCalculationNotification } from "./AutoCalculationNotification";
+import { useSiblingSessions } from "./WeeklyBudgetContext";
 
 interface LiveDurationCalculatorProps {
   className?: string;
@@ -21,8 +22,6 @@ interface LiveDurationCalculatorProps {
 export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
   className,
 }) => {
-  const { watch } = useFormContext();
-
   // Watch form values for real-time calculation
   const timeStart = useWatch({ name: "time_start" });
   const timeEnd = useWatch({ name: "time_end" });
@@ -36,21 +35,23 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
   const actions = useWatch({ name: "actions" }) || [];
   const actionsDailyDuration = calculateActionsDuration(actions);
 
+  // Other sessions of the same care plan (for the weekly-budget cumulative)
+  const siblingSessions = useSiblingSessions();
+
   // Fetch occurrence data to get names
   const { data: occurrences } = useGetList<CareOccurrence>("careoccurrences");
 
   // Fetch care items data to get weekly_package values
-  const { data: allCareItems } =
-    useGetList<LongTermCareItem>("longtermcareitems", {
+  const { data: allCareItems } = useGetList<LongTermCareItem>(
+    "longtermcareitems",
+    {
       pagination: { page: 1, perPage: 500 },
       sort: { field: "code", order: "ASC" },
-    });
+    },
+  );
 
   // Calculate session duration
   const [sessionDuration, setSessionDuration] = useState(0);
-  const [careItemsDailyDuration, setCareItemsDailyDuration] = useState(0);
-  const [careItemsActualWeeklyDuration, setCareItemsActualWeeklyDuration] =
-    useState(0);
   const [weeklySessionTime, setWeeklySessionTime] = useState(0);
 
   useEffect(() => {
@@ -90,64 +91,58 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
     setWeeklySessionTime(duration * actualDaysPerWeek);
   }, [timeStart, timeEnd, occurrenceIds, occurrences]);
 
-  useEffect(() => {
-    // Calculate care items duration
-    if (careItems.length > 0 && allCareItems) {
-      console.log("🔍 LiveDurationCalculator - careItems:", careItems);
-      console.log("🔍 LiveDurationCalculator - allCareItems:", allCareItems);
+  // Selected occurrence objects (used for both display and budget)
+  const selectedOccurrences = useMemo(
+    () =>
+      occurrences
+        ? (occurrenceIds
+            .map((id: number) => occurrences.find((o) => o.id === id))
+            .filter(Boolean) as CareOccurrence[])
+        : [],
+    [occurrences, occurrenceIds],
+  );
 
-      const transformedItems = careItems.map((item: any) => {
-        const careItem = allCareItems.find(
-          (ci) => ci.id === item.long_term_care_item_id,
+  const selectedOccurrenceNames = selectedOccurrences.map(
+    (occ) => occ.str_name || `ID:${occ.id}`,
+  );
+
+  // Weekly-budget status per care item in this session
+  const itemBudgets: WeeklyItemBudget[] = useMemo(() => {
+    if (!allCareItems || careItems.length === 0) return [];
+    const currentItems = careItems
+      .map((item: any) => {
+        const ci = allCareItems.find(
+          (c) => c.id === item.long_term_care_item_id,
         );
-        console.log(`🔍 Item ID ${item.long_term_care_item_id}:`, {
-          found: careItem,
-          code: careItem?.code,
-          weekly_package: careItem?.weekly_package,
-          quantity: item.quantity,
-        });
-
-        return {
-          long_term_care_item: careItem || { weekly_package: 0 },
-          quantity: item.quantity || 1,
-        };
-      });
-
-      console.log("🔍 Transformed items:", transformedItems);
-      const dailyDuration = calculateCareItemsDailyDuration(transformedItems);
-
-      // Get selected occurrence objects for proper calculation
-      const selectedOccurrences = occurrences
-        ? occurrenceIds
-            .map((id) => occurrences.find((o) => o.id === id))
-            .filter(Boolean)
-        : [];
-
-      const actualWeeklyDuration = calculateCareItemsActualWeeklyDuration(
-        transformedItems,
-        selectedOccurrences,
-      );
-
-      console.log("🔍 Calculated durations:", {
-        dailyDuration,
-        actualWeeklyDuration,
-        selectedOccurrences,
-      });
-      setCareItemsDailyDuration(dailyDuration);
-      setCareItemsActualWeeklyDuration(actualWeeklyDuration);
-    } else {
-      setCareItemsDailyDuration(0);
-      setCareItemsActualWeeklyDuration(0);
-    }
-  }, [careItems, allCareItems, occurrenceIds, occurrences]);
-
-  // Get selected occurrence names
-  const selectedOccurrenceNames = occurrences
-    ? occurrenceIds.map((id: number) => {
-        const occ = occurrences.find((o) => o.id === id);
-        return occ?.str_name || `ID:${id}`;
+        return ci
+          ? {
+              code: ci.code,
+              weekly_package: ci.weekly_package,
+              description: ci.description,
+            }
+          : null;
       })
-    : [];
+      .filter(Boolean) as Array<{
+      code: string;
+      weekly_package?: number;
+      description?: string;
+    }>;
+
+    return calculateItemWeeklyBudgets({
+      currentItems,
+      currentSessionMinutes: sessionDuration,
+      currentOccurrences: selectedOccurrences,
+      siblingSessions,
+    });
+  }, [
+    allCareItems,
+    careItems,
+    sessionDuration,
+    selectedOccurrences,
+    siblingSessions,
+  ]);
+
+  const multipleItems = itemBudgets.length > 1;
 
   // Show warning if no time is selected
   if (!timeStart || !timeEnd) {
@@ -208,7 +203,7 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            Session Duration
+            Durée de la séance
           </Typography>
           <Chip
             label={formatDurationDisplay(sessionDuration)}
@@ -227,7 +222,7 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              Occurrences ({occurrenceIds.length}x/week)
+              Occurrences ({occurrenceIds.length}x/semaine)
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
               {selectedOccurrenceNames.slice(0, 3).map((name, index) => (
@@ -260,7 +255,7 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            Weekly Session Time
+            Temps hebdo (séance)
           </Typography>
           <Chip
             label={formatDurationDisplay(weeklySessionTime)}
@@ -279,7 +274,7 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              Actions Daily
+              Actions (séance)
             </Typography>
             <Chip
               label={formatDurationDisplay(actionsDailyDuration)}
@@ -289,78 +284,82 @@ export const LiveDurationCalculator: React.FC<LiveDurationCalculatorProps> = ({
             />
           </Box>
         )}
-
-        {/* Care Items Daily Duration */}
-        {careItemsDailyDuration > 0 && (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              Care Items Daily
-            </Typography>
-            <Chip
-              label={formatDurationDisplay(careItemsDailyDuration)}
-              color="info"
-              variant="outlined"
-              size="small"
-            />
-          </Box>
-        )}
-
-        {/* Care Items Actual Weekly Duration */}
-        {careItemsActualWeeklyDuration > 0 && (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              Care Package/Week
-            </Typography>
-            <Chip
-              label={formatDurationDisplay(careItemsActualWeeklyDuration)}
-              color="info"
-              size="small"
-            />
-          </Box>
-        )}
       </Box>
 
-      {/* Warning if session time doesn't match care package */}
-      {careItemsActualWeeklyDuration > 0 &&
-        weeklySessionTime !== careItemsActualWeeklyDuration && (
-          <Box sx={{ mt: 1 }}>
-            <Typography variant="caption" color="warning.main">
-              ⚠️ Session time differs from care package time
-            </Typography>
-          </Box>
-        )}
-
-      {/* Care items breakdown */}
-      {careItems.length > 0 && allCareItems && (
-        <Box sx={{ mt: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            Care Items:{" "}
-            {careItems
-              .map((item: any, index: number) => {
-                const careItem = allCareItems.find(
-                  (ci) => ci.id === item.long_term_care_item_id,
-                );
-                const weeklyPackage = careItem?.weekly_package || 0;
-                const dailyPackage = weeklyPackage / 7;
-                const itemDailyDuration = dailyPackage * (item.quantity || 1);
-                return `${careItem?.code || "Unknown"}: ${formatDurationDisplay(itemDailyDuration)}/day`;
-              })
-              .join(", ")}
+      {/* Weekly budget per care item (forfait) */}
+      {itemBudgets.length > 0 && (
+        <Box sx={{ mt: 2 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontWeight: 600 }}
+          >
+            Forfaits (budget hebdomadaire)
           </Typography>
+
+          {multipleItems && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+              sx={{ fontStyle: "italic", mb: 0.5 }}
+            >
+              ℹ️ Séance à plusieurs prestations : le cumul est approximatif —
+              chaque forfait compte la durée entière de la séance.
+            </Typography>
+          )}
+
+          <Stack spacing={0.75} sx={{ mt: 0.5 }}>
+            {itemBudgets.map((b) => (
+              <BudgetRow key={b.code} budget={b} />
+            ))}
+          </Stack>
         </Box>
       )}
     </Paper>
+  );
+};
+
+const BudgetRow: React.FC<{ budget: WeeklyItemBudget }> = ({ budget }) => {
+  const label = budget.description
+    ? `${budget.code} — ${budget.description}`
+    : budget.code;
+
+  if (!budget.hasBudget) {
+    return (
+      <Typography variant="caption" color="text.secondary">
+        {label} : forfait hebdomadaire non défini.
+      </Typography>
+    );
+  }
+
+  const usage = `${formatDurationDisplay(budget.totalMinutes)} / ${formatDurationDisplay(budget.weeklyPackage)} utilisées cette semaine`;
+
+  if (budget.over) {
+    const overBy = budget.totalMinutes - budget.weeklyPackage;
+    const elsewhere =
+      budget.minutesElsewhere > 0
+        ? ` Déjà ${formatElsewhereByDay(budget.elsewhereByDay)} ; cette séance ajoute ${formatDurationDisplay(budget.minutesHere)}.`
+        : "";
+    return (
+      <Alert severity="warning" sx={{ py: 0, px: 1 }}>
+        <Typography variant="caption" component="div">
+          <strong>{label}</strong> — dépasse le forfait de{" "}
+          {formatDurationDisplay(overBy)} ({usage}).{elsewhere}
+        </Typography>
+      </Alert>
+    );
+  }
+
+  const remainingText =
+    budget.remaining > 0
+      ? ` — reste ${formatDurationDisplay(budget.remaining)} cette semaine`
+      : " — forfait entièrement utilisé";
+
+  return (
+    <Typography variant="caption" color="success.main">
+      ✓ <strong>{label}</strong> : {usage}
+      {remainingText}
+    </Typography>
   );
 };
