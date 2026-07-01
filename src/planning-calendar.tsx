@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -359,8 +360,69 @@ interface EmployeeChoice {
   name: string;
 }
 
+interface PatientOption {
+  id: number;
+  label: string;
+}
+
+// Searchable patient picker backed by /fast/patients (search endpoint).
+const PatientAutocomplete: React.FC<{
+  value: PatientOption | null;
+  onChange: (v: PatientOption | null) => void;
+}> = ({ value, onChange }) => {
+  const dataProvider = useDataProvider();
+  const [input, setInput] = useState("");
+  const [options, setOptions] = useState<PatientOption[]>([]);
+
+  useEffect(() => {
+    if (input.trim().length < 2) {
+      setOptions(value ? [value] : []);
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      dataProvider
+        .getList("patients", {
+          filter: { q: input },
+          pagination: { page: 1, perPage: 20 },
+          sort: { field: "name", order: "ASC" },
+        })
+        .then(({ data }) => {
+          if (!active) return;
+          setOptions(
+            data.map((p: Record<string, unknown>) => ({
+              id: p.id as number,
+              label:
+                `${(p.name as string) ?? ""} ${(p.first_name as string) ?? ""}`.trim() ||
+                `#${p.id}`,
+            })),
+          );
+        })
+        .catch(() => undefined);
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [input, dataProvider, value]);
+
+  return (
+    <Autocomplete
+      size="small"
+      value={value}
+      options={options}
+      getOptionLabel={(o) => o.label}
+      isOptionEqualToValue={(o, v) => o.id === v.id}
+      onInputChange={(_, v) => setInput(v)}
+      onChange={(_, v) => onChange(v)}
+      renderInput={(params) => <TextField {...params} label="Patient" />}
+    />
+  );
+};
+
 interface EventFormState {
   employee_id: number | "";
+  patient_id: number | "";
   state: number;
   event_type_enum: string;
   time_start: string;
@@ -382,8 +444,12 @@ const EventEditDialog: React.FC<{
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [patientName, setPatientName] = useState("");
+  const [patientOption, setPatientOption] = useState<PatientOption | null>(
+    null,
+  );
   const [form, setForm] = useState<EventFormState>({
     employee_id: "",
+    patient_id: "",
     state: 2,
     event_type_enum: "",
     time_start: "",
@@ -401,8 +467,14 @@ const EventEditDialog: React.FC<{
       .then((ev) => {
         if (cancelled) return;
         setPatientName(ev.patient_name || "");
+        setPatientOption(
+          ev.patient_id
+            ? { id: ev.patient_id, label: ev.patient_name || `#${ev.patient_id}` }
+            : null,
+        );
         setForm({
           employee_id: ev.employee_id ?? "",
+          patient_id: ev.patient_id ?? "",
           state: ev.state,
           event_type_enum: ev.event_type_enum || "",
           time_start: (ev.time_start_event || "").slice(0, 5),
@@ -436,6 +508,7 @@ const EventEditDialog: React.FC<{
     setSaving(true);
     const payload: EventUpdatePayload = {
       employee_id: form.employee_id === "" ? null : Number(form.employee_id),
+      patient_id: form.patient_id === "" ? undefined : Number(form.patient_id),
       state: form.state,
       event_type_enum: form.event_type_enum || null,
       time_start: form.time_start ? `${form.time_start}:00` : undefined,
@@ -478,6 +551,15 @@ const EventEditDialog: React.FC<{
               </Alert>
             )}
             <Grid container spacing={2}>
+              <Grid size={12}>
+                <PatientAutocomplete
+                  value={patientOption}
+                  onChange={(v) => {
+                    setPatientOption(v);
+                    set("patient_id", v ? v.id : "");
+                  }}
+                />
+              </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   select
