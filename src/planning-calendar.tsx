@@ -61,6 +61,7 @@ import type {
   AevPlan,
   AevMutatePayload,
   SeriesAction,
+  TravelWarning,
 } from "./dataProvider";
 
 // Event states (mirrors invoices/events.py Event.STATES)
@@ -224,6 +225,9 @@ export const PlanningCalendar: React.FC = () => {
   const [bulkEmployee, setBulkEmployee] = useState<number | "">("");
   const [bulkDate, setBulkDate] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [travelWarnings, setTravelWarnings] = useState<TravelWarning[] | null>(
+    null,
+  );
 
   const { data: employees } = useGetList("employees", {
     pagination: { page: 1, perPage: 500 },
@@ -360,8 +364,8 @@ export const PlanningCalendar: React.FC = () => {
     });
   }, []);
 
-  const bulkAssign = useCallback(async () => {
-    if (bulkEmployee === "" || selectedIds.size === 0) return;
+  const performBulkAssign = useCallback(async () => {
+    setTravelWarnings(null);
     setBulkBusy(true);
     let ok = 0;
     const errors: string[] = [];
@@ -384,6 +388,26 @@ export const PlanningCalendar: React.FC = () => {
     setMultiSelect(false);
     calendarRef.current?.getApi().refetchEvents();
   }, [bulkEmployee, selectedIds, dataProvider, notify]);
+
+  const bulkAssign = useCallback(async () => {
+    if (bulkEmployee === "" || selectedIds.size === 0) return;
+    // Advisory travel-time check first; on warnings, ask before assigning.
+    setBulkBusy(true);
+    try {
+      const res = await dataProvider.checkTravelTime({
+        employee_id: Number(bulkEmployee),
+        event_ids: [...selectedIds],
+      });
+      setBulkBusy(false);
+      if (res.warnings.length > 0) {
+        setTravelWarnings(res.warnings);
+        return;
+      }
+    } catch {
+      setBulkBusy(false); // travel check failed → proceed anyway (advisory)
+    }
+    performBulkAssign();
+  }, [bulkEmployee, selectedIds, dataProvider, performBulkAssign]);
 
   const bulkDuplicate = useCallback(async () => {
     if (!bulkDate || selectedIds.size === 0) return;
@@ -609,6 +633,58 @@ export const PlanningCalendar: React.FC = () => {
           {bulkBusy && <CircularProgress size={20} />}
         </Paper>
       )}
+
+      <Dialog
+        open={travelWarnings !== null}
+        onClose={() => setTravelWarnings(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Temps de trajet — vérification</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={1}>
+            {(travelWarnings ?? []).map((w, i) => (
+              <Alert
+                key={i}
+                severity={
+                  w.severity === "error"
+                    ? "error"
+                    : w.severity === "warning"
+                      ? "warning"
+                      : "info"
+                }
+                sx={{ py: 0 }}
+              >
+                <Typography variant="caption">
+                  {w.date} · {w.message}
+                  {w.suggested_start
+                    ? ` — début conseillé ${w.suggested_start}`
+                    : ""}
+                </Typography>
+              </Alert>
+            ))}
+          </Stack>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mt: 2, fontStyle: "italic" }}
+          >
+            Avertissements indicatifs — vous pouvez assigner quand même.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setTravelWarnings(null)} disabled={bulkBusy}>
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            onClick={performBulkAssign}
+            disabled={bulkBusy}
+          >
+            Assigner quand même
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {editingId != null && (
         <EventEditDialog

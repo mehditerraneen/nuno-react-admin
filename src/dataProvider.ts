@@ -579,6 +579,27 @@ export interface CalendarEventRead {
 
 export type SeriesAction = "single" | "following" | "all";
 
+export interface TravelWarning {
+  type: string;
+  severity: "error" | "warning" | "info";
+  date: string;
+  from_patient: string;
+  to_patient: string;
+  gap_minutes: number;
+  travel_minutes: number;
+  deficit_minutes?: number;
+  distance_km: number;
+  to_event_id: number;
+  suggested_start: string;
+  message: string;
+}
+
+export interface TravelCheckResult {
+  warnings: TravelWarning[];
+  has_errors: boolean;
+  has_warnings: boolean;
+}
+
 export interface BulkDuplicateResult {
   requested: number;
   created_count: number;
@@ -739,6 +760,11 @@ export interface MyDataProvider extends DataProvider {
     event_ids: number[];
     target_date: string;
   }) => Promise<BulkDuplicateResult>;
+  // Advisory travel-time check before assigning an employee to events.
+  checkTravelTime: (input: {
+    employee_id: number;
+    event_ids: number[];
+  }) => Promise<TravelCheckResult>;
   // AEV / care codes tied to the patient's established plan.
   getEventAev: (id: Identifier) => Promise<AevPlan>;
   aevMutate: (
@@ -3143,6 +3169,18 @@ export const dataProvider: MyDataProvider = {
       method: "POST",
       body: JSON.stringify(input),
     });
+    if (!res.ok) throw new Error(await parseEventApiError(res));
+    return res.json();
+  },
+
+  checkTravelTime: async (input: {
+    employee_id: number;
+    event_ids: number[];
+  }) => {
+    const res = await authenticatedFetch(
+      `${apiUrl}/events/travel-time-check`,
+      { method: "POST", body: JSON.stringify(input) },
+    );
     if (!res.ok) throw new Error(await parseEventApiError(res));
     return res.json();
   },

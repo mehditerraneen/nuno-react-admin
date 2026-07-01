@@ -122,6 +122,11 @@ async function mockApi(page: Page) {
       json: { ok: true, attached: [], generic: [], minutes: aevPlan.minutes, timing: aevPlan.timing },
     }),
   );
+  await page.route(/\/events\/travel-time-check/, (route) =>
+    route.fulfill({
+      json: { warnings: [], has_errors: false, has_warnings: false },
+    }),
+  );
   await page.route(/\/events\/\d+(\?|$)/, (route) =>
     route.fulfill({ json: singleEvent }),
   );
@@ -345,6 +350,48 @@ test.describe("Planning calendar", () => {
       event_ids: [42],
       target_date: "2026-07-20",
     });
+  });
+
+  test("bulk assign shows travel warnings then proceeds", async ({ page }) => {
+    await page.route(/\/events\/travel-time-check/, (route) =>
+      route.fulfill({
+        json: {
+          warnings: [
+            {
+              type: "insufficient_gap",
+              severity: "error",
+              date: "01/07/2026",
+              from_patient: "A",
+              to_patient: "B",
+              gap_minutes: 10,
+              travel_minutes: 25,
+              distance_km: 5,
+              to_event_id: 43,
+              suggested_start: "10:30",
+              message: "Trajet trop long",
+            },
+          ],
+          has_errors: true,
+          has_warnings: false,
+        },
+      }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.getByRole("button", { name: /Sélection multiple/i }).click();
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    await page.getByLabel("Employé").last().click();
+    await page.getByRole("option", { name: "Dupont Jean" }).click();
+    await page.getByRole("button", { name: /^Assigner$/i }).click();
+
+    await expect(page.getByText(/Temps de trajet/i)).toBeVisible();
+    await expect(page.getByText(/Trajet trop long/i)).toBeVisible();
+
+    const putReq = page.waitForRequest(
+      (r) => /\/events\/\d+\?/.test(r.url()) && r.method() === "PUT",
+    );
+    await page.getByRole("button", { name: /Assigner quand même/i }).click();
+    const req = await putReq;
+    expect(req.postDataJSON()).toMatchObject({ employee_id: 1 });
   });
 
   test("collaborators are prefilled and sent on save", async ({ page }) => {
