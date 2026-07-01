@@ -1,6 +1,6 @@
 {
-    "short_name": "test-admin-careplan",
-    "name": "{{name}}",
+    "short_name": "Nuno Care",
+    "name": "Nuno Care Admin",
     "icons": [
         {
             "src": "favicon.ico",

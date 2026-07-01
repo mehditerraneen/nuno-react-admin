@@ -66,5 +66,5 @@
     "vite": "^6.2.6",
     "vitest": "^4.1.6"
   },
-  "name": "test-admin-careplan"
+  "name": "nuno-care-admin"
 }

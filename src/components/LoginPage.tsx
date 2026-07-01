@@ -18,6 +18,7 @@ import {
   Login as LoginIcon,
   MedicalServices,
 } from "@mui/icons-material";
+import opefitooLogo from "../assets/logo-opefitoo.png";
 
 interface Branding {
   company_name?: string;
@@ -206,12 +207,34 @@ export const LoginPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary">
               Secure authentication with JWT token management
             </Typography>
+
+            {/* Publisher branding */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                mt: 2,
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Édité par
+              </Typography>
+              <Box
+                component="img"
+                src={opefitooLogo}
+                alt="Opefitoo"
+                sx={{ height: 22, objectFit: "contain" }}
+              />
+            </Box>
+
             <Typography
               variant="caption"
               color="text.disabled"
               sx={{ display: "block", mt: 1, fontFamily: "monospace" }}
             >
-              v{__APP_VERSION__} · {__APP_COMMIT__}
+              v{__APP_VERSION__}.{__APP_BUILD_NUMBER__} · {__APP_COMMIT__}
             </Typography>
           </Box>
         </CardContent>

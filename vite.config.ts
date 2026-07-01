@@ -29,6 +29,23 @@ const gitCommit = (() => {
   }
 })();
 
+// Auto-incrementing build number: the git commit count. It grows by one on
+// every commit with zero manual bookkeeping and never mutates a tracked file.
+// CI can override via VITE_BUILD_NUMBER; falls back to "0" without git.
+const buildNumber = (() => {
+  if (process.env.VITE_BUILD_NUMBER) return process.env.VITE_BUILD_NUMBER;
+  try {
+    return execSync("git rev-list --count HEAD", {
+      cwd: __dirname,
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+  } catch {
+    return "0";
+  }
+})();
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
@@ -42,6 +59,7 @@ export default defineConfig(({ mode }) => ({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version ?? "0.0.0"),
     __APP_COMMIT__: JSON.stringify(gitCommit),
+    __APP_BUILD_NUMBER__: JSON.stringify(buildNumber),
     __APP_BUILD_DATE__: JSON.stringify(new Date().toISOString()),
   },
 }));
