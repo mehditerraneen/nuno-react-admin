@@ -57,6 +57,7 @@ import type {
   CalendarEventRead,
   AevPlan,
   AevMutatePayload,
+  SeriesAction,
 } from "./dataProvider";
 
 // Event states (mirrors invoices/events.py Event.STATES)
@@ -228,6 +229,7 @@ export const PlanningCalendar: React.FC = () => {
       if (props.state === 1) classes.push("evt-waiting");
       if (props.state === 4 || props.state === 6) classes.push("evt-cancelled");
       if (props.has_aev_or_care_codes === false) classes.push("evt-no-aev");
+      if (props.series_id) classes.push("evt-series");
       return classes;
     },
     [],
@@ -324,6 +326,7 @@ export const PlanningCalendar: React.FC = () => {
             textDecoration: "line-through",
           },
           "& .fc .evt-no-aev": { borderLeft: "4px solid #f0ad4e !important" },
+          "& .fc .evt-series": { boxShadow: "inset 3px 0 0 0 #6f42c1" },
         }}
       >
         <FullCalendar
@@ -788,6 +791,8 @@ const EventEditDialog: React.FC<{
   const [patientOption, setPatientOption] = useState<PatientOption | null>(
     null,
   );
+  const [seriesId, setSeriesId] = useState<string | null>(null);
+  const [seriesAction, setSeriesAction] = useState<SeriesAction>("single");
   const [form, setForm] = useState<EventFormState>({
     employee_id: "",
     patient_id: "",
@@ -808,6 +813,7 @@ const EventEditDialog: React.FC<{
       .then((ev) => {
         if (cancelled) return;
         setPatientName(ev.patient_name || "");
+        setSeriesId(ev.series_id ?? null);
         setPatientOption(
           ev.patient_id
             ? { id: ev.patient_id, label: ev.patient_name || `#${ev.patient_id}` }
@@ -859,7 +865,11 @@ const EventEditDialog: React.FC<{
       event_address: form.event_address,
     };
     try {
-      await dataProvider.updateEvent(eventId, payload);
+      await dataProvider.updateEvent(
+        eventId,
+        payload,
+        seriesId ? seriesAction : "single",
+      );
       notify("Événement enregistré", { type: "success" });
       onSaved();
     } catch (e) {
@@ -901,6 +911,27 @@ const EventEditDialog: React.FC<{
                   }}
                 />
               </Grid>
+              {seriesId && (
+                <Grid size={12}>
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    label="Appliquer à (série récurrente)"
+                    value={seriesAction}
+                    onChange={(e) =>
+                      setSeriesAction(e.target.value as SeriesAction)
+                    }
+                    helperText="État et rapport restent propres à cette séance."
+                  >
+                    <MenuItem value="single">Cette séance uniquement</MenuItem>
+                    <MenuItem value="following">
+                      Celle-ci et les suivantes
+                    </MenuItem>
+                    <MenuItem value="all">Toute la série</MenuItem>
+                  </TextField>
+                </Grid>
+              )}
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   select

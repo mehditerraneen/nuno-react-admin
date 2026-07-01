@@ -215,4 +215,29 @@ test.describe("Planning calendar", () => {
       minutes: 15,
     });
   });
+
+  test("series event: scope selector propagates via series_action", async ({
+    page,
+  }) => {
+    // The event belongs to a recurring series.
+    await page.route(/\/events\/\d+(\?|$)/, (route) =>
+      route.fulfill({ json: { ...singleEvent, series_id: "series-abc" } }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByLabel(/Appliquer à/i)).toBeVisible();
+
+    await dialog.getByLabel(/Appliquer à/i).click();
+    await page
+      .getByRole("option", { name: /Celle-ci et les suivantes/i })
+      .click();
+
+    const putReq = page.waitForRequest(
+      (r) => /\/events\/\d+\?/.test(r.url()) && r.method() === "PUT",
+    );
+    await dialog.getByRole("button", { name: /Enregistrer/i }).click();
+    const req = await putReq;
+    expect(req.url()).toContain("series_action=following");
+  });
 });

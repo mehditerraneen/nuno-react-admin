@@ -570,10 +570,13 @@ export interface CalendarEventRead {
   employee_avatar: string | null; // data URI (minified_avatar_base64) or URL
   event_type_enum: string | null;
   tour_id: number | null;
+  series_id?: string | null;
   color: string | null;
   textColor: string | null;
   has_aev_or_care_codes?: boolean;
 }
+
+export type SeriesAction = "single" | "following" | "all";
 
 export interface CalendarRange {
   start: string; // ISO date/datetime
@@ -703,10 +706,12 @@ export interface MyDataProvider extends DataProvider {
     id: Identifier,
     schedule: EventSchedule,
   ) => Promise<CalendarEventRead>;
-  // Rich edit with admin-parity validation (?validate=1).
+  // Rich edit with admin-parity validation (?validate=1). seriesAction
+  // propagates propagatable fields to the series (following/all, staff only).
   updateEvent: (
     id: Identifier,
     payload: EventUpdatePayload,
+    seriesAction?: SeriesAction,
   ) => Promise<CalendarEventRead>;
   // Full single event (includes event_report / event_address).
   getEvent: (id: Identifier) => Promise<CalendarEventRead>;
@@ -3050,14 +3055,18 @@ export const dataProvider: MyDataProvider = {
     return res.json();
   },
 
-  updateEvent: async (id: Identifier, payload: EventUpdatePayload) => {
+  updateEvent: async (
+    id: Identifier,
+    payload: EventUpdatePayload,
+    seriesAction: SeriesAction = "single",
+  ) => {
     // Drop undefined keys so the endpoint's exclude_unset works as intended.
     const body: Record<string, unknown> = {};
     (Object.keys(payload) as Array<keyof EventUpdatePayload>).forEach((k) => {
       if (payload[k] !== undefined) body[k] = payload[k];
     });
     const res = await authenticatedFetch(
-      `${apiUrl}/events/${id}?validate=1`,
+      `${apiUrl}/events/${id}?validate=1&series_action=${seriesAction}`,
       { method: "PUT", body: JSON.stringify(body) },
     );
     if (!res.ok) throw new Error(await parseEventApiError(res));
