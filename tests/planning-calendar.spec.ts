@@ -65,6 +65,9 @@ const aevPlan = {
   ],
   attached: [],
   generic: [],
+  care_codes: [] as unknown[],
+  prescriptions: [] as unknown[],
+  event_type_enum: "CARE",
   minutes: {
     nature_package: 5,
     forfait_code: "AEVF05",
@@ -130,6 +133,23 @@ async function mockApi(page: Page) {
   await page.route(/\/events\/travel-time-check/, (route) =>
     route.fulfill({
       json: { warnings: [], has_errors: false, has_warnings: false },
+    }),
+  );
+  await page.route(/\/fast\/care-codes/, (route) =>
+    route.fulfill({
+      json: [{ id: 900, code: "N803", name: "Soin infirmier" }],
+    }),
+  );
+  await page.route(/\/fast\/prescriptions/, (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: 700,
+          date: "2026-06-01",
+          prescriptor_name: "Dr House",
+          patient_id: 7,
+        },
+      ],
     }),
   );
   await page.route(/\/events\/\d+(\?|$)/, (route) =>
@@ -511,6 +531,36 @@ test.describe("Planning calendar", () => {
     // zone hidden + notification explaining the change
     await expect(dialog.getByText(/Paramètres vitaux requis/i)).toHaveCount(0);
     await expect(page.getByText(/masqué/i)).toBeVisible();
+  });
+
+  test("care event: attach a care code (add_care_code)", async ({ page }) => {
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await dialog.getByText(/Codes AEV/i).click();
+    await dialog.getByLabel("Ajouter un code de soin").fill("N80");
+    const req = page.waitForRequest(/\/events\/\d+\/aev-mutate/);
+    await page.getByRole("option", { name: /N803/ }).click();
+    const r = await req;
+    expect(r.postDataJSON()).toMatchObject({
+      action: "add_care_code",
+      care_code_id: 900,
+    });
+  });
+
+  test("attach a prescription (attach_prescription)", async ({ page }) => {
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await dialog.getByText(/Codes AEV/i).click();
+    await dialog.getByLabel("Attacher une ordonnance").click();
+    const req = page.waitForRequest(/\/events\/\d+\/aev-mutate/);
+    await page.getByRole("option", { name: /Dr House/ }).click();
+    const r = await req;
+    expect(r.postDataJSON()).toMatchObject({
+      action: "attach_prescription",
+      prescription_id: 700,
+    });
   });
 
   test("collaborators show a 🤝 marker on the event", async ({ page }) => {

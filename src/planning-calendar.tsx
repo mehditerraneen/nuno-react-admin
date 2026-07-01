@@ -811,6 +811,103 @@ interface EventFormState {
   parameter_requirement_notes: string;
 }
 
+// Event types considered "soin" — care codes are offered for these.
+const CARE_TYPES = new Set([
+  "CARE",
+  "ASS_DEP",
+  "SUB_CARE",
+  "FIRST_VISIT",
+  "OVERNIGHT",
+  "MEDS",
+]);
+
+// Searchable CareCode picker (adds a care code to the event).
+const CareCodePicker: React.FC<{
+  disabled: boolean;
+  onPick: (id: number) => void;
+}> = ({ disabled, onPick }) => {
+  const dataProvider = useDataProvider<MyDataProvider>();
+  const [input, setInput] = useState("");
+  const [options, setOptions] = useState<
+    Array<{ id: number; code: string; name: string }>
+  >([]);
+  useEffect(() => {
+    if (input.trim().length < 2) {
+      setOptions([]);
+      return;
+    }
+    let active = true;
+    const t = setTimeout(() => {
+      dataProvider
+        .getCareCodes(input)
+        .then((r) => active && setOptions(r))
+        .catch(() => undefined);
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [input, dataProvider]);
+  return (
+    <Autocomplete
+      size="small"
+      value={null}
+      options={options}
+      getOptionLabel={(o) => `${o.code} — ${o.name}`}
+      isOptionEqualToValue={(o, v) => o.id === v.id}
+      onInputChange={(_, v) => setInput(v)}
+      onChange={(_, v) => v && onPick(v.id)}
+      disabled={disabled}
+      renderInput={(params) => (
+        <TextField {...params} label="Ajouter un code de soin" />
+      )}
+    />
+  );
+};
+
+// Picker of the patient's prescriptions (attaches one to the event).
+const PrescriptionPicker: React.FC<{
+  patientId: number | null;
+  disabled: boolean;
+  onPick: (id: number) => void;
+}> = ({ patientId, disabled, onPick }) => {
+  const dataProvider = useDataProvider<MyDataProvider>();
+  const [options, setOptions] = useState<
+    Array<{ id: number; date: string; prescriptor_name: string }>
+  >([]);
+  useEffect(() => {
+    if (!patientId) {
+      setOptions([]);
+      return;
+    }
+    let active = true;
+    dataProvider
+      .getPatientPrescriptions(patientId)
+      .then((r) => active && setOptions(r))
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [patientId, dataProvider]);
+  if (!patientId) return null;
+  return (
+    <Autocomplete
+      size="small"
+      value={null}
+      options={options}
+      getOptionLabel={(o) =>
+        `${o.date ?? ""} — ${o.prescriptor_name ?? ""}`.trim()
+      }
+      isOptionEqualToValue={(o, v) => o.id === v.id}
+      onChange={(_, v) => v && onPick(v.id)}
+      disabled={disabled}
+      renderInput={(params) => (
+        <TextField {...params} label="Attacher une ordonnance" />
+      )}
+    />
+  );
+};
+
 // AEV / care codes panel — suggestions from the patient's established plan,
 // attached acts with quota usage, minutes budget, add/remove.
 const AevPanel: React.FC<{
@@ -1121,6 +1218,83 @@ const AevPanel: React.FC<{
                   Ajouter tâche
                 </Button>
               </Box>
+            </Stack>
+
+            {plan.event_type_enum && CARE_TYPES.has(plan.event_type_enum) && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="caption" color="text.secondary">
+                  Codes de soins (CareCode)
+                </Typography>
+                <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+                  {plan.care_codes.map((c) => (
+                    <Box
+                      key={c.link_id}
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <Chip size="small" color="primary" label={c.code} />
+                      <Typography variant="caption" sx={{ flex: 1 }}>
+                        {c.name}
+                      </Typography>
+                      <Button
+                        size="small"
+                        color="error"
+                        disabled={busy}
+                        onClick={() =>
+                          mutate({
+                            action: "remove_care_code",
+                            link_id: c.link_id,
+                          })
+                        }
+                      >
+                        Retirer
+                      </Button>
+                    </Box>
+                  ))}
+                  <CareCodePicker
+                    disabled={busy}
+                    onPick={(id) =>
+                      mutate({ action: "add_care_code", care_code_id: id })
+                    }
+                  />
+                </Stack>
+              </>
+            )}
+
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="caption" color="text.secondary">
+              Ordonnances
+            </Typography>
+            <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+              {plan.prescriptions.map((p) => (
+                <Box
+                  key={p.link_id}
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <Chip size="small" variant="outlined" label={p.label} />
+                  <Box sx={{ flex: 1 }} />
+                  <Button
+                    size="small"
+                    color="error"
+                    disabled={busy}
+                    onClick={() =>
+                      mutate({
+                        action: "detach_prescription",
+                        link_id: p.link_id,
+                      })
+                    }
+                  >
+                    Détacher
+                  </Button>
+                </Box>
+              ))}
+              <PrescriptionPicker
+                patientId={plan.patient_id}
+                disabled={busy}
+                onPick={(id) =>
+                  mutate({ action: "attach_prescription", prescription_id: id })
+                }
+              />
             </Stack>
           </>
         )}

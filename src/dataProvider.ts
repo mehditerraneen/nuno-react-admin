@@ -676,6 +676,19 @@ export interface AevGeneric {
   minutes: number;
 }
 
+export interface AevCareCode {
+  link_id: number;
+  care_code_id: number;
+  code: string;
+  name: string;
+}
+
+export interface AevPrescription {
+  link_id: number;
+  prescription_id: number;
+  label: string;
+}
+
 export interface AevPlan {
   event_id: number;
   day: string | null;
@@ -685,6 +698,9 @@ export interface AevPlan {
   suggestions: AevSuggestion[];
   attached: AevAttached[];
   generic: AevGeneric[];
+  care_codes: AevCareCode[];
+  prescriptions: AevPrescription[];
+  event_type_enum?: string | null;
   minutes: AevMinutes | null;
   timing: AevTiming | null;
 }
@@ -696,7 +712,11 @@ export interface AevMutatePayload {
     | "remove"
     | "add_generic"
     | "update_generic"
-    | "remove_generic";
+    | "remove_generic"
+    | "add_care_code"
+    | "remove_care_code"
+    | "attach_prescription"
+    | "detach_prescription";
   detail_id?: number;
   link_id?: number;
   quantity?: number;
@@ -705,12 +725,16 @@ export interface AevMutatePayload {
   label?: string;
   minutes?: number;
   id?: number;
+  care_code_id?: number;
+  prescription_id?: number;
 }
 
 export interface AevMutateResult {
   ok: boolean;
   attached: AevAttached[];
   generic: AevGeneric[];
+  care_codes: AevCareCode[];
+  prescriptions: AevPrescription[];
   minutes: AevMinutes | null;
   timing: AevTiming | null;
 }
@@ -781,6 +805,10 @@ export interface MyDataProvider extends DataProvider {
     id: Identifier,
     payload: AevMutatePayload,
   ) => Promise<AevMutateResult>;
+  // Care-code picker (for attaching a care code to an event).
+  getCareCodes: (
+    search: string,
+  ) => Promise<Array<{ id: number; code: string; name: string }>>;
 
   getLatestCnsCarePlanForPatient: (
     patientId: Identifier,
@@ -3206,6 +3234,14 @@ export const dataProvider: MyDataProvider = {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    if (!res.ok) throw new Error(await parseEventApiError(res));
+    return res.json();
+  },
+
+  getCareCodes: async (search: string) => {
+    const res = await authenticatedFetch(
+      `${apiUrl}/care-codes?search=${encodeURIComponent(search)}`,
+    );
     if (!res.ok) throw new Error(await parseEventApiError(res));
     return res.json();
   },
