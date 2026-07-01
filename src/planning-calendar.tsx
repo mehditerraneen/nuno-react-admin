@@ -184,11 +184,35 @@ export const PlanningCalendar: React.FC = () => {
   const [seriesFilter, setSeriesFilter] = useState<string | null>(null);
   const seriesFilterRef = useRef<string | null>(null);
   seriesFilterRef.current = seriesFilter;
+  const [seriesDates, setSeriesDates] = useState<string[]>([]);
 
   // Refetch whenever a client-side filter changes (after the refs are updated).
   useEffect(() => {
     calendarRef.current?.getApi().refetchEvents();
   }, [employeeFilter, seriesFilter]);
+
+  // When a series is filtered, load all its occurrence dates (across weeks).
+  useEffect(() => {
+    if (!seriesFilter) {
+      setSeriesDates([]);
+      return;
+    }
+    let cancelled = false;
+    dataProvider
+      .getSeriesEvents(seriesFilter)
+      .then((evs) => {
+        if (cancelled) return;
+        setSeriesDates(
+          Array.from(new Set(evs.map((e) => e.day))).sort(),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setSeriesDates([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [seriesFilter, dataProvider]);
 
   // Multi-select (bulk assign / duplicate)
   const [multiSelect, setMultiSelect] = useState(false);
@@ -435,6 +459,31 @@ export const PlanningCalendar: React.FC = () => {
           </FormControl>
         </Stack>
       </Stack>
+
+      {seriesFilter && seriesDates.length > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            gap: 0.5,
+            flexWrap: "wrap",
+            alignItems: "center",
+            mb: 1,
+          }}
+        >
+          <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>
+            {seriesDates.length} occurrence(s) — aller à :
+          </Typography>
+          {seriesDates.map((d) => (
+            <Chip
+              key={d}
+              size="small"
+              variant="outlined"
+              label={d.slice(5)}
+              onClick={() => calendarRef.current?.getApi().gotoDate(d)}
+            />
+          ))}
+        </Box>
+      )}
 
       <Box
         sx={{

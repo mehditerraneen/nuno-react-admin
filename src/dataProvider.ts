@@ -713,6 +713,8 @@ export interface MyDataProvider extends DataProvider {
   // Planning calendar (FastAPI /events) — loads every event in the visible
   // range, paging through the 100-per-page cap.
   getCalendarEvents: (range: CalendarRange) => Promise<CalendarEventRead[]>;
+  // All events of a series (across weeks) — for occurrence navigation.
+  getSeriesEvents: (seriesId: string) => Promise<CalendarEventRead[]>;
   // Move/resize: patch only the schedule of an event (day + start/end).
   updateEventSchedule: (
     id: Identifier,
@@ -3053,6 +3055,27 @@ export const dataProvider: MyDataProvider = {
       if (!res.ok) {
         throw new Error(`Failed to load calendar events (HTTP ${res.status})`);
       }
+      const data = await res.json();
+      const items: CalendarEventRead[] = data.items || data.data || [];
+      all.push(...items);
+      const pages = data.pages ?? 1;
+      if (page >= pages || items.length === 0) break;
+      page += 1;
+    }
+    return all;
+  },
+
+  getSeriesEvents: async (seriesId: string) => {
+    const all: CalendarEventRead[] = [];
+    let page = 1;
+    for (let i = 0; i < 100; i++) {
+      const params = new URLSearchParams({
+        series_id: seriesId,
+        page: String(page),
+        page_size: "100",
+      });
+      const res = await authenticatedFetch(`${apiUrl}/events?${params.toString()}`);
+      if (!res.ok) throw new Error(`Failed to load series (HTTP ${res.status})`);
       const data = await res.json();
       const items: CalendarEventRead[] = data.items || data.data || [];
       all.push(...items);

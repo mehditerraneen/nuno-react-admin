@@ -369,6 +369,39 @@ test.describe("Planning calendar", () => {
     expect(req.postDataJSON().additional_employee_ids).toContain(2);
   });
 
+  test("series occurrence dates enable cross-week navigation", async ({
+    page,
+  }) => {
+    // getSeriesEvents (series_id param) returns the whole series across weeks.
+    await page.route(
+      (url) =>
+        url.pathname.endsWith("/events") && url.searchParams.has("series_id"),
+      (route) =>
+        route.fulfill({
+          json: {
+            items: [
+              { ...listEvent, id: 42, day: "2026-07-01", series_id: "s-abc" },
+              { ...listEvent, id: 43, day: "2026-07-08", series_id: "s-abc" },
+            ],
+            total: 2,
+            page: 1,
+            page_size: 100,
+            pages: 1,
+          },
+        }),
+    );
+    await page.route(/\/events\/\d+(\?|$)/, (route) =>
+      route.fulfill({ json: { ...singleEvent, series_id: "s-abc" } }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: /Voir la série/i }).click();
+    await expect(page.getByText(/2 occurrence/i)).toBeVisible();
+    await expect(page.getByText(/07-01/)).toBeVisible();
+    await expect(page.getByText(/07-08/)).toBeVisible();
+  });
+
   test("collaborators show a 🤝 marker on the event", async ({ page }) => {
     await page.route(/\/events\?/, (route) =>
       route.fulfill({
