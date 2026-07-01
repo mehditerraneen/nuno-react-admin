@@ -1,21 +1,33 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
+  Alert,
   Box,
+  Button,
   Card,
+  CircularProgress,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   FormControl,
+  Grid,
   IconButton,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { Title, useDataProvider, useGetList, useNotify } from "react-admin";
+import type { EventUpdatePayload } from "./dataProvider";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -127,7 +139,11 @@ export const PlanningCalendar: React.FC = () => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
   const calendarRef = useRef<FullCalendar | null>(null);
-  const [selected, setSelected] = useState<CalendarEventRead | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  const refetch = useCallback(() => {
+    calendarRef.current?.getApi().refetchEvents();
+  }, []);
 
   // Employee filter (client-side: /events has no employee param, we already
   // load the whole visible range).
@@ -195,7 +211,7 @@ export const PlanningCalendar: React.FC = () => {
   );
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
-    setSelected(arg.event.extendedProps as CalendarEventRead);
+    setEditingId(Number(arg.event.id));
   }, []);
 
   // Rich hover box via tippy (with avatar when available).
@@ -323,77 +339,274 @@ export const PlanningCalendar: React.FC = () => {
         />
       </Box>
 
-      <EventDetailDialog event={selected} onClose={() => setSelected(null)} />
+      {editingId != null && (
+        <EventEditDialog
+          eventId={editingId}
+          employeeChoices={employeeChoices}
+          onClose={() => setEditingId(null)}
+          onSaved={() => {
+            setEditingId(null);
+            refetch();
+          }}
+        />
+      )}
     </Card>
   );
 };
 
-const DetailRow: React.FC<{ label: string; value?: React.ReactNode }> = ({
-  label,
-  value,
-}) =>
-  value ? (
-    <Box sx={{ display: "flex", gap: 1 }}>
-      <Typography variant="caption" sx={{ fontWeight: 600, minWidth: 130 }}>
-        {label}
-      </Typography>
-      <Typography variant="body2">{value}</Typography>
-    </Box>
-  ) : null;
+interface EmployeeChoice {
+  id: number;
+  name: string;
+}
 
-const EventDetailDialog: React.FC<{
-  event: CalendarEventRead | null;
+interface EventFormState {
+  employee_id: number | "";
+  state: number;
+  event_type_enum: string;
+  time_start: string;
+  time_end: string;
+  notes: string;
+  event_report: string;
+  event_address: string;
+}
+
+const EventEditDialog: React.FC<{
+  eventId: number;
+  employeeChoices: EmployeeChoice[];
   onClose: () => void;
-}> = ({ event, onClose }) => {
-  if (!event) return null;
-  const fmtTime = (t?: string | null) => (t ? t.slice(0, 5) : "—");
+  onSaved: () => void;
+}> = ({ eventId, employeeChoices, onClose, onSaved }) => {
+  const dataProvider = useDataProvider<MyDataProvider>();
+  const notify = useNotify();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [patientName, setPatientName] = useState("");
+  const [form, setForm] = useState<EventFormState>({
+    employee_id: "",
+    state: 2,
+    event_type_enum: "",
+    time_start: "",
+    time_end: "",
+    notes: "",
+    event_report: "",
+    event_address: "",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    dataProvider
+      .getEvent(eventId)
+      .then((ev) => {
+        if (cancelled) return;
+        setPatientName(ev.patient_name || "");
+        setForm({
+          employee_id: ev.employee_id ?? "",
+          state: ev.state,
+          event_type_enum: ev.event_type_enum || "",
+          time_start: (ev.time_start_event || "").slice(0, 5),
+          time_end: (ev.time_end_event || "").slice(0, 5),
+          notes: ev.notes || "",
+          event_report: ev.event_report || "",
+          event_address: ev.event_address || "",
+        });
+      })
+      .catch((e: Error) => {
+        if (!cancelled) setError(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dataProvider, eventId]);
+
+  const set = <K extends keyof EventFormState>(k: K, v: EventFormState[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const handleSave = async () => {
+    setError(null);
+    // Quick client check; the server enforces the full admin-parity matrix.
+    if (form.time_start && form.time_end && form.time_end <= form.time_start) {
+      setError("L'heure de fin doit être après l'heure de début.");
+      return;
+    }
+    setSaving(true);
+    const payload: EventUpdatePayload = {
+      employee_id: form.employee_id === "" ? null : Number(form.employee_id),
+      state: form.state,
+      event_type_enum: form.event_type_enum || null,
+      time_start: form.time_start ? `${form.time_start}:00` : undefined,
+      time_end: form.time_end ? `${form.time_end}:00` : undefined,
+      notes: form.notes,
+      event_report: form.event_report,
+      event_address: form.event_address,
+    };
+    try {
+      await dataProvider.updateEvent(eventId, payload);
+      notify("Événement enregistré", { type: "success" });
+      onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: "flex", alignItems: "center", pr: 1 }}>
-        <Box sx={{ flexGrow: 1 }}>{titleOf(event)}</Box>
-        <IconButton onClick={onClose} size="small">
+        <Box sx={{ flexGrow: 1 }}>
+          Modifier l'événement{patientName ? ` — ${patientName}` : ""}
+        </Box>
+        <IconButton onClick={onClose} size="small" disabled={saving}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
       <DialogContent dividers>
-        <Stack spacing={1}>
-          <DetailRow label="Patient" value={event.patient_name} />
-          <DetailRow label="Employé" value={event.employee_name} />
-          <DetailRow label="Jour" value={event.day} />
-          <DetailRow
-            label="Horaire"
-            value={`${fmtTime(event.time_start_event)} – ${fmtTime(
-              event.time_end_event,
-            )}`}
-          />
-          <DetailRow
-            label="État"
-            value={STATE_LABELS[event.state] ?? String(event.state)}
-          />
-          <DetailRow
-            label="Type"
-            value={
-              event.event_type_enum
-                ? EVENT_TYPE_LABELS[event.event_type_enum] ??
-                  event.event_type_enum
-                : undefined
-            }
-          />
-          {event.notes ? (
-            <>
-              <Divider />
-              <DetailRow label="Notes" value={event.notes} />
-            </>
-          ) : null}
-        </Stack>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: "block", mt: 2, fontStyle: "italic" }}
-        >
-          Lecture seule — l'édition sera activée à la prochaine étape.
-        </Typography>
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label="Employé"
+                  value={form.employee_id}
+                  onChange={(e) =>
+                    set(
+                      "employee_id",
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    )
+                  }
+                >
+                  <MenuItem value="">
+                    <em>Aucun</em>
+                  </MenuItem>
+                  {employeeChoices.map((emp) => (
+                    <MenuItem key={emp.id} value={emp.id}>
+                      {emp.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label="État"
+                  value={form.state}
+                  onChange={(e) => set("state", Number(e.target.value))}
+                >
+                  {Object.entries(STATE_LABELS).map(([id, label]) => (
+                    <MenuItem key={id} value={Number(id)}>
+                      {label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  type="time"
+                  fullWidth
+                  size="small"
+                  label="Début"
+                  InputLabelProps={{ shrink: true }}
+                  value={form.time_start}
+                  onChange={(e) => set("time_start", e.target.value)}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  type="time"
+                  fullWidth
+                  size="small"
+                  label="Fin"
+                  InputLabelProps={{ shrink: true }}
+                  value={form.time_end}
+                  onChange={(e) => set("time_end", e.target.value)}
+                />
+              </Grid>
+              <Grid size={12}>
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label="Type"
+                  value={form.event_type_enum}
+                  onChange={(e) => set("event_type_enum", e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>—</em>
+                  </MenuItem>
+                  {Object.entries(EVENT_TYPE_LABELS).map(([id, label]) => (
+                    <MenuItem key={id} value={id}>
+                      {label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid size={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Adresse"
+                  value={form.event_address}
+                  onChange={(e) => set("event_address", e.target.value)}
+                />
+              </Grid>
+              <Grid size={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Notes"
+                  multiline
+                  minRows={2}
+                  value={form.notes}
+                  onChange={(e) => set("notes", e.target.value)}
+                />
+              </Grid>
+              <Grid size={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Rapport de soin"
+                  multiline
+                  minRows={2}
+                  value={form.event_report}
+                  onChange={(e) => set("event_report", e.target.value)}
+                  helperText="Requis pour passer l'état à « Fait » ou « Non fait »."
+                />
+              </Grid>
+            </Grid>
+          </>
+        )}
       </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onClose} disabled={saving}>
+          Annuler
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={loading || saving}
+        >
+          {saving ? <CircularProgress size={22} /> : "Enregistrer"}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

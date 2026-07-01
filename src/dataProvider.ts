@@ -409,6 +409,25 @@ export const authenticatedFetch = async (
   }
 };
 
+// Turn a failed /events response into a readable message. The validate=1 path
+// returns { detail: { validation: { field: msg } } }; other errors return
+// { detail: "..." }.
+export const parseEventApiError = async (res: Response): Promise<string> => {
+  const data = await res.json().catch(() => ({}) as unknown);
+  const detail = (data as { detail?: unknown }).detail;
+  if (detail && typeof detail === "object") {
+    const validation = (detail as { validation?: Record<string, string> })
+      .validation;
+    if (validation) {
+      return Object.entries(validation)
+        .map(([field, msg]) => `${field} : ${msg}`)
+        .join(" · ");
+    }
+  }
+  if (typeof detail === "string") return detail;
+  return `Échec de la mise à jour (HTTP ${res.status})`;
+};
+
 // Create authenticated HTTP client with automatic token refresh
 const httpClient = async (url: string, options: any = {}) => {
   const token = authService.getAccessToken();
@@ -541,6 +560,8 @@ export interface CalendarEventRead {
   real_time_end_event: string | null;
   state: number;
   notes: string | null;
+  event_report?: string | null; // only returned by GET /events/{id}
+  event_address?: string | null; // only returned by GET /events/{id}
   patient_id: number | null;
   patient_name: string | null;
   employees: string | null;
@@ -564,6 +585,20 @@ export interface EventSchedule {
   time_end?: string; // "HH:MM:SS"
 }
 
+/** Rich edit payload for PUT /events/{id}?validate=1. */
+export interface EventUpdatePayload {
+  day?: string;
+  time_start?: string; // "HH:MM:SS"
+  time_end?: string;
+  patient_id?: number | null;
+  employee_id?: number | null;
+  state?: number;
+  event_type_enum?: string | null;
+  notes?: string;
+  event_report?: string;
+  event_address?: string;
+}
+
 export interface MyDataProvider extends DataProvider {
   // Planning calendar (FastAPI /events) — loads every event in the visible
   // range, paging through the 100-per-page cap.
@@ -573,6 +608,13 @@ export interface MyDataProvider extends DataProvider {
     id: Identifier,
     schedule: EventSchedule,
   ) => Promise<CalendarEventRead>;
+  // Rich edit with admin-parity validation (?validate=1).
+  updateEvent: (
+    id: Identifier,
+    payload: EventUpdatePayload,
+  ) => Promise<CalendarEventRead>;
+  // Full single event (includes event_report / event_address).
+  getEvent: (id: Identifier) => Promise<CalendarEventRead>;
 
   getLatestCnsCarePlanForPatient: (
     patientId: Identifier,
@@ -2899,17 +2941,31 @@ export const dataProvider: MyDataProvider = {
       time_start: schedule.time_start,
     };
     if (schedule.time_end) body.time_end = schedule.time_end;
-    const res = await authenticatedFetch(`${apiUrl}/events/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(body),
+    const res = await authenticatedFetch(
+      `${apiUrl}/events/${id}?validate=1`,
+      { method: "PUT", body: JSON.stringify(body) },
+    );
+    if (!res.ok) throw new Error(await parseEventApiError(res));
+    return res.json();
+  },
+
+  updateEvent: async (id: Identifier, payload: EventUpdatePayload) => {
+    // Drop undefined keys so the endpoint's exclude_unset works as intended.
+    const body: Record<string, unknown> = {};
+    (Object.keys(payload) as Array<keyof EventUpdatePayload>).forEach((k) => {
+      if (payload[k] !== undefined) body[k] = payload[k];
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(
-        (err as { detail?: string }).detail ||
-          `Échec de la mise à jour (HTTP ${res.status})`,
-      );
-    }
+    const res = await authenticatedFetch(
+      `${apiUrl}/events/${id}?validate=1`,
+      { method: "PUT", body: JSON.stringify(body) },
+    );
+    if (!res.ok) throw new Error(await parseEventApiError(res));
+    return res.json();
+  },
+
+  getEvent: async (id: Identifier) => {
+    const res = await authenticatedFetch(`${apiUrl}/events/${id}`);
+    if (!res.ok) throw new Error(await parseEventApiError(res));
     return res.json();
   },
 
