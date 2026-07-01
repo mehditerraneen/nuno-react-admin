@@ -1962,7 +1962,14 @@ export const dataProvider: MyDataProvider = {
     }
 
     if (resource === "patients" && params.filter?.q) {
-      const url = `${apiUrl}/patients/search?query=${encodeURIComponent(params.filter.q)}`;
+      const searchParams = new URLSearchParams({ query: params.filter.q });
+      // Forward the has_careplan flag so the search results stay restricted to
+      // patients that already have a care plan (the list endpoint already does
+      // this; the search endpoint must too, otherwise typing drops the filter).
+      if (params.filter.has_careplan) {
+        searchParams.set("has_careplan", String(params.filter.has_careplan));
+      }
+      const url = `${apiUrl}/patients/search?${searchParams.toString()}`;
       const response = await authenticatedFetch(url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

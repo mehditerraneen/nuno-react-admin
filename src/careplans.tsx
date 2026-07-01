@@ -58,6 +58,7 @@ const carePlanFilters = [
     filter={{ has_careplan: "true" }}
   >
     <AutocompleteInput
+      sx={{ minWidth: 320 }}
       optionText={(choice) =>
         choice
           ? `${choice.name} ${choice.first_name} (${choice.code_sn})`
