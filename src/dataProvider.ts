@@ -529,7 +529,51 @@ export interface EventProximityResponse {
   calculated_at: string;
 }
 
+// ---- Planning calendar (FastAPI /events, JWT auth) ----
+
+/** An event as returned by the FastAPI EventRead schema (GET /events). */
+export interface CalendarEventRead {
+  id: number;
+  day: string; // "YYYY-MM-DD"
+  time_start_event: string | null; // "HH:MM:SS"
+  time_end_event: string | null;
+  real_time_start_event: string | null;
+  real_time_end_event: string | null;
+  state: number;
+  notes: string | null;
+  patient_id: number | null;
+  patient_name: string | null;
+  employees: string | null;
+  employee_id: number | null;
+  employee_name: string | null;
+  employee_avatar: string | null; // data URI (minified_avatar_base64) or URL
+  event_type_enum: string | null;
+  tour_id: number | null;
+  color: string | null;
+  textColor: string | null;
+}
+
+export interface CalendarRange {
+  start: string; // ISO date/datetime
+  end: string;
+}
+
+export interface EventSchedule {
+  day: string; // "YYYY-MM-DD"
+  time_start: string; // "HH:MM:SS"
+  time_end?: string; // "HH:MM:SS"
+}
+
 export interface MyDataProvider extends DataProvider {
+  // Planning calendar (FastAPI /events) — loads every event in the visible
+  // range, paging through the 100-per-page cap.
+  getCalendarEvents: (range: CalendarRange) => Promise<CalendarEventRead[]>;
+  // Move/resize: patch only the schedule of an event (day + start/end).
+  updateEventSchedule: (
+    id: Identifier,
+    schedule: EventSchedule,
+  ) => Promise<CalendarEventRead>;
+
   getLatestCnsCarePlanForPatient: (
     patientId: Identifier,
   ) => Promise<{ id: Identifier | null }>;
@@ -2820,6 +2864,53 @@ export const dataProvider: MyDataProvider = {
     }
 
     return response.json();
+  },
+
+  // ---- Planning calendar (FastAPI /events) ----
+  getCalendarEvents: async ({ start, end }: CalendarRange) => {
+    const all: CalendarEventRead[] = [];
+    const pageSize = 100; // endpoint caps page_size at 100
+    let page = 1;
+    // Page through the range (bounded to avoid an accidental infinite loop).
+    for (let i = 0; i < 100; i++) {
+      const params = new URLSearchParams({
+        start,
+        end,
+        page: String(page),
+        page_size: String(pageSize),
+      });
+      const res = await authenticatedFetch(`${apiUrl}/events?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error(`Failed to load calendar events (HTTP ${res.status})`);
+      }
+      const data = await res.json();
+      const items: CalendarEventRead[] = data.items || data.data || [];
+      all.push(...items);
+      const pages = data.pages ?? 1;
+      if (page >= pages || items.length === 0) break;
+      page += 1;
+    }
+    return all;
+  },
+
+  updateEventSchedule: async (id: Identifier, schedule: EventSchedule) => {
+    const body: Record<string, string> = {
+      day: schedule.day,
+      time_start: schedule.time_start,
+    };
+    if (schedule.time_end) body.time_end = schedule.time_end;
+    const res = await authenticatedFetch(`${apiUrl}/events/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(
+        (err as { detail?: string }).detail ||
+          `Échec de la mise à jour (HTTP ${res.status})`,
+      );
+    }
+    return res.json();
   },
 
   getDailyEvents: async (date: string, employeeId?: number) => {

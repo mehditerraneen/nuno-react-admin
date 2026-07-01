@@ -60,6 +60,7 @@ import {
   PlanningAgGridEdit,
 } from "./planning-aggrid";
 import PlanningAuditLogPage from "./components/planning/PlanningAuditLogPage";
+import { PlanningCalendar } from "./planning-calendar";
 import { StickyTest } from "./StickyTest";
 import { StickyTestAgGrid } from "./StickyTestAgGrid";
 import {
@@ -87,6 +88,7 @@ export const App = () => (
     authProvider={authProvider}
     i18nProvider={i18nProvider}
     loginPage={LoginPage}
+    requireAuth
   >
     <Resource
       name="careplans"
@@ -208,6 +210,7 @@ export const App = () => (
     <CustomRoutes>
       <Route path="/tours-dashboard" element={<EnhancedToursDashboard />} />
       <Route path="/careplan-overlaps" element={<CarePlanOverlapView />} />
+      <Route path="/planning/calendar" element={<PlanningCalendar />} />
       <Route path="/planning/:id/audit-log" element={<PlanningAuditLogPage />} />
       <Route path="/medication-plans/:id/board" element={<MedicationBoard />} />
       <Route path="/sticky-test" element={<StickyTest />} />
