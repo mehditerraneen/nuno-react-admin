@@ -34,6 +34,11 @@ const singleEvent = {
   ...listEvent,
   event_report: "",
   event_address: "12 rue du Test",
+  requires_parameters: false,
+  required_parameter_types: [] as string[],
+  parameter_requirement_reason: null,
+  parameter_requirement_notes: "",
+  employee_encodes_clinical_data: true,
 };
 
 const aevPlan = {
@@ -447,6 +452,44 @@ test.describe("Planning calendar", () => {
     await expect(page.getByText(/2 occurrence/i)).toBeVisible();
     await expect(page.getByText(/07-01/)).toBeVisible();
     await expect(page.getByText(/07-08/)).toBeVisible();
+  });
+
+  test("vital-parameters wizard: visible for clinical staff, sent on save", async ({
+    page,
+  }) => {
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await dialog.getByText(/Paramètres vitaux requis/i).click();
+    await dialog.getByLabel("Paramètres quotidiens requis").check();
+    await dialog.getByLabel("Types de paramètres").click();
+    await page.getByRole("option", { name: "Température" }).click();
+    await page.keyboard.press("Escape");
+
+    const putReq = page.waitForRequest(
+      (r) => /\/events\/\d+\?/.test(r.url()) && r.method() === "PUT",
+    );
+    await dialog.getByRole("button", { name: /Enregistrer/i }).click();
+    const req = await putReq;
+    expect(req.postDataJSON()).toMatchObject({
+      requires_parameters: true,
+      required_parameter_types: ["temperature"],
+    });
+  });
+
+  test("vital-parameters wizard hidden for non-clinical staff", async ({
+    page,
+  }) => {
+    await page.route(/\/events\/\d+(\?|$)/, (route) =>
+      route.fulfill({
+        json: { ...singleEvent, employee_encodes_clinical_data: false },
+      }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Modifier l'événement/i)).toBeVisible();
+    await expect(dialog.getByText(/Paramètres vitaux requis/i)).toHaveCount(0);
   });
 
   test("collaborators show a 🤝 marker on the event", async ({ page }) => {

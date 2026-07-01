@@ -562,6 +562,12 @@ export interface CalendarEventRead {
   notes: string | null;
   event_report?: string | null; // only returned by GET /events/{id}
   event_address?: string | null; // only returned by GET /events/{id}
+  // Vital-parameters requirement (single-event fetch only)
+  requires_parameters?: boolean;
+  required_parameter_types?: string[];
+  parameter_requirement_reason?: string | null;
+  parameter_requirement_notes?: string | null;
+  employee_encodes_clinical_data?: boolean;
   patient_id: number | null;
   patient_name: string | null;
   employees: string | null;
@@ -728,6 +734,10 @@ export interface EventUpdatePayload {
   notes?: string;
   event_report?: string;
   event_address?: string;
+  requires_parameters?: boolean;
+  required_parameter_types?: string[];
+  parameter_requirement_reason?: string | null;
+  parameter_requirement_notes?: string | null;
 }
 
 export interface MyDataProvider extends DataProvider {

@@ -14,6 +14,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
@@ -22,6 +23,7 @@ import {
   DialogTitle,
   Divider,
   FormControl,
+  FormControlLabel,
   Grid,
   IconButton,
   InputLabel,
@@ -89,6 +91,26 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   OVERNIGHT: "Nuit",
   FIRST_VISIT: "Première visite",
   PAUSE: "Pause",
+};
+
+// Vital-parameter types + requirement reasons (mirror invoices/events.py)
+const PARAM_TYPES: Record<string, string> = {
+  temperature: "Température",
+  blood_pressure: "Tension artérielle",
+  heart_rate: "Pouls",
+  weight: "Poids",
+  pain_level: "Douleur (EVA)",
+  oxygen_saturation: "Saturation O2",
+  blood_sugar: "Glycémie",
+  stools: "Selles",
+};
+const PARAM_REASONS: Record<string, string> = {
+  FALL: "Suite à une chute",
+  DOCTOR_REQUEST: "Sur demande du médecin",
+  FAMILY_REQUEST: "Sur demande de la famille",
+  NURSE_OBSERVATION: "Observation infirmière",
+  ROUTINE_MONTHLY: "Contrôle mensuel",
+  OTHER: "Autre",
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -781,6 +803,10 @@ interface EventFormState {
   notes: string;
   event_report: string;
   event_address: string;
+  requires_parameters: boolean;
+  required_parameter_types: string[];
+  parameter_requirement_reason: string;
+  parameter_requirement_notes: string;
 }
 
 // AEV / care codes panel — suggestions from the patient's established plan,
@@ -1120,6 +1146,7 @@ const EventEditDialog: React.FC<{
   );
   const [seriesId, setSeriesId] = useState<string | null>(null);
   const [seriesAction, setSeriesAction] = useState<SeriesAction>("single");
+  const [encodesClinical, setEncodesClinical] = useState(true);
   const [form, setForm] = useState<EventFormState>({
     employee_id: "",
     additional_employee_ids: [],
@@ -1131,6 +1158,10 @@ const EventEditDialog: React.FC<{
     notes: "",
     event_report: "",
     event_address: "",
+    requires_parameters: false,
+    required_parameter_types: [],
+    parameter_requirement_reason: "",
+    parameter_requirement_notes: "",
   });
 
   useEffect(() => {
@@ -1158,7 +1189,12 @@ const EventEditDialog: React.FC<{
           notes: ev.notes || "",
           event_report: ev.event_report || "",
           event_address: ev.event_address || "",
+          requires_parameters: ev.requires_parameters ?? false,
+          required_parameter_types: ev.required_parameter_types ?? [],
+          parameter_requirement_reason: ev.parameter_requirement_reason ?? "",
+          parameter_requirement_notes: ev.parameter_requirement_notes ?? "",
         });
+        setEncodesClinical(ev.employee_encodes_clinical_data ?? true);
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -1193,6 +1229,11 @@ const EventEditDialog: React.FC<{
       notes: form.notes,
       event_report: form.event_report,
       event_address: form.event_address,
+      requires_parameters: form.requires_parameters,
+      required_parameter_types: form.required_parameter_types,
+      parameter_requirement_reason:
+        form.parameter_requirement_reason || null,
+      parameter_requirement_notes: form.parameter_requirement_notes,
     };
     try {
       await dataProvider.updateEvent(
@@ -1465,6 +1506,107 @@ const EventEditDialog: React.FC<{
                   currentEnd={form.time_end}
                   onAdaptEnd={(v) => set("time_end", v)}
                 />
+              </Box>
+            )}
+
+            {encodesClinical && (
+              <Box sx={{ mt: 2 }}>
+                <Accordion
+                  disableGutters
+                  defaultExpanded={false}
+                  sx={{ boxShadow: "none", "&:before": { display: "none" } }}
+                >
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    sx={{ px: 0 }}
+                  >
+                    <Typography variant="subtitle2">
+                      📊 Paramètres vitaux requis (avancé)
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ px: 0 }}>
+                    <Stack spacing={1.5}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            size="small"
+                            checked={form.requires_parameters}
+                            onChange={(e) =>
+                              set("requires_parameters", e.target.checked)
+                            }
+                          />
+                        }
+                        label="Paramètres quotidiens requis"
+                      />
+                      <FormControl fullWidth size="small">
+                        <InputLabel id="ptypes-label">
+                          Types de paramètres
+                        </InputLabel>
+                        <Select
+                          labelId="ptypes-label"
+                          label="Types de paramètres"
+                          multiple
+                          value={form.required_parameter_types}
+                          onChange={(e) =>
+                            set(
+                              "required_parameter_types",
+                              e.target.value as string[],
+                            )
+                          }
+                          renderValue={(sel) =>
+                            (sel as string[])
+                              .map((t) => PARAM_TYPES[t] ?? t)
+                              .join(", ")
+                          }
+                        >
+                          {Object.entries(PARAM_TYPES).map(([k, v]) => (
+                            <MenuItem key={k} value={k}>
+                              {v}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        label="Raison"
+                        value={form.parameter_requirement_reason}
+                        onChange={(e) =>
+                          set("parameter_requirement_reason", e.target.value)
+                        }
+                      >
+                        <MenuItem value="">
+                          <em>—</em>
+                        </MenuItem>
+                        {Object.entries(PARAM_REASONS).map(([k, v]) => (
+                          <MenuItem key={k} value={k}>
+                            {v}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        multiline
+                        minRows={2}
+                        label="Notes paramètres"
+                        value={form.parameter_requirement_notes}
+                        onChange={(e) =>
+                          set("parameter_requirement_notes", e.target.value)
+                        }
+                      />
+                      <Alert severity="info" sx={{ py: 0 }}>
+                        <Typography variant="caption">
+                          Infos techniques : validé au passage à « Fait »
+                          (état 3) pour les patients sous assurance‑dépendance
+                          (paramètres mensuels + quotidiens après chute). Zone
+                          masquée pour le personnel non‑clinique.
+                        </Typography>
+                      </Alert>
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
               </Box>
             )}
           </>
