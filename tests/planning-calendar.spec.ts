@@ -240,4 +240,39 @@ test.describe("Planning calendar", () => {
     const req = await putReq;
     expect(req.url()).toContain("series_action=following");
   });
+
+  test("deletes the event (DELETE series_action=single)", async ({ page }) => {
+    page.on("dialog", (d) => d.accept());
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    const delReq = page.waitForRequest(
+      (r) => /\/events\/\d+\?/.test(r.url()) && r.method() === "DELETE",
+    );
+    await dialog.getByRole("button", { name: /Supprimer/i }).click();
+    const req = await delReq;
+    expect(req.url()).toContain("series_action=single");
+  });
+
+  test("series delete sends series_action=all", async ({ page }) => {
+    page.on("dialog", (d) => d.accept());
+    await page.route(/\/events\/\d+(\?|$)/, (route) => {
+      if (route.request().method() === "DELETE") {
+        return route.fulfill({ status: 204, body: "" });
+      }
+      return route.fulfill({ json: { ...singleEvent, series_id: "series-abc" } });
+    });
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(/Appliquer à/i).click();
+    await page.getByRole("option", { name: /Toute la série/i }).click();
+
+    const delReq = page.waitForRequest(
+      (r) => /\/events\/\d+\?/.test(r.url()) && r.method() === "DELETE",
+    );
+    await dialog.getByRole("button", { name: /Supprimer/i }).click();
+    const req = await delReq;
+    expect(req.url()).toContain("series_action=all");
+  });
 });

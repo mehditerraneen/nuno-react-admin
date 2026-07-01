@@ -34,6 +34,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import { Title, useDataProvider, useGetList, useNotify } from "react-admin";
@@ -786,6 +787,7 @@ const EventEditDialog: React.FC<{
   const notify = useNotify();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [patientName, setPatientName] = useState("");
   const [patientOption, setPatientOption] = useState<PatientOption | null>(
@@ -876,6 +878,28 @@ const EventEditDialog: React.FC<{
       setError((e as Error).message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const scope: SeriesAction = seriesId ? seriesAction : "single";
+    const msg =
+      seriesId && scope !== "single"
+        ? scope === "all"
+          ? "Supprimer TOUTE la série ? Action irréversible."
+          : "Supprimer cette séance et les suivantes de la série ?"
+        : "Supprimer cet événement ?";
+    if (!window.confirm(msg)) return;
+    setError(null);
+    setDeleting(true);
+    try {
+      await dataProvider.deleteCalendarEvent(eventId, scope);
+      notify("Événement supprimé", { type: "success" });
+      onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1062,13 +1086,22 @@ const EventEditDialog: React.FC<{
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={saving}>
+        <Button
+          color="error"
+          startIcon={<DeleteIcon />}
+          onClick={handleDelete}
+          disabled={loading || saving || deleting}
+        >
+          {deleting ? <CircularProgress size={22} /> : "Supprimer"}
+        </Button>
+        <Box sx={{ flexGrow: 1 }} />
+        <Button onClick={onClose} disabled={saving || deleting}>
           Annuler
         </Button>
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={loading || saving}
+          disabled={loading || saving || deleting}
         >
           {saving ? <CircularProgress size={22} /> : "Enregistrer"}
         </Button>

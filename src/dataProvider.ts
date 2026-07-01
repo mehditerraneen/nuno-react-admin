@@ -715,6 +715,11 @@ export interface MyDataProvider extends DataProvider {
   ) => Promise<CalendarEventRead>;
   // Full single event (includes event_report / event_address).
   getEvent: (id: Identifier) => Promise<CalendarEventRead>;
+  // Delete (single/following/all), staff-only, with state guards server-side.
+  deleteCalendarEvent: (
+    id: Identifier,
+    seriesAction?: SeriesAction,
+  ) => Promise<void>;
   // AEV / care codes tied to the patient's established plan.
   getEventAev: (id: Identifier) => Promise<AevPlan>;
   aevMutate: (
@@ -3077,6 +3082,17 @@ export const dataProvider: MyDataProvider = {
     const res = await authenticatedFetch(`${apiUrl}/events/${id}`);
     if (!res.ok) throw new Error(await parseEventApiError(res));
     return res.json();
+  },
+
+  deleteCalendarEvent: async (
+    id: Identifier,
+    seriesAction: SeriesAction = "single",
+  ) => {
+    const res = await authenticatedFetch(
+      `${apiUrl}/events/${id}?series_action=${seriesAction}`,
+      { method: "DELETE" },
+    );
+    if (!res.ok) throw new Error(await parseEventApiError(res));
   },
 
   getEventAev: async (id: Identifier) => {
