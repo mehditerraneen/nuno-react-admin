@@ -26,6 +26,7 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
   Stack,
   TextField,
@@ -185,6 +186,17 @@ export const PlanningCalendar: React.FC = () => {
     calendarRef.current?.getApi().refetchEvents();
   }, [employeeFilter, seriesFilter]);
 
+  // Multi-select (bulk assign / duplicate)
+  const [multiSelect, setMultiSelect] = useState(false);
+  const multiSelectRef = useRef(false);
+  multiSelectRef.current = multiSelect;
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const selectedIdsRef = useRef<Set<number>>(selectedIds);
+  selectedIdsRef.current = selectedIds;
+  const [bulkEmployee, setBulkEmployee] = useState<number | "">("");
+  const [bulkDate, setBulkDate] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+
   const { data: employees } = useGetList("employees", {
     pagination: { page: 1, perPage: 500 },
     sort: { field: "name", order: "ASC" },
@@ -234,20 +246,35 @@ export const PlanningCalendar: React.FC = () => {
   }, []);
 
   const eventClassNames = useCallback(
-    (arg: { event: { extendedProps: Partial<CalendarEventRead> } }) => {
+    (arg: {
+      event: { id: string; extendedProps: Partial<CalendarEventRead> };
+    }) => {
       const props = arg.event.extendedProps;
       const classes: string[] = [];
       if (props.state === 1) classes.push("evt-waiting");
       if (props.state === 4 || props.state === 6) classes.push("evt-cancelled");
       if (props.has_aev_or_care_codes === false) classes.push("evt-no-aev");
       if (props.series_id) classes.push("evt-series");
+      if (selectedIdsRef.current.has(Number(arg.event.id)))
+        classes.push("evt-selected");
       return classes;
     },
     [],
   );
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
-    setEditingId(Number(arg.event.id));
+    const id = Number(arg.event.id);
+    if (multiSelectRef.current) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      arg.el.classList.toggle("evt-selected");
+    } else {
+      setEditingId(id);
+    }
   }, []);
 
   // Rich hover box via tippy (with avatar when available).
@@ -295,6 +322,63 @@ export const PlanningCalendar: React.FC = () => {
     [dataProvider, notify],
   );
 
+  const toggleMultiSelect = useCallback(() => {
+    setMultiSelect((v) => {
+      if (v) {
+        setSelectedIds(new Set());
+        setTimeout(() => calendarRef.current?.getApi().refetchEvents(), 0);
+      }
+      return !v;
+    });
+  }, []);
+
+  const bulkAssign = useCallback(async () => {
+    if (bulkEmployee === "" || selectedIds.size === 0) return;
+    setBulkBusy(true);
+    let ok = 0;
+    const errors: string[] = [];
+    for (const id of selectedIds) {
+      try {
+        await dataProvider.updateEvent(id, {
+          employee_id: Number(bulkEmployee),
+        });
+        ok++;
+      } catch (e) {
+        errors.push(`#${id}: ${(e as Error).message}`);
+      }
+    }
+    setBulkBusy(false);
+    notify(
+      `Assignation : ${ok} ok${errors.length ? `, ${errors.length} échec(s)` : ""}`,
+      { type: errors.length ? "warning" : "success" },
+    );
+    setSelectedIds(new Set());
+    setMultiSelect(false);
+    calendarRef.current?.getApi().refetchEvents();
+  }, [bulkEmployee, selectedIds, dataProvider, notify]);
+
+  const bulkDuplicate = useCallback(async () => {
+    if (!bulkDate || selectedIds.size === 0) return;
+    setBulkBusy(true);
+    try {
+      const res = await dataProvider.bulkDuplicateEvents({
+        event_ids: [...selectedIds],
+        target_date: bulkDate,
+      });
+      notify(
+        `Duplication : ${res.created_count} créé(s)${res.skipped_count ? `, ${res.skipped_count} ignoré(s)` : ""}`,
+        { type: "success" },
+      );
+      setSelectedIds(new Set());
+      setMultiSelect(false);
+      calendarRef.current?.getApi().refetchEvents();
+    } catch (e) {
+      notify(`Duplication : ${(e as Error).message}`, { type: "error" });
+    } finally {
+      setBulkBusy(false);
+    }
+  }, [bulkDate, selectedIds, dataProvider, notify]);
+
   return (
     <Card sx={{ p: 2, mt: 1 }}>
       <Title title="Planning (calendrier)" />
@@ -315,8 +399,16 @@ export const PlanningCalendar: React.FC = () => {
             />
           )}
         </Stack>
-        <FormControl size="small" sx={{ minWidth: 220 }}>
-          <InputLabel id="emp-filter-label">Employé</InputLabel>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Button
+            size="small"
+            variant={multiSelect ? "contained" : "outlined"}
+            onClick={toggleMultiSelect}
+          >
+            {multiSelect ? "Quitter la sélection" : "Sélection multiple"}
+          </Button>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel id="emp-filter-label">Employé</InputLabel>
           <Select
             labelId="emp-filter-label"
             label="Employé"
@@ -336,7 +428,8 @@ export const PlanningCalendar: React.FC = () => {
               </MenuItem>
             ))}
           </Select>
-        </FormControl>
+          </FormControl>
+        </Stack>
       </Stack>
 
       <Box
@@ -348,6 +441,13 @@ export const PlanningCalendar: React.FC = () => {
           },
           "& .fc .evt-no-aev": { borderLeft: "4px solid #f0ad4e !important" },
           "& .fc .evt-series": { boxShadow: "inset 3px 0 0 0 #6f42c1" },
+          "& .fc .evt-selected": {
+            outline: "2px solid #1976d2",
+            outlineOffset: "-2px",
+          },
+          "& .fc .fc-event": {
+            cursor: multiSelect ? "copy" : "pointer",
+          },
         }}
       >
         <FullCalendar
@@ -386,6 +486,76 @@ export const PlanningCalendar: React.FC = () => {
           selectable={false}
         />
       </Box>
+
+      {multiSelect && (
+        <Paper
+          elevation={4}
+          sx={{
+            position: "sticky",
+            bottom: 8,
+            mt: 1,
+            p: 1.5,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            flexWrap: "wrap",
+            zIndex: 5,
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {selectedIds.size} sélectionné(s)
+          </Typography>
+          <Divider orientation="vertical" flexItem />
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel id="bulk-emp">Employé</InputLabel>
+            <Select
+              labelId="bulk-emp"
+              label="Employé"
+              value={bulkEmployee}
+              onChange={(e) =>
+                setBulkEmployee(
+                  e.target.value === "" ? "" : Number(e.target.value),
+                )
+              }
+            >
+              <MenuItem value="">
+                <em>—</em>
+              </MenuItem>
+              {employeeChoices.map((emp) => (
+                <MenuItem key={emp.id} value={emp.id}>
+                  {emp.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button
+            size="small"
+            variant="contained"
+            disabled={bulkBusy || bulkEmployee === "" || selectedIds.size === 0}
+            onClick={bulkAssign}
+          >
+            Assigner
+          </Button>
+          <Divider orientation="vertical" flexItem />
+          <TextField
+            size="small"
+            type="date"
+            label="Dupliquer vers"
+            InputLabelProps={{ shrink: true }}
+            value={bulkDate}
+            onChange={(e) => setBulkDate(e.target.value)}
+          />
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={bulkBusy || !bulkDate || selectedIds.size === 0}
+            onClick={bulkDuplicate}
+          >
+            Dupliquer
+          </Button>
+          {bulkBusy && <CircularProgress size={20} />}
+        </Paper>
+      )}
 
       {editingId != null && (
         <EventEditDialog

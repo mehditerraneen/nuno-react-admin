@@ -288,4 +288,56 @@ test.describe("Planning calendar", () => {
     // the toolbar shows the active series-filter chip
     await expect(page.getByText(/Série series-a/i)).toBeVisible();
   });
+
+  test("multi-select + bulk assign sends employee_id per event", async ({
+    page,
+  }) => {
+    await page.goto("/#/planning/calendar");
+    await page.getByRole("button", { name: /Sélection multiple/i }).click();
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    await expect(page.getByText(/1 sélectionné/i)).toBeVisible();
+
+    await page.getByLabel("Employé").last().click();
+    await page.getByRole("option", { name: "Dupont Jean" }).click();
+
+    const putReq = page.waitForRequest(
+      (r) => /\/events\/\d+\?/.test(r.url()) && r.method() === "PUT",
+    );
+    await page.getByRole("button", { name: /^Assigner$/i }).click();
+    const req = await putReq;
+    expect(req.postDataJSON()).toMatchObject({ employee_id: 1 });
+  });
+
+  test("multi-select + bulk duplicate posts to bulk-duplicate", async ({
+    page,
+  }) => {
+    await page.route(/\/events\/bulk-duplicate/, (route) =>
+      route.fulfill({
+        json: {
+          requested: 1,
+          created_count: 1,
+          created_ids: [99],
+          skipped_count: 0,
+          skipped: [],
+          errors: [],
+          target_date: "2026-07-20",
+        },
+      }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.getByRole("button", { name: /Sélection multiple/i }).click();
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    await page.getByLabel("Dupliquer vers").fill("2026-07-20");
+
+    const postReq = page.waitForRequest(
+      (r) =>
+        /\/events\/bulk-duplicate/.test(r.url()) && r.method() === "POST",
+    );
+    await page.getByRole("button", { name: /^Dupliquer$/i }).click();
+    const req = await postReq;
+    expect(req.postDataJSON()).toMatchObject({
+      event_ids: [42],
+      target_date: "2026-07-20",
+    });
+  });
 });

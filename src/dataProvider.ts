@@ -578,6 +578,16 @@ export interface CalendarEventRead {
 
 export type SeriesAction = "single" | "following" | "all";
 
+export interface BulkDuplicateResult {
+  requested: number;
+  created_count: number;
+  created_ids: number[];
+  skipped_count: number;
+  skipped: number[];
+  errors: Array<{ event_id: number; error: string }>;
+  target_date: string;
+}
+
 export interface CalendarRange {
   start: string; // ISO date/datetime
   end: string;
@@ -720,6 +730,11 @@ export interface MyDataProvider extends DataProvider {
     id: Identifier,
     seriesAction?: SeriesAction,
   ) => Promise<void>;
+  // Clone selected events to a target date (staff only).
+  bulkDuplicateEvents: (input: {
+    event_ids: number[];
+    target_date: string;
+  }) => Promise<BulkDuplicateResult>;
   // AEV / care codes tied to the patient's established plan.
   getEventAev: (id: Identifier) => Promise<AevPlan>;
   aevMutate: (
@@ -3093,6 +3108,18 @@ export const dataProvider: MyDataProvider = {
       { method: "DELETE" },
     );
     if (!res.ok) throw new Error(await parseEventApiError(res));
+  },
+
+  bulkDuplicateEvents: async (input: {
+    event_ids: number[];
+    target_date: string;
+  }) => {
+    const res = await authenticatedFetch(`${apiUrl}/events/bulk-duplicate`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) throw new Error(await parseEventApiError(res));
+    return res.json();
   },
 
   getEventAev: async (id: Identifier) => {
