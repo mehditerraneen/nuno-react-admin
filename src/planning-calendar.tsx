@@ -11,11 +11,13 @@ import {
   Box,
   Button,
   Card,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   Grid,
   IconButton,
@@ -43,7 +45,12 @@ import type {
 import tippy from "tippy.js";
 import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";
-import type { MyDataProvider, CalendarEventRead } from "./dataProvider";
+import type {
+  MyDataProvider,
+  CalendarEventRead,
+  AevPlan,
+  AevMutatePayload,
+} from "./dataProvider";
 
 // Event states (mirrors invoices/events.py Event.STATES)
 const STATE_LABELS: Record<number, string> = {
@@ -202,10 +209,11 @@ export const PlanningCalendar: React.FC = () => {
 
   const eventClassNames = useCallback(
     (arg: { event: { extendedProps: Partial<CalendarEventRead> } }) => {
-      const stateId = arg.event.extendedProps.state;
+      const props = arg.event.extendedProps;
       const classes: string[] = [];
-      if (stateId === 1) classes.push("evt-waiting");
-      if (stateId === 4 || stateId === 6) classes.push("evt-cancelled");
+      if (props.state === 1) classes.push("evt-waiting");
+      if (props.state === 4 || props.state === 6) classes.push("evt-cancelled");
+      if (props.has_aev_or_care_codes === false) classes.push("evt-no-aev");
       return classes;
     },
     [],
@@ -301,6 +309,7 @@ export const PlanningCalendar: React.FC = () => {
           "& .fc .evt-cancelled .fc-event-title": {
             textDecoration: "line-through",
           },
+          "& .fc .evt-no-aev": { borderLeft: "4px solid #f0ad4e !important" },
         }}
       >
         <FullCalendar
@@ -431,6 +440,173 @@ interface EventFormState {
   event_report: string;
   event_address: string;
 }
+
+// AEV / care codes panel — suggestions from the patient's established plan,
+// attached acts with quota usage, minutes budget, add/remove.
+const AevPanel: React.FC<{ eventId: number }> = ({ eventId }) => {
+  const dataProvider = useDataProvider<MyDataProvider>();
+  const notify = useNotify();
+  const [plan, setPlan] = useState<AevPlan | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    dataProvider
+      .getEventAev(eventId)
+      .then(setPlan)
+      .catch((e: Error) => notify(`AEV : ${e.message}`, { type: "error" }))
+      .finally(() => setLoading(false));
+  }, [dataProvider, eventId, notify]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const mutate = async (payload: AevMutatePayload) => {
+    setBusy(true);
+    try {
+      await dataProvider.aevMutate(eventId, payload);
+      load();
+    } catch (e) {
+      notify(`AEV : ${(e as Error).message}`, { type: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+        <CircularProgress size={22} />
+      </Box>
+    );
+  }
+  if (!plan) return null;
+  if (!plan.patient_id) {
+    return (
+      <Typography variant="caption" color="text.secondary">
+        Aucun patient — pas de plan AEV.
+      </Typography>
+    );
+  }
+
+  return (
+    <Box>
+      <Typography variant="subtitle2" gutterBottom>
+        Codes AEV (selon le plan établi)
+      </Typography>
+
+      {plan.minutes && (
+        <Alert
+          severity={plan.minutes.over ? "warning" : "info"}
+          sx={{ py: 0, mb: 1 }}
+        >
+          <Typography variant="caption">
+            Forfait {plan.minutes.forfait_code ?? "—"} :{" "}
+            {plan.minutes.consumed ?? 0}/{plan.minutes.budget ?? "?"} min cette
+            semaine{plan.minutes.over ? " — dépassé" : ""}
+          </Typography>
+        </Alert>
+      )}
+
+      {plan.timing && plan.timing.acts_min != null && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          sx={{ mb: 1 }}
+        >
+          Actes : {plan.timing.acts_min} min · Séance :{" "}
+          {plan.timing.current_min ?? 0} min
+          {plan.timing.suggested_end
+            ? ` · Fin suggérée : ${plan.timing.suggested_end}`
+            : ""}
+        </Typography>
+      )}
+
+      {plan.attached.length > 0 && (
+        <Stack spacing={0.5} sx={{ mb: 1 }}>
+          {plan.attached.map((a) => (
+            <Box
+              key={a.link_id}
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <Chip
+                size="small"
+                color="info"
+                label={`${a.code ?? "?"}${a.quantity > 1 ? ` ×${a.quantity}` : ""}`}
+              />
+              <Typography variant="caption" sx={{ flex: 1 }}>
+                {a.label}
+                {a.allocated != null
+                  ? ` — ${a.consumed}/${a.allocated}/${a.period_label}`
+                  : ""}
+              </Typography>
+              <Button
+                size="small"
+                color="error"
+                disabled={busy}
+                onClick={() => mutate({ action: "remove", link_id: a.link_id })}
+              >
+                Retirer
+              </Button>
+            </Box>
+          ))}
+        </Stack>
+      )}
+
+      <Divider sx={{ my: 1 }} />
+      <Typography variant="caption" color="text.secondary">
+        Suggestions du plan
+      </Typography>
+      <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+        {plan.suggestions.length === 0 && (
+          <Typography variant="caption" color="text.secondary">
+            {plan.has_active_plan
+              ? "Aucune suggestion pour ce créneau."
+              : "Pas de plan actif pour ce patient."}
+          </Typography>
+        )}
+        {plan.suggestions.map((s) => (
+          <Box
+            key={s.item_id}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              opacity: s.status === "on_event" ? 0.5 : 1,
+            }}
+          >
+            <Chip size="small" variant="outlined" label={s.code} />
+            <Typography variant="caption" sx={{ flex: 1 }}>
+              {s.label}
+              {s.remaining != null
+                ? ` — reste ${s.remaining}/${s.allocated}`
+                : s.status === "no_alloc"
+                  ? " — hors forfait"
+                  : ""}
+            </Typography>
+            {s.status === "on_event" ? (
+              <Chip size="small" color="success" label="ajouté" />
+            ) : (
+              <Button
+                size="small"
+                disabled={busy || !s.cns_detail_id || s.status === "exhausted"}
+                onClick={() =>
+                  s.cns_detail_id &&
+                  mutate({ action: "add", detail_id: s.cns_detail_id })
+                }
+              >
+                {s.status === "exhausted" ? "épuisé" : "Ajouter"}
+              </Button>
+            )}
+          </Box>
+        ))}
+      </Stack>
+    </Box>
+  );
+};
 
 const EventEditDialog: React.FC<{
   eventId: number;
@@ -674,6 +850,11 @@ const EventEditDialog: React.FC<{
                 />
               </Grid>
             </Grid>
+
+            <Box sx={{ mt: 2 }}>
+              <Divider sx={{ mb: 1.5 }} />
+              <AevPanel eventId={eventId} />
+            </Box>
           </>
         )}
       </DialogContent>

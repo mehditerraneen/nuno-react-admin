@@ -572,11 +572,106 @@ export interface CalendarEventRead {
   tour_id: number | null;
   color: string | null;
   textColor: string | null;
+  has_aev_or_care_codes?: boolean;
 }
 
 export interface CalendarRange {
   start: string; // ISO date/datetime
   end: string;
+}
+
+// ---- AEV / care codes (FastAPI /events/{id}/aev-*) ----
+export interface AevSuggestion {
+  item_id: number;
+  code: string;
+  label: string;
+  description: string;
+  type: string;
+  planned: string | null;
+  on_event: boolean;
+  cns_detail_id: number | null;
+  allocated: number | null;
+  consumed: number | null;
+  remaining: number | null;
+  status: "on_event" | "no_alloc" | "exhausted" | "available";
+}
+
+export interface AevAttached {
+  link_id: number;
+  detail_id: number | null;
+  code: string | null;
+  label: string | null;
+  description: string;
+  quantity: number;
+  is_done: boolean;
+  not_done_reason: string;
+  allocated: number | null;
+  consumed: number | null;
+  remaining: number | null;
+  period_label: string | null;
+}
+
+export interface AevMinutes {
+  nature_package: number | null;
+  forfait_code: string | null;
+  budget: number | null;
+  consumed: number | null;
+  planned: number | null;
+  over: boolean;
+  plan_over_cap: boolean;
+  period: [string, string];
+}
+
+export interface AevTiming {
+  acts_min?: number;
+  current_min?: number;
+  suggested_end?: string | null;
+  delta_min?: number;
+}
+
+export interface AevGeneric {
+  id: number;
+  label: string;
+  minutes: number;
+}
+
+export interface AevPlan {
+  event_id: number;
+  day: string | null;
+  patient_id: number | null;
+  has_active_plan: boolean;
+  is_done: boolean;
+  suggestions: AevSuggestion[];
+  attached: AevAttached[];
+  generic: AevGeneric[];
+  minutes: AevMinutes | null;
+  timing: AevTiming | null;
+}
+
+export interface AevMutatePayload {
+  action:
+    | "add"
+    | "update"
+    | "remove"
+    | "add_generic"
+    | "update_generic"
+    | "remove_generic";
+  detail_id?: number;
+  link_id?: number;
+  quantity?: number;
+  is_done?: boolean;
+  not_done_reason?: string | null;
+  label?: string;
+  minutes?: number;
+  id?: number;
+}
+
+export interface AevMutateResult {
+  ok: boolean;
+  attached: AevAttached[];
+  generic: AevGeneric[];
+  minutes: AevMinutes | null;
+  timing: AevTiming | null;
 }
 
 export interface EventSchedule {
@@ -615,6 +710,12 @@ export interface MyDataProvider extends DataProvider {
   ) => Promise<CalendarEventRead>;
   // Full single event (includes event_report / event_address).
   getEvent: (id: Identifier) => Promise<CalendarEventRead>;
+  // AEV / care codes tied to the patient's established plan.
+  getEventAev: (id: Identifier) => Promise<AevPlan>;
+  aevMutate: (
+    id: Identifier,
+    payload: AevMutatePayload,
+  ) => Promise<AevMutateResult>;
 
   getLatestCnsCarePlanForPatient: (
     patientId: Identifier,
@@ -2965,6 +3066,21 @@ export const dataProvider: MyDataProvider = {
 
   getEvent: async (id: Identifier) => {
     const res = await authenticatedFetch(`${apiUrl}/events/${id}`);
+    if (!res.ok) throw new Error(await parseEventApiError(res));
+    return res.json();
+  },
+
+  getEventAev: async (id: Identifier) => {
+    const res = await authenticatedFetch(`${apiUrl}/events/${id}/aev-plan`);
+    if (!res.ok) throw new Error(await parseEventApiError(res));
+    return res.json();
+  },
+
+  aevMutate: async (id: Identifier, payload: AevMutatePayload) => {
+    const res = await authenticatedFetch(`${apiUrl}/events/${id}/aev-mutate`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
     if (!res.ok) throw new Error(await parseEventApiError(res));
     return res.json();
   },
