@@ -29,6 +29,8 @@ import {
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 import { Title, useDataProvider, useGetList, useNotify } from "react-admin";
 import type { EventUpdatePayload } from "./dataProvider";
 import FullCalendar from "@fullcalendar/react";
@@ -532,17 +534,46 @@ const AevPanel: React.FC<{ eventId: number }> = ({ eventId }) => {
               key={a.link_id}
               sx={{ display: "flex", alignItems: "center", gap: 1 }}
             >
-              <Chip
-                size="small"
-                color="info"
-                label={`${a.code ?? "?"}${a.quantity > 1 ? ` ×${a.quantity}` : ""}`}
-              />
+              <Chip size="small" color="info" label={a.code ?? "?"} />
               <Typography variant="caption" sx={{ flex: 1 }}>
                 {a.label}
                 {a.allocated != null
                   ? ` — ${a.consumed}/${a.allocated}/${a.period_label}`
                   : ""}
               </Typography>
+              {/* Quantity stepper (aev-mutate action=update) */}
+              <IconButton
+                size="small"
+                disabled={busy || a.quantity <= 1}
+                onClick={() =>
+                  mutate({
+                    action: "update",
+                    link_id: a.link_id,
+                    quantity: a.quantity - 1,
+                  })
+                }
+              >
+                <RemoveIcon fontSize="inherit" />
+              </IconButton>
+              <Typography
+                variant="caption"
+                sx={{ minWidth: 18, textAlign: "center", fontWeight: 600 }}
+              >
+                {a.quantity}
+              </Typography>
+              <IconButton
+                size="small"
+                disabled={busy}
+                onClick={() =>
+                  mutate({
+                    action: "update",
+                    link_id: a.link_id,
+                    quantity: a.quantity + 1,
+                  })
+                }
+              >
+                <AddIcon fontSize="inherit" />
+              </IconButton>
               <Button
                 size="small"
                 color="error"
