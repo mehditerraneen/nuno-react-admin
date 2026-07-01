@@ -100,7 +100,13 @@ async function mockApi(page: Page) {
   );
   await page.route(/\/employees(\?|$|\/)/, (route) =>
     route.fulfill({
-      json: { data: [{ id: 1, name: "Dupont Jean" }], total: 1 },
+      json: {
+        data: [
+          { id: 1, name: "Dupont Jean" },
+          { id: 2, name: "Durand Marie" },
+        ],
+        total: 2,
+      },
     }),
   );
   await page.route(/\/events\?/, (route) =>
@@ -339,5 +345,43 @@ test.describe("Planning calendar", () => {
       event_ids: [42],
       target_date: "2026-07-20",
     });
+  });
+
+  test("collaborators are prefilled and sent on save", async ({ page }) => {
+    await page.route(/\/events\/\d+(\?|$)/, (route) => {
+      if (route.request().method() === "PUT") {
+        return route.fulfill({ json: singleEvent });
+      }
+      return route.fulfill({
+        json: { ...singleEvent, additional_employee_ids: [2] },
+      });
+    });
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("Durand Marie")).toBeVisible();
+
+    const putReq = page.waitForRequest(
+      (r) => /\/events\/\d+\?/.test(r.url()) && r.method() === "PUT",
+    );
+    await dialog.getByRole("button", { name: /Enregistrer/i }).click();
+    const req = await putReq;
+    expect(req.postDataJSON().additional_employee_ids).toContain(2);
+  });
+
+  test("collaborators show a 🤝 marker on the event", async ({ page }) => {
+    await page.route(/\/events\?/, (route) =>
+      route.fulfill({
+        json: {
+          items: [{ ...listEvent, additional_employee_ids: [2] }],
+          total: 1,
+          page: 1,
+          page_size: 100,
+          pages: 1,
+        },
+      }),
+    );
+    await page.goto("/#/planning/calendar");
+    await expect(page.getByText(/🤝/).first()).toBeVisible({ timeout: 15000 });
   });
 });

@@ -568,6 +568,7 @@ export interface CalendarEventRead {
   employee_id: number | null;
   employee_name: string | null;
   employee_avatar: string | null; // data URI (minified_avatar_base64) or URL
+  additional_employee_ids?: number[];
   event_type_enum: string | null;
   tour_id: number | null;
   series_id?: string | null;
@@ -700,6 +701,7 @@ export interface EventUpdatePayload {
   time_end?: string;
   patient_id?: number | null;
   employee_id?: number | null;
+  additional_employee_ids?: number[];
   state?: number;
   event_type_enum?: string | null;
   notes?: string;

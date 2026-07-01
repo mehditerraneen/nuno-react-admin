@@ -121,9 +121,10 @@ const titleOf = (e: CalendarEventRead) =>
 
 const toFcEvent = (e: CalendarEventRead): EventInput => {
   const hasTime = !!e.time_start_event;
+  const collab = e.additional_employee_ids?.length ? "🤝 " : "";
   return {
     id: String(e.id),
-    title: titleOf(e),
+    title: collab + titleOf(e),
     start: hasTime ? `${e.day}T${e.time_start_event}` : e.day,
     end: e.time_end_event ? `${e.day}T${e.time_end_event}` : undefined,
     allDay: !hasTime,
@@ -145,6 +146,9 @@ const tooltipHtml = (e: CalendarEventRead) => {
   const rows = [
     time.length > 1 ? `🕐 ${escapeHtml(time)}` : "",
     e.employee_name ? `👤 ${escapeHtml(e.employee_name)}` : "",
+    e.additional_employee_ids?.length
+      ? `🤝 ${e.additional_employee_ids.length} collaborateur(s)`
+      : "",
     `● ${escapeHtml(STATE_LABELS[e.state] ?? String(e.state))}`,
     e.event_type_enum
       ? `▸ ${escapeHtml(EVENT_TYPE_LABELS[e.event_type_enum] ?? e.event_type_enum)}`
@@ -643,6 +647,7 @@ const PatientAutocomplete: React.FC<{
 
 interface EventFormState {
   employee_id: number | "";
+  additional_employee_ids: number[];
   patient_id: number | "";
   state: number;
   event_type_enum: string;
@@ -992,6 +997,7 @@ const EventEditDialog: React.FC<{
   const [seriesAction, setSeriesAction] = useState<SeriesAction>("single");
   const [form, setForm] = useState<EventFormState>({
     employee_id: "",
+    additional_employee_ids: [],
     patient_id: "",
     state: 2,
     event_type_enum: "",
@@ -1018,6 +1024,7 @@ const EventEditDialog: React.FC<{
         );
         setForm({
           employee_id: ev.employee_id ?? "",
+          additional_employee_ids: ev.additional_employee_ids ?? [],
           patient_id: ev.patient_id ?? "",
           state: ev.state,
           event_type_enum: ev.event_type_enum || "",
@@ -1052,6 +1059,7 @@ const EventEditDialog: React.FC<{
     setSaving(true);
     const payload: EventUpdatePayload = {
       employee_id: form.employee_id === "" ? null : Number(form.employee_id),
+      additional_employee_ids: form.additional_employee_ids,
       patient_id: form.patient_id === "" ? undefined : Number(form.patient_id),
       state: form.state,
       event_type_enum: form.event_type_enum || null,
@@ -1212,6 +1220,41 @@ const EventEditDialog: React.FC<{
                     </MenuItem>
                   ))}
                 </TextField>
+              </Grid>
+              <Grid size={12}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="collab-label">
+                    Collaborateurs (🤝)
+                  </InputLabel>
+                  <Select
+                    labelId="collab-label"
+                    label="Collaborateurs (🤝)"
+                    multiple
+                    value={form.additional_employee_ids}
+                    onChange={(e) =>
+                      set(
+                        "additional_employee_ids",
+                        (e.target.value as number[]).filter(
+                          (v) => typeof v === "number",
+                        ),
+                      )
+                    }
+                    renderValue={(sel) =>
+                      employeeChoices
+                        .filter((c) => (sel as number[]).includes(c.id))
+                        .map((c) => c.name)
+                        .join(", ")
+                    }
+                  >
+                    {employeeChoices
+                      .filter((c) => c.id !== form.employee_id)
+                      .map((c) => (
+                        <MenuItem key={c.id} value={c.id}>
+                          {c.name}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
