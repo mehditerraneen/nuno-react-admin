@@ -70,7 +70,7 @@ const aevPlan = {
     plan_over_cap: false,
     period: [today, today],
   },
-  timing: { acts_min: 0, current_min: 60, suggested_end: null, delta_min: 0 },
+  timing: { acts_min: 90, current_min: 60, suggested_end: "11:30", delta_min: 30 },
 };
 
 async function seedAuth(page: Page) {
@@ -150,11 +150,11 @@ test.describe("Planning calendar", () => {
     await expect(dialog.getByText(/Modifier l'événement/i)).toBeVisible();
     // rich edit fields loaded from GET /events/{id}
     await expect(dialog.getByLabel("Adresse")).toHaveValue("12 rue du Test");
-    // AEV panel from GET /events/{id}/aev-plan
-    await expect(dialog.getByText(/Codes AEV/i)).toBeVisible();
+    // AEV panel from GET /events/{id}/aev-plan — collapsed by default, expand it
+    await dialog.getByText(/Codes AEV/i).click();
     await expect(dialog.getByText("AEVH01")).toBeVisible();
     await expect(
-      dialog.getByRole("button", { name: /Ajouter/i }),
+      dialog.getByRole("button", { name: /^Ajouter$/i }),
     ).toBeVisible();
   });
 
@@ -162,12 +162,39 @@ test.describe("Planning calendar", () => {
     await page.goto("/#/planning/calendar");
     await page.locator(".fc-event").first().click({ timeout: 15000 });
     const dialog = page.getByRole("dialog");
+    await dialog.getByText(/Codes AEV/i).click();
     await expect(dialog.getByText("AEVH01")).toBeVisible();
 
     const mutateCall = page.waitForRequest(/\/events\/\d+\/aev-mutate/);
-    await dialog.getByRole("button", { name: /Ajouter/i }).click();
+    await dialog.getByRole("button", { name: /^Ajouter$/i }).click();
     const req = await mutateCall;
     expect(req.method()).toBe("POST");
     expect(req.postDataJSON()).toMatchObject({ action: "add", detail_id: 500 });
+  });
+
+  test("adapts the end time to the acts total", async ({ page }) => {
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    // end starts at 11:00
+    await expect(dialog.getByLabel("Fin")).toHaveValue("11:00");
+    await dialog.getByText(/Codes AEV/i).click();
+    // acts_min=90 from 10:00 -> suggests 11:30
+    await dialog.getByRole("button", { name: /Adapter la fin à 11:30/i }).click();
+    await expect(dialog.getByLabel("Fin")).toHaveValue("11:30");
+  });
+
+  test("hides the AEV panel when the event has no patient", async ({ page }) => {
+    // Override the single-event fetch to return an event without a patient.
+    await page.route(/\/events\/\d+(\?|$)/, (route) =>
+      route.fulfill({
+        json: { ...singleEvent, patient_id: null, patient_name: null },
+      }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Modifier l'événement/i)).toBeVisible();
+    await expect(dialog.getByText(/Codes AEV/i)).toHaveCount(0);
   });
 });

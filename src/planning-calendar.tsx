@@ -6,6 +6,9 @@ import React, {
   useState,
 } from "react";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Autocomplete,
   Box,
@@ -31,6 +34,8 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import { Title, useDataProvider, useGetList, useNotify } from "react-admin";
 import type { EventUpdatePayload } from "./dataProvider";
 import FullCalendar from "@fullcalendar/react";
@@ -86,6 +91,13 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const toDateStr = (d: Date) =>
   `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const toTimeStr = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+/** Add minutes to an "HH:MM" string, returning "HH:MM" (same day, capped 23:59). */
+const addMinutes = (hhmm: string, mins: number): string => {
+  const [h, m] = hhmm.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  const total = Math.min(23 * 60 + 59, h * 60 + m + mins);
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+};
 
 const escapeHtml = (s: string) =>
   s.replace(
@@ -445,12 +457,18 @@ interface EventFormState {
 
 // AEV / care codes panel — suggestions from the patient's established plan,
 // attached acts with quota usage, minutes budget, add/remove.
-const AevPanel: React.FC<{ eventId: number }> = ({ eventId }) => {
+const AevPanel: React.FC<{
+  eventId: number;
+  startTime: string;
+  currentEnd: string;
+  onAdaptEnd: (hhmm: string) => void;
+}> = ({ eventId, startTime, currentEnd, onAdaptEnd }) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
   const [plan, setPlan] = useState<AevPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [addQty, setAddQty] = useState<Record<number, number>>({});
 
   const load = useCallback(() => {
     setLoading(true);
@@ -477,57 +495,74 @@ const AevPanel: React.FC<{ eventId: number }> = ({ eventId }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-        <CircularProgress size={22} />
-      </Box>
-    );
-  }
-  if (!plan) return null;
-  if (!plan.patient_id) {
-    return (
-      <Typography variant="caption" color="text.secondary">
-        Aucun patient — pas de plan AEV.
-      </Typography>
-    );
-  }
+  const attachedCount = plan?.attached.length ?? 0;
+  const actsMin = plan?.timing?.acts_min ?? 0;
+  // Suggested end time = event start + total minutes of the attached acts.
+  const suggestedEnd =
+    startTime && actsMin > 0 ? addMinutes(startTime, actsMin) : null;
 
   return (
-    <Box>
-      <Typography variant="subtitle2" gutterBottom>
-        Codes AEV (selon le plan établi)
-      </Typography>
-
-      {plan.minutes && (
-        <Alert
-          severity={plan.minutes.over ? "warning" : "info"}
-          sx={{ py: 0, mb: 1 }}
-        >
-          <Typography variant="caption">
-            Forfait {plan.minutes.forfait_code ?? "—"} :{" "}
-            {plan.minutes.consumed ?? 0}/{plan.minutes.budget ?? "?"} min cette
-            semaine{plan.minutes.over ? " — dépassé" : ""}
-          </Typography>
-        </Alert>
-      )}
-
-      {plan.timing && plan.timing.acts_min != null && (
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
-          sx={{ mb: 1 }}
-        >
-          Actes : {plan.timing.acts_min} min · Séance :{" "}
-          {plan.timing.current_min ?? 0} min
-          {plan.timing.suggested_end
-            ? ` · Fin suggérée : ${plan.timing.suggested_end}`
-            : ""}
+    <Accordion
+      disableGutters
+      defaultExpanded={false}
+      sx={{ boxShadow: "none", "&:before": { display: "none" } }}
+    >
+      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
+        <Typography variant="subtitle2">
+          Codes AEV (selon le plan établi)
+          {attachedCount > 0 ? ` — ${attachedCount} attaché(s)` : ""}
         </Typography>
-      )}
+      </AccordionSummary>
+      <AccordionDetails sx={{ px: 0, pt: 0 }}>
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+            <CircularProgress size={22} />
+          </Box>
+        ) : !plan ? null : !plan.patient_id ? (
+          <Typography variant="caption" color="text.secondary">
+            Aucun patient — pas de plan AEV.
+          </Typography>
+        ) : (
+          <>
+            {plan.minutes && (
+              <Alert
+                severity={plan.minutes.over ? "warning" : "info"}
+                sx={{ py: 0, mb: 1 }}
+              >
+                <Typography variant="caption">
+                  Forfait {plan.minutes.forfait_code ?? "—"} :{" "}
+                  {plan.minutes.consumed ?? 0}/{plan.minutes.budget ?? "?"} min
+                  cette semaine{plan.minutes.over ? " — dépassé" : ""}
+                </Typography>
+              </Alert>
+            )}
 
-      {plan.attached.length > 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                mb: 1,
+                flexWrap: "wrap",
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Actes : {actsMin} min · Séance : {plan.timing?.current_min ?? 0}{" "}
+                min
+              </Typography>
+              {suggestedEnd && suggestedEnd !== currentEnd && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ScheduleIcon fontSize="small" />}
+                  onClick={() => onAdaptEnd(suggestedEnd)}
+                >
+                  Adapter la fin à {suggestedEnd}
+                </Button>
+              )}
+            </Box>
+
+            {plan.attached.length > 0 && (
         <Stack spacing={0.5} sx={{ mb: 1 }}>
           {plan.attached.map((a) => (
             <Box
@@ -621,21 +656,46 @@ const AevPanel: React.FC<{ eventId: number }> = ({ eventId }) => {
             {s.status === "on_event" ? (
               <Chip size="small" color="success" label="ajouté" />
             ) : (
-              <Button
-                size="small"
-                disabled={busy || !s.cns_detail_id || s.status === "exhausted"}
-                onClick={() =>
-                  s.cns_detail_id &&
-                  mutate({ action: "add", detail_id: s.cns_detail_id })
-                }
-              >
-                {s.status === "exhausted" ? "épuisé" : "Ajouter"}
-              </Button>
+              <>
+                <TextField
+                  type="number"
+                  size="small"
+                  value={addQty[s.item_id] ?? 1}
+                  onChange={(e) =>
+                    setAddQty((q) => ({
+                      ...q,
+                      [s.item_id]: Math.max(1, Number(e.target.value) || 1),
+                    }))
+                  }
+                  inputProps={{ min: 1 }}
+                  sx={{ width: 56 }}
+                  disabled={busy || s.status === "exhausted"}
+                />
+                <Button
+                  size="small"
+                  disabled={
+                    busy || !s.cns_detail_id || s.status === "exhausted"
+                  }
+                  onClick={() =>
+                    s.cns_detail_id &&
+                    mutate({
+                      action: "add",
+                      detail_id: s.cns_detail_id,
+                      quantity: addQty[s.item_id] ?? 1,
+                    })
+                  }
+                >
+                  {s.status === "exhausted" ? "épuisé" : "Ajouter"}
+                </Button>
+              </>
             )}
           </Box>
         ))}
-      </Stack>
-    </Box>
+            </Stack>
+          </>
+        )}
+      </AccordionDetails>
+    </Accordion>
   );
 };
 
@@ -882,10 +942,17 @@ const EventEditDialog: React.FC<{
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 2 }}>
-              <Divider sx={{ mb: 1.5 }} />
-              <AevPanel eventId={eventId} />
-            </Box>
+            {form.patient_id !== "" && (
+              <Box sx={{ mt: 2 }}>
+                <Divider sx={{ mb: 1.5 }} />
+                <AevPanel
+                  eventId={eventId}
+                  startTime={form.time_start}
+                  currentEnd={form.time_end}
+                  onAdaptEnd={(v) => set("time_end", v)}
+                />
+              </Box>
+            )}
           </>
         )}
       </DialogContent>
