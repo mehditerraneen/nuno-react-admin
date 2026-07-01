@@ -275,4 +275,17 @@ test.describe("Planning calendar", () => {
     const req = await delReq;
     expect(req.url()).toContain("series_action=all");
   });
+
+  test("'Voir la série' activates the series filter", async ({ page }) => {
+    await page.route(/\/events\/\d+(\?|$)/, (route) =>
+      route.fulfill({ json: { ...singleEvent, series_id: "series-abc" } }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: /Voir la série/i }).click();
+    await expect(dialog).toBeHidden();
+    // the toolbar shows the active series-filter chip
+    await expect(page.getByText(/Série series-a/i)).toBeVisible();
+  });
 });

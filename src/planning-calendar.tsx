@@ -35,6 +35,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/Delete";
+import LinkIcon from "@mui/icons-material/Link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import { Title, useDataProvider, useGetList, useNotify } from "react-admin";
@@ -147,6 +148,7 @@ const tooltipHtml = (e: CalendarEventRead) => {
     e.event_type_enum
       ? `▸ ${escapeHtml(EVENT_TYPE_LABELS[e.event_type_enum] ?? e.event_type_enum)}`
       : "",
+    e.series_id ? `🔗 Série ${escapeHtml(String(e.series_id).slice(0, 8))}` : "",
     e.notes ? `📝 ${escapeHtml(e.notes)}` : "",
   ]
     .filter(Boolean)
@@ -174,6 +176,14 @@ export const PlanningCalendar: React.FC = () => {
   const [employeeFilter, setEmployeeFilter] = useState<number | "">("");
   const employeeFilterRef = useRef<number | "">("");
   employeeFilterRef.current = employeeFilter;
+  const [seriesFilter, setSeriesFilter] = useState<string | null>(null);
+  const seriesFilterRef = useRef<string | null>(null);
+  seriesFilterRef.current = seriesFilter;
+
+  // Refetch whenever a client-side filter changes (after the refs are updated).
+  useEffect(() => {
+    calendarRef.current?.getApi().refetchEvents();
+  }, [employeeFilter, seriesFilter]);
 
   const { data: employees } = useGetList("employees", {
     pagination: { page: 1, perPage: 500 },
@@ -203,9 +213,10 @@ export const PlanningCalendar: React.FC = () => {
         })
         .then((events) => {
           const empId = employeeFilterRef.current;
-          const filtered = empId
-            ? events.filter((e) => e.employee_id === empId)
-            : events;
+          const ser = seriesFilterRef.current;
+          let filtered = events;
+          if (empId) filtered = filtered.filter((e) => e.employee_id === empId);
+          if (ser) filtered = filtered.filter((e) => e.series_id === ser);
           success(filtered.map(toFcEvent));
         })
         .catch((error: Error) => {
@@ -220,7 +231,6 @@ export const PlanningCalendar: React.FC = () => {
 
   const onEmployeeFilterChange = useCallback((value: number | "") => {
     setEmployeeFilter(value);
-    calendarRef.current?.getApi().refetchEvents();
   }, []);
 
   const eventClassNames = useCallback(
@@ -294,7 +304,17 @@ export const PlanningCalendar: React.FC = () => {
         justifyContent="space-between"
         sx={{ mb: 1 }}
       >
-        <Typography variant="h6">Planning — calendrier</Typography>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Typography variant="h6">Planning — calendrier</Typography>
+          {seriesFilter && (
+            <Chip
+              color="secondary"
+              size="small"
+              label={`Série ${seriesFilter.slice(0, 8)}…`}
+              onDelete={() => setSeriesFilter(null)}
+            />
+          )}
+        </Stack>
         <FormControl size="small" sx={{ minWidth: 220 }}>
           <InputLabel id="emp-filter-label">Employé</InputLabel>
           <Select
@@ -375,6 +395,10 @@ export const PlanningCalendar: React.FC = () => {
           onSaved={() => {
             setEditingId(null);
             refetch();
+          }}
+          onFilterSeries={(sid) => {
+            setSeriesFilter(sid);
+            setEditingId(null);
           }}
         />
       )}
@@ -782,7 +806,8 @@ const EventEditDialog: React.FC<{
   employeeChoices: EmployeeChoice[];
   onClose: () => void;
   onSaved: () => void;
-}> = ({ eventId, employeeChoices, onClose, onSaved }) => {
+  onFilterSeries: (seriesId: string) => void;
+}> = ({ eventId, employeeChoices, onClose, onSaved, onFilterSeries }) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
   const [loading, setLoading] = useState(true);
@@ -937,6 +962,28 @@ const EventEditDialog: React.FC<{
               </Grid>
               {seriesId && (
                 <Grid size={12}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Chip
+                      size="small"
+                      color="secondary"
+                      icon={<LinkIcon fontSize="small" />}
+                      label={`Série ${seriesId.slice(0, 8)}…`}
+                    />
+                    <Button
+                      size="small"
+                      onClick={() => onFilterSeries(seriesId)}
+                    >
+                      Voir la série
+                    </Button>
+                  </Box>
                   <TextField
                     select
                     fullWidth
