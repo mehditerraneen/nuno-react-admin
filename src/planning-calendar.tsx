@@ -65,6 +65,7 @@ import type {
   SeriesAction,
   TravelWarning,
   EventActivity,
+  EventReportRow,
 } from "./dataProvider";
 import {
   CARE_TYPES,
@@ -854,6 +855,47 @@ const PROXIMITY: Record<
   no_gps: { label: "sans GPS", color: "default" },
   no_coord: { label: "sans repère", color: "default" },
 };
+
+// A single report card (primary caregiver or a collaborator).
+const ReportCard: React.FC<{
+  name: string;
+  isPrimary: boolean;
+  report?: EventReportRow;
+}> = ({ name, isPrimary, report }) => (
+  <Box sx={{ p: 1, bgcolor: "action.hover", borderRadius: 1 }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+      <Chip
+        size="small"
+        color={isPrimary ? "primary" : "default"}
+        label={report?.author_abbr || name.slice(0, 3).toUpperCase()}
+      />
+      <Typography variant="caption" sx={{ flex: 1 }}>
+        {name} · {isPrimary ? "soignant principal" : "collaborateur"}
+      </Typography>
+      {report?.updated_on && (
+        <Typography variant="caption" color="text.secondary">
+          {new Date(report.updated_on).toLocaleString("fr-FR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          })}
+        </Typography>
+      )}
+    </Box>
+    {report && report.text ? (
+      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+        {report.text}
+      </Typography>
+    ) : (
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ fontStyle: "italic" }}
+      >
+        Pas encore de rapport.
+      </Typography>
+    )}
+  </Box>
+);
 
 // One clock leg (arrival or departure): time + GPS map link + distance + proximity.
 const ClockLeg: React.FC<{
@@ -2033,51 +2075,43 @@ const EventEditDialog: React.FC<{
             </Box>
 
             {activity &&
-              Array.isArray(activity.reports) &&
-              activity.reports.length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <Divider sx={{ mb: 1 }} />
-                <Typography variant="subtitle2" gutterBottom>
-                  Rapports des collaborateurs ({activity.reports.length})
-                </Typography>
-                <Stack spacing={1}>
-                  {activity.reports.map((r, i) => (
-                    <Box
-                      key={r.author_id ?? i}
-                      sx={{ p: 1, bgcolor: "action.hover", borderRadius: 1 }}
-                    >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                          mb: 0.5,
-                        }}
-                      >
-                        <Chip
-                          size="small"
-                          label={r.author_abbr || r.author_name || "?"}
+              (activity.primary_employee_id ||
+                (activity.reports?.length ?? 0) > 0) &&
+              (() => {
+                const reports = activity.reports || [];
+                const primaryReport = reports.find(
+                  (r) => r.author_id === activity.primary_employee_id,
+                );
+                const collabReports = reports.filter(
+                  (r) => r.author_id !== activity.primary_employee_id,
+                );
+                return (
+                  <Box sx={{ mt: 2 }}>
+                    <Divider sx={{ mb: 1 }} />
+                    <Typography variant="subtitle2" gutterBottom>
+                      Rapports ({reports.length})
+                    </Typography>
+                    <Stack spacing={1}>
+                      <ReportCard
+                        name={
+                          activity.primary_employee_name ||
+                          "Soignant principal"
+                        }
+                        isPrimary
+                        report={primaryReport}
+                      />
+                      {collabReports.map((r, i) => (
+                        <ReportCard
+                          key={r.author_id ?? i}
+                          name={r.author_name || "Collaborateur"}
+                          isPrimary={false}
+                          report={r}
                         />
-                        <Typography variant="caption" sx={{ flex: 1 }}>
-                          {r.author_name}
-                        </Typography>
-                        {r.updated_on && (
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(r.updated_on).toLocaleString("fr-FR", {
-                              dateStyle: "short",
-                              timeStyle: "short",
-                            })}
-                          </Typography>
-                        )}
-                      </Box>
-                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                        {r.text}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </Box>
-            )}
+                      ))}
+                    </Stack>
+                  </Box>
+                );
+              })()}
 
             {activity &&
               ((activity.sessions?.length ?? 0) > 0 ||

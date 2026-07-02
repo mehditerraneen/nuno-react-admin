@@ -667,6 +667,14 @@ test.describe("Planning calendar", () => {
           primary_employee_name: "Dupont Jean",
           reports: [
             {
+              author_id: 1,
+              author_name: "Dupont Jean",
+              author_abbr: "DJ",
+              text: "Rapport principal OK",
+              created_on: "2026-07-01T09:00:00",
+              updated_on: "2026-07-01T09:05:00",
+            },
+            {
               author_id: 2,
               author_name: "Durand Marie",
               author_abbr: "DM",
@@ -702,9 +710,11 @@ test.describe("Planning calendar", () => {
     await page.goto("/#/planning/calendar");
     await page.locator(".fc-event").first().click({ timeout: 15000 });
     const dialog = page.getByRole("dialog");
-    await expect(
-      dialog.getByText(/Rapports des collaborateurs \(1\)/i),
-    ).toBeVisible();
+    await expect(dialog.getByText(/Rapports \(2\)/i)).toBeVisible();
+    // Primary caregiver's report is shown and tagged.
+    await expect(dialog.getByText(/soignant principal/i)).toBeVisible();
+    await expect(dialog.getByText(/Rapport principal OK/i)).toBeVisible();
+    // Collaborator's report too.
     await expect(dialog.getByText(/RAS, patient stable/i)).toBeVisible();
     // Admin GPS zone is collapsed — expand it
     await dialog.getByText(/Pointages GPS & temps/i).click();
