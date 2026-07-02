@@ -676,6 +676,43 @@ export interface AevGeneric {
   minutes: number;
 }
 
+export interface EventReportRow {
+  author_id: number | null;
+  author_name: string | null;
+  author_abbr: string | null;
+  text: string;
+  created_on: string | null;
+  updated_on: string | null;
+}
+
+export interface ClockSession {
+  id: number;
+  employee_id: number | null;
+  employee_name: string | null;
+  start_time: string | null;
+  stop_time: string | null;
+  start_lat: number | null;
+  start_lng: number | null;
+  stop_lat: number | null;
+  stop_lng: number | null;
+  start_distance_m: number | null;
+  stop_distance_m: number | null;
+  start_proximity: string | null;
+  stop_proximity: string | null;
+  duration_seconds: number | null;
+}
+
+export interface EventActivity {
+  event_id: number;
+  primary_employee_id: number | null;
+  primary_employee_name: string | null;
+  reports: EventReportRow[];
+  sessions: ClockSession[];
+  total_duration_seconds: number | null;
+  real_time_start: string | null;
+  real_time_end: string | null;
+}
+
 export interface AevCareCode {
   link_id: number;
   care_code_id: number;
@@ -786,6 +823,8 @@ export interface MyDataProvider extends DataProvider {
   ) => Promise<CalendarEventRead>;
   // Full single event (includes event_report / event_address).
   getEvent: (id: Identifier) => Promise<CalendarEventRead>;
+  // Per-collaborator reports + GPS clock sessions (activity zone).
+  getEventActivity: (id: Identifier) => Promise<EventActivity>;
   // Delete (single/following/all), staff-only, with state guards server-side.
   deleteCalendarEvent: (
     id: Identifier,
@@ -3186,6 +3225,12 @@ export const dataProvider: MyDataProvider = {
 
   getEvent: async (id: Identifier) => {
     const res = await authenticatedFetch(`${apiUrl}/events/${id}`);
+    if (!res.ok) throw new Error(await parseEventApiError(res));
+    return res.json();
+  },
+
+  getEventActivity: async (id: Identifier) => {
+    const res = await authenticatedFetch(`${apiUrl}/events/${id}/activity`);
     if (!res.ok) throw new Error(await parseEventApiError(res));
     return res.json();
   },

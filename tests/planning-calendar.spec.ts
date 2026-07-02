@@ -122,6 +122,20 @@ async function mockApi(page: Page) {
       json: { items: [listEvent], total: 1, page: 1, page_size: 100, pages: 1 },
     }),
   );
+  await page.route(/\/events\/\d+\/activity/, (route) =>
+    route.fulfill({
+      json: {
+        event_id: 42,
+        primary_employee_id: 1,
+        primary_employee_name: "Dupont Jean",
+        reports: [],
+        sessions: [],
+        total_duration_seconds: null,
+        real_time_start: null,
+        real_time_end: null,
+      },
+    }),
+  );
   await page.route(/\/events\/\d+\/aev-plan/, (route) =>
     route.fulfill({ json: aevPlan }),
   );
@@ -598,6 +612,62 @@ test.describe("Planning calendar", () => {
       "src",
       /\/media\/prescriptions\/x\.png$/,
     );
+  });
+
+  test("collaborator reports + GPS clock sessions show in the dialog", async ({
+    page,
+  }) => {
+    await page.route(/\/events\/\d+\/activity/, (route) =>
+      route.fulfill({
+        json: {
+          event_id: 42,
+          primary_employee_id: 1,
+          primary_employee_name: "Dupont Jean",
+          reports: [
+            {
+              author_id: 2,
+              author_name: "Durand Marie",
+              author_abbr: "DM",
+              text: "RAS, patient stable",
+              created_on: "2026-07-01T10:00:00",
+              updated_on: "2026-07-01T10:05:00",
+            },
+          ],
+          sessions: [
+            {
+              id: 9,
+              employee_id: 2,
+              employee_name: "Durand Marie",
+              start_time: "2026-07-01T10:02:00",
+              stop_time: "2026-07-01T10:47:00",
+              start_lat: 49.61,
+              start_lng: 6.13,
+              stop_lat: 49.61,
+              stop_lng: 6.13,
+              start_distance_m: 12,
+              stop_distance_m: 20,
+              start_proximity: "ok",
+              stop_proximity: "ok",
+              duration_seconds: 2700,
+            },
+          ],
+          total_duration_seconds: 2700,
+          real_time_start: "10:02",
+          real_time_end: "10:47",
+        },
+      }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await expect(
+      dialog.getByText(/Rapports des collaborateurs \(1\)/i),
+    ).toBeVisible();
+    await expect(dialog.getByText(/RAS, patient stable/i)).toBeVisible();
+    // Admin GPS zone is collapsed — expand it
+    await dialog.getByText(/Pointages GPS & temps/i).click();
+    await expect(dialog.getByText(/Arrivée/i)).toBeVisible();
+    await expect(dialog.getByText(/45 min/i).first()).toBeVisible();
   });
 
   test("collaborators show a 🤝 marker on the event", async ({ page }) => {

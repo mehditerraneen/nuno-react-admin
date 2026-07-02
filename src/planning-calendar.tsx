@@ -64,6 +64,7 @@ import type {
   AevMutatePayload,
   SeriesAction,
   TravelWarning,
+  EventActivity,
 } from "./dataProvider";
 
 // Event states (mirrors invoices/events.py Event.STATES)
@@ -818,6 +819,74 @@ const mediaUrl = (fileUrl: string) => {
   return `${api.replace(/\/fast\/?$/, "")}${fileUrl}`;
 };
 
+// Worked-time seconds → "1h05" / "45 min".
+const fmtDuration = (sec: number) => {
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m} min`;
+};
+
+const PROXIMITY: Record<
+  string,
+  { label: string; color: "success" | "warning" | "default" }
+> = {
+  ok: { label: "sur place", color: "success" },
+  far: { label: "éloigné", color: "warning" },
+  no_gps: { label: "sans GPS", color: "default" },
+  no_coord: { label: "sans repère", color: "default" },
+};
+
+// One clock leg (arrival or departure): time + GPS map link + distance + proximity.
+const ClockLeg: React.FC<{
+  label: string;
+  time: string | null;
+  lat: number | null;
+  lng: number | null;
+  distance: number | null;
+  proximity: string | null;
+}> = ({ label, time, lat, lng, distance, proximity }) => {
+  if (!time) return null;
+  const prox = proximity ? PROXIMITY[proximity] : null;
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+      <Typography variant="caption" sx={{ minWidth: 52, color: "text.secondary" }}>
+        {label}
+      </Typography>
+      <Typography variant="caption">
+        {new Date(time).toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </Typography>
+      {lat != null && lng != null && (
+        <Button
+          size="small"
+          component="a"
+          href={`https://www.google.com/maps?q=${lat},${lng}`}
+          target="_blank"
+          rel="noopener"
+          sx={{ minWidth: 0, p: 0.25 }}
+        >
+          📍 carte
+        </Button>
+      )}
+      {distance != null && (
+        <Typography variant="caption" color="text.secondary">
+          {Math.round(distance)} m
+        </Typography>
+      )}
+      {prox && (
+        <Chip
+          size="small"
+          variant="outlined"
+          label={prox.label}
+          color={prox.color === "default" ? undefined : prox.color}
+        />
+      )}
+    </Box>
+  );
+};
+
 // Event types considered "soin" — care codes are offered for these.
 const CARE_TYPES = new Set([
   "CARE",
@@ -1403,6 +1472,7 @@ const EventEditDialog: React.FC<{
   const [seriesId, setSeriesId] = useState<string | null>(null);
   const [seriesAction, setSeriesAction] = useState<SeriesAction>("single");
   const [encodesClinical, setEncodesClinical] = useState(true);
+  const [activity, setActivity] = useState<EventActivity | null>(null);
   const [form, setForm] = useState<EventFormState>({
     employee_id: "",
     additional_employee_ids: [],
@@ -1457,6 +1527,11 @@ const EventEditDialog: React.FC<{
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
+        // Reports + GPS clock sessions (non-blocking, resilient).
+        dataProvider
+          .getEventActivity(eventId)
+          .then((a) => !cancelled && setActivity(a))
+          .catch(() => !cancelled && setActivity(null));
       });
     return () => {
       cancelled = true;
@@ -1883,6 +1958,140 @@ const EventEditDialog: React.FC<{
                 </Accordion>
               </Box>
             )}
+
+            {activity &&
+              Array.isArray(activity.reports) &&
+              activity.reports.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Divider sx={{ mb: 1 }} />
+                <Typography variant="subtitle2" gutterBottom>
+                  Rapports des collaborateurs ({activity.reports.length})
+                </Typography>
+                <Stack spacing={1}>
+                  {activity.reports.map((r, i) => (
+                    <Box
+                      key={r.author_id ?? i}
+                      sx={{ p: 1, bgcolor: "action.hover", borderRadius: 1 }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 0.5,
+                        }}
+                      >
+                        <Chip
+                          size="small"
+                          label={r.author_abbr || r.author_name || "?"}
+                        />
+                        <Typography variant="caption" sx={{ flex: 1 }}>
+                          {r.author_name}
+                        </Typography>
+                        {r.updated_on && (
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(r.updated_on).toLocaleString("fr-FR", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                        {r.text}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              </Box>
+            )}
+
+            {activity &&
+              ((activity.sessions?.length ?? 0) > 0 ||
+                activity.real_time_start ||
+                activity.total_duration_seconds) && (
+                <Box sx={{ mt: 2 }}>
+                  <Accordion
+                    disableGutters
+                    defaultExpanded={false}
+                    sx={{ boxShadow: "none", "&:before": { display: "none" } }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      sx={{ px: 0 }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        🛰️ Pointages GPS & temps (admin)
+                        {activity.total_duration_seconds
+                          ? ` · ${fmtDuration(activity.total_duration_seconds)}`
+                          : ""}
+                      </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ px: 0 }}>
+                      <Stack spacing={1}>
+                        <Typography variant="caption" color="text.secondary">
+                          Temps réel : {activity.real_time_start || "—"} →{" "}
+                          {activity.real_time_end || "—"}
+                        </Typography>
+                        {(activity.sessions?.length ?? 0) === 0 && (
+                          <Typography variant="caption" color="text.secondary">
+                            Aucun pointage enregistré.
+                          </Typography>
+                        )}
+                        {(activity.sessions || []).map((s) => (
+                          <Box
+                            key={s.id}
+                            sx={{
+                              p: 1,
+                              border: "1px solid",
+                              borderColor: "divider",
+                              borderRadius: 1,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 0.5,
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{ flex: 1, fontWeight: 600 }}
+                              >
+                                {s.employee_name || `#${s.employee_id}`}
+                              </Typography>
+                              {s.duration_seconds != null && (
+                                <Chip
+                                  size="small"
+                                  label={fmtDuration(s.duration_seconds)}
+                                />
+                              )}
+                            </Box>
+                            <ClockLeg
+                              label="Arrivée"
+                              time={s.start_time}
+                              lat={s.start_lat}
+                              lng={s.start_lng}
+                              distance={s.start_distance_m}
+                              proximity={s.start_proximity}
+                            />
+                            <ClockLeg
+                              label="Départ"
+                              time={s.stop_time}
+                              lat={s.stop_lat}
+                              lng={s.stop_lng}
+                              distance={s.stop_distance_m}
+                              proximity={s.stop_proximity}
+                            />
+                          </Box>
+                        ))}
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                </Box>
+              )}
           </>
         )}
       </DialogContent>
