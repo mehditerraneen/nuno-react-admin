@@ -518,7 +518,7 @@ test.describe("Planning calendar", () => {
     });
   });
 
-  test("vital-parameters wizard hidden for non-clinical staff", async ({
+  test("vital-parameters wizard disabled (with reason) for non-clinical staff", async ({
     page,
   }) => {
     // event assigned to employee 2 (Durand Marie, non-clinical)
@@ -535,7 +535,9 @@ test.describe("Planning calendar", () => {
     await page.locator(".fc-event").first().click({ timeout: 15000 });
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByText(/Modifier l'événement/i)).toBeVisible();
-    await expect(dialog.getByText(/Paramètres vitaux requis/i)).toHaveCount(0);
+    // Present but disabled — expanding shows the reason.
+    await dialog.getByText(/Paramètres vitaux requis/i).click();
+    await expect(dialog.getByText(/personnel clinique/i)).toBeVisible();
   });
 
   test("param zone reacts to the selected employee (with notification)", async ({
@@ -544,17 +546,18 @@ test.describe("Planning calendar", () => {
     await page.goto("/#/planning/calendar");
     await page.locator(".fc-event").first().click({ timeout: 15000 });
     const dialog = page.getByRole("dialog");
-    // employee 1 (Dupont Jean) is clinical → zone visible
+    // employee 1 (Dupont Jean) is clinical → zone enabled
     await expect(dialog.getByText(/Paramètres vitaux requis/i)).toBeVisible();
     // switch to Durand Marie (non-clinical)
     await dialog.getByLabel("Employé").click();
     await page.getByRole("option", { name: "Durand Marie" }).click();
-    // zone hidden + notification explaining the change
-    await expect(dialog.getByText(/Paramètres vitaux requis/i)).toHaveCount(0);
-    await expect(page.getByText(/masqué/i)).toBeVisible();
+    // notification explains it; the zone becomes disabled (still present)
+    await expect(page.getByText(/désactivée/i)).toBeVisible();
+    await dialog.getByText(/Paramètres vitaux requis/i).click();
+    await expect(dialog.getByText(/personnel clinique/i)).toBeVisible();
   });
 
-  test("AEV plan panel: hidden for Soin, Codes de soins still shown", async ({
+  test("AEV plan panel: disabled with reason for Soin, Codes de soins enabled", async ({
     page,
   }) => {
     await page.route(/\/events\/\d+(\?|$)/, (route) =>
@@ -563,10 +566,31 @@ test.describe("Planning calendar", () => {
     await page.goto("/#/planning/calendar");
     await page.locator(".fc-event").first().click({ timeout: 15000 });
     const dialog = page.getByRole("dialog");
+    // Codes AEV is present but disabled — expanding shows the reason.
+    await dialog.getByText(/Codes AEV \(selon le plan/i).click();
+    await expect(dialog.getByText(/Assurance Dépendance/i)).toBeVisible();
+    // Codes de soins stays enabled for a care event.
     await expect(dialog.getByText(/Codes de soins/i)).toBeVisible();
+  });
+
+  test("mandatory: Done state requires a report (client-side block)", async ({
+    page,
+  }) => {
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    let putFired = false;
+    page.on("request", (r) => {
+      if (r.method() === "PUT" && /\/events\/\d+\?/.test(r.url()))
+        putFired = true;
+    });
+    await dialog.getByLabel("État").click();
+    await page.getByRole("option", { name: "Fait", exact: true }).click();
+    await dialog.getByRole("button", { name: /Enregistrer/i }).click();
     await expect(
-      dialog.getByText(/Codes AEV \(selon le plan/i),
-    ).toHaveCount(0);
+      dialog.getByText(/Champs obligatoires manquants.*Rapport de soin/i),
+    ).toBeVisible();
+    expect(putFired).toBe(false);
   });
 
   test("care event: attach a care code (add_care_code)", async ({ page }) => {

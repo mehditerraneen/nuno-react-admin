@@ -66,6 +66,14 @@ import type {
   TravelWarning,
   EventActivity,
 } from "./dataProvider";
+import {
+  CARE_TYPES,
+  getSectionPolicy,
+  getFieldRequirements,
+  missingRequiredFields,
+  type Aspect,
+  type EventSectionPolicy,
+} from "./eventPolicy";
 
 // Event states (mirrors invoices/events.py Event.STATES)
 const STATE_LABELS: Record<number, string> = {
@@ -752,7 +760,8 @@ interface PatientOption {
 const PatientAutocomplete: React.FC<{
   value: PatientOption | null;
   onChange: (v: PatientOption | null) => void;
-}> = ({ value, onChange }) => {
+  required?: boolean;
+}> = ({ value, onChange, required }) => {
   const dataProvider = useDataProvider();
   const [input, setInput] = useState("");
   const [options, setOptions] = useState<PatientOption[]>([]);
@@ -798,7 +807,9 @@ const PatientAutocomplete: React.FC<{
       isOptionEqualToValue={(o, v) => o.id === v.id}
       onInputChange={(_, v) => setInput(v)}
       onChange={(_, v) => onChange(v)}
-      renderInput={(params) => <TextField {...params} label="Patient" />}
+      renderInput={(params) => (
+        <TextField {...params} label="Patient" required={required} />
+      )}
     />
   );
 };
@@ -895,15 +906,43 @@ const ClockLeg: React.FC<{
   );
 };
 
-// Event types considered "soin" — care codes are offered for these.
-const CARE_TYPES = new Set([
-  "CARE",
-  "ASS_DEP",
-  "SUB_CARE",
-  "FIRST_VISIT",
-  "OVERNIGHT",
-  "MEDS",
-]);
+// Section accordion that shows a disabled state + reason instead of hiding,
+// driven by the event policy (single source of truth in eventPolicy.ts).
+const SectionAccordion: React.FC<{
+  title: React.ReactNode;
+  aspect: Aspect;
+  defaultExpanded?: boolean;
+  children: React.ReactNode;
+}> = ({ title, aspect, defaultExpanded, children }) => (
+  <Accordion
+    disableGutters
+    defaultExpanded={aspect.enabled && defaultExpanded}
+    sx={{
+      boxShadow: "none",
+      "&:before": { display: "none" },
+      opacity: aspect.enabled ? 1 : 0.65,
+    }}
+  >
+    <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
+      <Typography
+        variant="subtitle2"
+        color={aspect.enabled ? "textPrimary" : "text.disabled"}
+      >
+        {aspect.enabled ? "" : "🔒 "}
+        {title}
+      </Typography>
+    </AccordionSummary>
+    <AccordionDetails sx={{ px: 0, pt: 0 }}>
+      {aspect.enabled ? (
+        children
+      ) : (
+        <Alert severity="info" sx={{ py: 0 }}>
+          <Typography variant="caption">{aspect.reason}</Typography>
+        </Alert>
+      )}
+    </AccordionDetails>
+  </Accordion>
+);
 
 // Searchable CareCode picker (adds a care code to the event).
 const CareCodePicker: React.FC<{
@@ -1005,9 +1044,9 @@ const AevPanel: React.FC<{
   eventId: number;
   startTime: string;
   currentEnd: string;
-  eventType: string;
+  section: EventSectionPolicy;
   onAdaptEnd: (hhmm: string) => void;
-}> = ({ eventId, startTime, currentEnd, eventType, onAdaptEnd }) => {
+}> = ({ eventId, startTime, currentEnd, section, onAdaptEnd }) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
   const [plan, setPlan] = useState<AevPlan | null>(null);
@@ -1053,16 +1092,17 @@ const AevPanel: React.FC<{
 
   return (
     <>
-    {/* AEV plan codes: only for Assurance Dépendance (ASS_DEP), not Soin. */}
-    {eventType === "ASS_DEP" && (
-    <Accordion disableGutters defaultExpanded={false} sx={accSx}>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
-        <Typography variant="subtitle2">
+    {/* AEV plan codes: only for Assurance Dépendance — disabled + reason
+        for other types instead of being hidden. */}
+    <SectionAccordion
+      title={
+        <>
           Codes AEV (selon le plan établi)
           {attachedCount > 0 ? ` — ${attachedCount} attaché(s)` : ""}
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails sx={{ px: 0, pt: 0 }}>
+        </>
+      }
+      aspect={section.aevPlan}
+    >
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
             <CircularProgress size={22} />
@@ -1315,22 +1355,18 @@ const AevPanel: React.FC<{
             </Stack>
           </>
         )}
-      </AccordionDetails>
-    </Accordion>
-    )}
+    </SectionAccordion>
 
-    {!loading &&
-      plan &&
-      plan.patient_id &&
-      CARE_TYPES.has(eventType) && (
-        <Accordion disableGutters defaultExpanded={false} sx={accSx}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
-            <Typography variant="subtitle2">
-              Codes de soins
-              {plan.care_codes.length ? ` (${plan.care_codes.length})` : ""}
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ px: 0, pt: 0 }}>
+    <SectionAccordion
+      title={
+        <>
+          Codes de soins
+          {plan?.care_codes?.length ? ` (${plan.care_codes.length})` : ""}
+        </>
+      }
+      aspect={section.careCodes}
+    >
+      {plan && plan.patient_id ? (
             <Stack spacing={0.5}>
               {plan.care_codes.map((c) => (
                 <Box
@@ -1360,22 +1396,22 @@ const AevPanel: React.FC<{
                 }
               />
             </Stack>
-          </AccordionDetails>
-        </Accordion>
-      )}
+      ) : null}
+    </SectionAccordion>
 
-    {!loading && plan && plan.patient_id && (
-      <Accordion disableGutters defaultExpanded={false} sx={accSx}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
-          <Typography variant="subtitle2">
-            Ordonnances
-            {plan.prescriptions.length
-              ? ` (${plan.prescriptions.length})`
-              : ""}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ px: 0, pt: 0 }}>
-          <Stack spacing={0.5}>
+    <SectionAccordion
+      title={
+        <>
+          Ordonnances
+          {plan?.prescriptions?.length
+            ? ` (${plan.prescriptions.length})`
+            : ""}
+        </>
+      }
+      aspect={section.prescriptions}
+    >
+      {plan && plan.patient_id ? (
+        <Stack spacing={0.5}>
             {plan.prescriptions.map((p) => (
               <Box
                 key={p.link_id}
@@ -1413,10 +1449,9 @@ const AevPanel: React.FC<{
                 mutate({ action: "attach_prescription", prescription_id: id })
               }
             />
-          </Stack>
-        </AccordionDetails>
-      </Accordion>
-    )}
+        </Stack>
+      ) : null}
+    </SectionAccordion>
 
     <Dialog
       open={!!previewUrl}
@@ -1559,6 +1594,26 @@ const EventEditDialog: React.FC<{
       setError("L'heure de fin doit être après l'heure de début.");
       return;
     }
+    // Conditional mandatory fields (mirror of the backend validators).
+    const req = getFieldRequirements({
+      eventType: form.event_type_enum,
+      state: form.state,
+      hasPatient: form.patient_id !== "",
+      hasEmployee: form.employee_id !== "",
+      employeeEncodesClinical: true,
+    });
+    const missing = missingRequiredFields(req, {
+      employee_id: form.employee_id,
+      patient_id: form.patient_id,
+      event_report: form.event_report,
+      notes: form.notes,
+      time_start: form.time_start,
+      time_end: form.time_end,
+    });
+    if (missing.length) {
+      setError(`Champs obligatoires manquants : ${missing.join(", ")}.`);
+      return;
+    }
     setSaving(true);
     const payload: EventUpdatePayload = {
       employee_id: form.employee_id === "" ? null : Number(form.employee_id),
@@ -1614,20 +1669,33 @@ const EventEditDialog: React.FC<{
     }
   };
 
-  // Reactive "soignant" gating: the vital-parameters zone follows the currently
-  // selected employee (falls back to the event's loaded flag when none).
+  // Reactive clinical flag: follows the currently selected employee (falls back
+  // to the event's loaded flag when none is selected).
   const selectedEmp = employeeChoices.find((c) => c.id === form.employee_id);
-  const showParamZone = selectedEmp ? selectedEmp.encodesClinical : encodesClinical;
+  const employeeEncodesClinical = selectedEmp
+    ? selectedEmp.encodesClinical
+    : encodesClinical;
+
+  // Single source of truth for section enablement + mandatory fields.
+  const policyCtx = {
+    eventType: form.event_type_enum,
+    state: form.state,
+    hasPatient: form.patient_id !== "",
+    hasEmployee: form.employee_id !== "",
+    employeeEncodesClinical,
+  };
+  const sectionPolicy = getSectionPolicy(policyCtx);
+  const fieldReq = getFieldRequirements(policyCtx);
 
   const onEmployeePicked = (value: number | "") => {
     const emp = employeeChoices.find((c) => c.id === value);
-    const nextShow = emp ? emp.encodesClinical : encodesClinical;
+    const nextClinical = emp ? emp.encodesClinical : encodesClinical;
     set("employee_id", value);
-    if (nextShow !== showParamZone) {
+    if (nextClinical !== employeeEncodesClinical) {
       notify(
-        nextShow
-          ? "Employé soignant : la zone « Paramètres vitaux requis » devient disponible."
-          : "Employé non‑clinique : la zone « Paramètres vitaux requis » est masquée (validation des paramètres vitaux ignorée pour cet employé).",
+        nextClinical
+          ? "Employé soignant : la zone « Paramètres vitaux » est activée."
+          : "Employé non‑clinique : la zone « Paramètres vitaux » est désactivée (validation ignorée pour cet employé).",
         { type: "info", autoHideDuration: 5000 },
       );
     }
@@ -1659,6 +1727,7 @@ const EventEditDialog: React.FC<{
               <Grid size={12}>
                 <PatientAutocomplete
                   value={patientOption}
+                  required={fieldReq.patient}
                   onChange={(v) => {
                     setPatientOption(v);
                     set("patient_id", v ? v.id : "");
@@ -1714,6 +1783,7 @@ const EventEditDialog: React.FC<{
                   fullWidth
                   size="small"
                   label="Employé"
+                  required={fieldReq.employee}
                   value={form.employee_id}
                   onChange={(e) =>
                     onEmployeePicked(
@@ -1788,6 +1858,7 @@ const EventEditDialog: React.FC<{
                   fullWidth
                   size="small"
                   label="Début"
+                  required={fieldReq.timeStart}
                   InputLabelProps={{ shrink: true }}
                   value={form.time_start}
                   onChange={(e) => set("time_start", e.target.value)}
@@ -1799,6 +1870,7 @@ const EventEditDialog: React.FC<{
                   fullWidth
                   size="small"
                   label="Fin"
+                  required={fieldReq.timeEnd}
                   InputLabelProps={{ shrink: true }}
                   value={form.time_end}
                   onChange={(e) => set("time_end", e.target.value)}
@@ -1837,6 +1909,7 @@ const EventEditDialog: React.FC<{
                   fullWidth
                   size="small"
                   label="Notes"
+                  required={fieldReq.notes}
                   multiline
                   minRows={2}
                   value={form.notes}
@@ -1848,6 +1921,7 @@ const EventEditDialog: React.FC<{
                   fullWidth
                   size="small"
                   label="Rapport de soin"
+                  required={fieldReq.report}
                   multiline
                   minRows={2}
                   value={form.event_report}
@@ -1864,28 +1938,17 @@ const EventEditDialog: React.FC<{
                   eventId={eventId}
                   startTime={form.time_start}
                   currentEnd={form.time_end}
-                  eventType={form.event_type_enum}
+                  section={sectionPolicy}
                   onAdaptEnd={(v) => set("time_end", v)}
                 />
               </Box>
             )}
 
-            {showParamZone && (
-              <Box sx={{ mt: 2 }}>
-                <Accordion
-                  disableGutters
-                  defaultExpanded={false}
-                  sx={{ boxShadow: "none", "&:before": { display: "none" } }}
-                >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    sx={{ px: 0 }}
-                  >
-                    <Typography variant="subtitle2">
-                      📊 Paramètres vitaux requis (avancé)
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ px: 0 }}>
+            <Box sx={{ mt: 2 }}>
+              <SectionAccordion
+                title="📊 Paramètres vitaux requis (avancé)"
+                aspect={sectionPolicy.vitalParams}
+              >
                     <Stack spacing={1.5}>
                       <FormControlLabel
                         control={
@@ -1962,14 +2025,12 @@ const EventEditDialog: React.FC<{
                           Infos techniques : validé au passage à « Fait »
                           (état 3) pour les patients sous assurance‑dépendance
                           (paramètres mensuels + quotidiens après chute). Zone
-                          masquée pour le personnel non‑clinique.
+                          désactivée pour le personnel non‑clinique.
                         </Typography>
                       </Alert>
                     </Stack>
-                  </AccordionDetails>
-                </Accordion>
-              </Box>
-            )}
+              </SectionAccordion>
+            </Box>
 
             {activity &&
               Array.isArray(activity.reports) &&
