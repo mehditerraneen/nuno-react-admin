@@ -956,12 +956,11 @@ const AevPanel: React.FC<{
   const suggestedEnd =
     startTime && actsMin > 0 ? addMinutes(startTime, actsMin) : null;
 
+  const accSx = { boxShadow: "none", "&:before": { display: "none" } } as const;
+
   return (
-    <Accordion
-      disableGutters
-      defaultExpanded={false}
-      sx={{ boxShadow: "none", "&:before": { display: "none" } }}
-    >
+    <>
+    <Accordion disableGutters defaultExpanded={false} sx={accSx}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
         <Typography variant="subtitle2">
           Codes AEV (selon le plan établi)
@@ -1219,87 +1218,103 @@ const AevPanel: React.FC<{
                 </Button>
               </Box>
             </Stack>
+          </>
+        )}
+      </AccordionDetails>
+    </Accordion>
 
-            {plan.event_type_enum && CARE_TYPES.has(plan.event_type_enum) && (
-              <>
-                <Divider sx={{ my: 1 }} />
-                <Typography variant="caption" color="text.secondary">
-                  Codes de soins (CareCode)
-                </Typography>
-                <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-                  {plan.care_codes.map((c) => (
-                    <Box
-                      key={c.link_id}
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                    >
-                      <Chip size="small" color="primary" label={c.code} />
-                      <Typography variant="caption" sx={{ flex: 1 }}>
-                        {c.name}
-                      </Typography>
-                      <Button
-                        size="small"
-                        color="error"
-                        disabled={busy}
-                        onClick={() =>
-                          mutate({
-                            action: "remove_care_code",
-                            link_id: c.link_id,
-                          })
-                        }
-                      >
-                        Retirer
-                      </Button>
-                    </Box>
-                  ))}
-                  <CareCodePicker
-                    disabled={busy}
-                    onPick={(id) =>
-                      mutate({ action: "add_care_code", care_code_id: id })
-                    }
-                  />
-                </Stack>
-              </>
-            )}
-
-            <Divider sx={{ my: 1 }} />
-            <Typography variant="caption" color="text.secondary">
-              Ordonnances
+    {!loading &&
+      plan &&
+      plan.patient_id &&
+      plan.event_type_enum &&
+      CARE_TYPES.has(plan.event_type_enum) && (
+        <Accordion disableGutters defaultExpanded={false} sx={accSx}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
+            <Typography variant="subtitle2">
+              Codes de soins
+              {plan.care_codes.length ? ` (${plan.care_codes.length})` : ""}
             </Typography>
-            <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-              {plan.prescriptions.map((p) => (
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 0, pt: 0 }}>
+            <Stack spacing={0.5}>
+              {plan.care_codes.map((c) => (
                 <Box
-                  key={p.link_id}
+                  key={c.link_id}
                   sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
-                  <Chip size="small" variant="outlined" label={p.label} />
-                  <Box sx={{ flex: 1 }} />
+                  <Chip size="small" color="primary" label={c.code} />
+                  <Typography variant="caption" sx={{ flex: 1 }}>
+                    {c.name}
+                  </Typography>
                   <Button
                     size="small"
                     color="error"
                     disabled={busy}
                     onClick={() =>
-                      mutate({
-                        action: "detach_prescription",
-                        link_id: p.link_id,
-                      })
+                      mutate({ action: "remove_care_code", link_id: c.link_id })
                     }
                   >
-                    Détacher
+                    Retirer
                   </Button>
                 </Box>
               ))}
-              <PrescriptionPicker
-                patientId={plan.patient_id}
+              <CareCodePicker
                 disabled={busy}
                 onPick={(id) =>
-                  mutate({ action: "attach_prescription", prescription_id: id })
+                  mutate({ action: "add_care_code", care_code_id: id })
                 }
               />
             </Stack>
-          </>
-        )}
-      </AccordionDetails>
-    </Accordion>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+    {!loading && plan && plan.patient_id && (
+      <Accordion disableGutters defaultExpanded={false} sx={accSx}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
+          <Typography variant="subtitle2">
+            Ordonnances
+            {plan.prescriptions.length
+              ? ` (${plan.prescriptions.length})`
+              : ""}
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ px: 0, pt: 0 }}>
+          <Stack spacing={0.5}>
+            {plan.prescriptions.map((p) => (
+              <Box
+                key={p.link_id}
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
+                <Chip size="small" variant="outlined" label={p.label} />
+                <Box sx={{ flex: 1 }} />
+                <Button
+                  size="small"
+                  color="error"
+                  disabled={busy}
+                  onClick={() =>
+                    mutate({
+                      action: "detach_prescription",
+                      link_id: p.link_id,
+                    })
+                  }
+                >
+                  Détacher
+                </Button>
+              </Box>
+            ))}
+            <PrescriptionPicker
+              patientId={plan.patient_id}
+              disabled={busy}
+              onPick={(id) =>
+                mutate({ action: "attach_prescription", prescription_id: id })
+              }
+            />
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
+    )}
+    </>
   );
 };
 

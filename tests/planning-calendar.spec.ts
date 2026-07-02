@@ -537,7 +537,9 @@ test.describe("Planning calendar", () => {
     await page.goto("/#/planning/calendar");
     await page.locator(".fc-event").first().click({ timeout: 15000 });
     const dialog = page.getByRole("dialog");
-    await dialog.getByText(/Codes AEV/i).click();
+    // "Codes de soins" is its own top-level accordion (discoverable)
+    await expect(dialog.getByText(/Codes de soins/i)).toBeVisible();
+    await dialog.getByText(/Codes de soins/i).click();
     await dialog.getByLabel("Ajouter un code de soin").fill("N80");
     const req = page.waitForRequest(/\/events\/\d+\/aev-mutate/);
     await page.getByRole("option", { name: /N803/ }).click();
@@ -552,7 +554,9 @@ test.describe("Planning calendar", () => {
     await page.goto("/#/planning/calendar");
     await page.locator(".fc-event").first().click({ timeout: 15000 });
     const dialog = page.getByRole("dialog");
-    await dialog.getByText(/Codes AEV/i).click();
+    // "Ordonnances" is its own top-level accordion (discoverable)
+    await expect(dialog.getByText(/Ordonnances/i)).toBeVisible();
+    await dialog.getByText(/Ordonnances/i).click();
     await dialog.getByLabel("Attacher une ordonnance").click();
     const req = page.waitForRequest(/\/events\/\d+\/aev-mutate/);
     await page.getByRole("option", { name: /Dr House/ }).click();
