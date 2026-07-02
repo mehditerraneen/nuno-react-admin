@@ -811,6 +811,13 @@ interface EventFormState {
   parameter_requirement_notes: string;
 }
 
+// Resolve a Django media path (/media/...) against the backend origin.
+const mediaUrl = (fileUrl: string) => {
+  if (/^https?:\/\//.test(fileUrl)) return fileUrl;
+  const api = (import.meta.env.VITE_SIMPLE_REST_URL as string) || "";
+  return `${api.replace(/\/fast\/?$/, "")}${fileUrl}`;
+};
+
 // Event types considered "soin" — care codes are offered for these.
 const CARE_TYPES = new Set([
   "CARE",
@@ -931,6 +938,7 @@ const AevPanel: React.FC<{
   const [addQty, setAddQty] = useState<Record<number, number>>({});
   const [newGenLabel, setNewGenLabel] = useState("");
   const [newGenMin, setNewGenMin] = useState<number | "">("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -1295,6 +1303,14 @@ const AevPanel: React.FC<{
               >
                 <Chip size="small" variant="outlined" label={p.label} />
                 <Box sx={{ flex: 1 }} />
+                {p.file_url && (
+                  <Button
+                    size="small"
+                    onClick={() => setPreviewUrl(mediaUrl(p.file_url!))}
+                  >
+                    Aperçu
+                  </Button>
+                )}
                 <Button
                   size="small"
                   color="error"
@@ -1321,6 +1337,48 @@ const AevPanel: React.FC<{
         </AccordionDetails>
       </Accordion>
     )}
+
+    <Dialog
+      open={!!previewUrl}
+      onClose={() => setPreviewUrl(null)}
+      maxWidth="md"
+      fullWidth
+    >
+      <DialogTitle sx={{ display: "flex", alignItems: "center", pr: 1 }}>
+        <Box sx={{ flexGrow: 1 }}>Aperçu de l'ordonnance</Box>
+        {previewUrl && (
+          <Button
+            size="small"
+            component="a"
+            href={previewUrl}
+            target="_blank"
+            rel="noopener"
+          >
+            Ouvrir dans un onglet
+          </Button>
+        )}
+      </DialogTitle>
+      <DialogContent dividers sx={{ p: 0, height: "70vh" }}>
+        {previewUrl &&
+          (/\.pdf($|\?)/i.test(previewUrl) ? (
+            <iframe
+              src={previewUrl}
+              title="Ordonnance"
+              style={{ width: "100%", height: "100%", border: 0 }}
+            />
+          ) : (
+            <img
+              src={previewUrl}
+              alt="Ordonnance"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+              }}
+            />
+          ))}
+      </DialogContent>
+    </Dialog>
     </>
   );
 };

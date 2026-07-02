@@ -687,6 +687,8 @@ export interface AevPrescription {
   link_id: number;
   prescription_id: number;
   label: string;
+  file_url?: string | null;
+  has_file?: boolean;
 }
 
 export interface AevPlan {

@@ -571,6 +571,35 @@ test.describe("Planning calendar", () => {
     });
   });
 
+  test("attached prescription with a file opens a preview", async ({ page }) => {
+    await page.route(/\/events\/\d+\/aev-plan/, (route) =>
+      route.fulfill({
+        json: {
+          ...aevPlan,
+          prescriptions: [
+            {
+              link_id: 5,
+              prescription_id: 700,
+              label: "2026-06-01 — Dr House",
+              file_url: "/media/prescriptions/x.png",
+              has_file: true,
+            },
+          ],
+        },
+      }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await dialog.getByText(/Ordonnances/i).click();
+    await dialog.getByRole("button", { name: /Aperçu/i }).click();
+    await expect(page.getByText(/Aperçu de l'ordonnance/i)).toBeVisible();
+    await expect(page.locator('img[alt="Ordonnance"]')).toHaveAttribute(
+      "src",
+      /\/media\/prescriptions\/x\.png$/,
+    );
+  });
+
   test("collaborators show a 🤝 marker on the event", async ({ page }) => {
     await page.route(/\/events\?/, (route) =>
       route.fulfill({
