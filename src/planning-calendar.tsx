@@ -167,6 +167,12 @@ const tooltipHtml = (e: CalendarEventRead) => {
   const avatar = e.employee_avatar
     ? `<img src="${e.employee_avatar}" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex:0 0 auto"/>`
     : "";
+  const realStart = (e.real_time_start_event || "").slice(0, 5);
+  const realEnd = (e.real_time_end_event || "").slice(0, 5);
+  const pointe =
+    realStart || realEnd
+      ? `🕒 pointé ${escapeHtml(realStart || "…")}–${escapeHtml(realEnd || "…")}`
+      : "";
   const rows = [
     time.length > 1 ? `🕐 ${escapeHtml(time)}` : "",
     e.employee_name ? `👤 ${escapeHtml(e.employee_name)}` : "",
@@ -177,6 +183,8 @@ const tooltipHtml = (e: CalendarEventRead) => {
     e.event_type_enum
       ? `▸ ${escapeHtml(EVENT_TYPE_LABELS[e.event_type_enum] ?? e.event_type_enum)}`
       : "",
+    e.report_count ? `📋 ${e.report_count} rapport(s)` : "",
+    pointe,
     e.series_id ? `🔗 Série ${escapeHtml(String(e.series_id).slice(0, 8))}` : "",
     e.notes ? `📝 ${escapeHtml(e.notes)}` : "",
   ]
@@ -997,8 +1005,9 @@ const AevPanel: React.FC<{
   eventId: number;
   startTime: string;
   currentEnd: string;
+  eventType: string;
   onAdaptEnd: (hhmm: string) => void;
-}> = ({ eventId, startTime, currentEnd, onAdaptEnd }) => {
+}> = ({ eventId, startTime, currentEnd, eventType, onAdaptEnd }) => {
   const dataProvider = useDataProvider<MyDataProvider>();
   const notify = useNotify();
   const [plan, setPlan] = useState<AevPlan | null>(null);
@@ -1044,6 +1053,8 @@ const AevPanel: React.FC<{
 
   return (
     <>
+    {/* AEV plan codes: only for Assurance Dépendance (ASS_DEP), not Soin. */}
+    {eventType === "ASS_DEP" && (
     <Accordion disableGutters defaultExpanded={false} sx={accSx}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
         <Typography variant="subtitle2">
@@ -1306,12 +1317,12 @@ const AevPanel: React.FC<{
         )}
       </AccordionDetails>
     </Accordion>
+    )}
 
     {!loading &&
       plan &&
       plan.patient_id &&
-      plan.event_type_enum &&
-      CARE_TYPES.has(plan.event_type_enum) && (
+      CARE_TYPES.has(eventType) && (
         <Accordion disableGutters defaultExpanded={false} sx={accSx}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
             <Typography variant="subtitle2">
@@ -1853,6 +1864,7 @@ const EventEditDialog: React.FC<{
                   eventId={eventId}
                   startTime={form.time_start}
                   currentEnd={form.time_end}
+                  eventType={form.event_type_enum}
                   onAdaptEnd={(v) => set("time_end", v)}
                 />
               </Box>

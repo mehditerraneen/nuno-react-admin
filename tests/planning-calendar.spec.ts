@@ -28,10 +28,13 @@ const listEvent = {
   color: "#4a90d9",
   textColor: "#ffffff",
   has_aev_or_care_codes: false,
+  report_count: 0,
 };
 
 const singleEvent = {
   ...listEvent,
+  // AEV plan panel only shows for Assurance Dépendance events.
+  event_type_enum: "ASS_DEP",
   event_report: "",
   event_address: "12 rue du Test",
   requires_parameters: false,
@@ -549,6 +552,21 @@ test.describe("Planning calendar", () => {
     // zone hidden + notification explaining the change
     await expect(dialog.getByText(/Paramètres vitaux requis/i)).toHaveCount(0);
     await expect(page.getByText(/masqué/i)).toBeVisible();
+  });
+
+  test("AEV plan panel: hidden for Soin, Codes de soins still shown", async ({
+    page,
+  }) => {
+    await page.route(/\/events\/\d+(\?|$)/, (route) =>
+      route.fulfill({ json: { ...singleEvent, event_type_enum: "CARE" } }),
+    );
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Codes de soins/i)).toBeVisible();
+    await expect(
+      dialog.getByText(/Codes AEV \(selon le plan/i),
+    ).toHaveCount(0);
   });
 
   test("care event: attach a care code (add_care_code)", async ({ page }) => {

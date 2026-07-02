@@ -581,6 +581,7 @@ export interface CalendarEventRead {
   color: string | null;
   textColor: string | null;
   has_aev_or_care_codes?: boolean;
+  report_count?: number;
 }
 
 export type SeriesAction = "single" | "following" | "all";
