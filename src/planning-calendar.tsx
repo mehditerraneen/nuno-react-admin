@@ -840,7 +840,7 @@ const CareCodePicker: React.FC<{
     const t = setTimeout(() => {
       dataProvider
         .getCareCodes(input)
-        .then((r) => active && setOptions(r))
+        .then((r) => active && setOptions(Array.isArray(r) ? r : []))
         .catch(() => undefined);
     }, 300);
     return () => {
@@ -852,7 +852,7 @@ const CareCodePicker: React.FC<{
     <Autocomplete
       size="small"
       value={null}
-      options={options}
+      options={Array.isArray(options) ? options : []}
       getOptionLabel={(o) => `${o.code} — ${o.name}`}
       isOptionEqualToValue={(o, v) => o.id === v.id}
       onInputChange={(_, v) => setInput(v)}
@@ -883,7 +883,14 @@ const PrescriptionPicker: React.FC<{
     let active = true;
     dataProvider
       .getPatientPrescriptions(patientId)
-      .then((r) => active && setOptions(r))
+      .then((r: unknown) => {
+        if (!active) return;
+        // Endpoint returns { data: [...], total }; be tolerant of a bare array.
+        const list = Array.isArray(r)
+          ? r
+          : ((r as { data?: unknown })?.data ?? []);
+        setOptions(Array.isArray(list) ? list : []);
+      })
       .catch(() => undefined);
     return () => {
       active = false;
@@ -894,7 +901,7 @@ const PrescriptionPicker: React.FC<{
     <Autocomplete
       size="small"
       value={null}
-      options={options}
+      options={Array.isArray(options) ? options : []}
       getOptionLabel={(o) =>
         `${o.date ?? ""} — ${o.prescriptor_name ?? ""}`.trim()
       }

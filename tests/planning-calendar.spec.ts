@@ -140,16 +140,20 @@ async function mockApi(page: Page) {
       json: [{ id: 900, code: "N803", name: "Soin infirmier" }],
     }),
   );
+  // Real endpoint shape: { data: [...], total } (NOT a bare array).
   await page.route(/\/fast\/prescriptions/, (route) =>
     route.fulfill({
-      json: [
-        {
-          id: 700,
-          date: "2026-06-01",
-          prescriptor_name: "Dr House",
-          patient_id: 7,
-        },
-      ],
+      json: {
+        data: [
+          {
+            id: 700,
+            date: "2026-06-01",
+            prescriptor_name: "Dr House",
+            patient_id: 7,
+          },
+        ],
+        total: 1,
+      },
     }),
   );
   await page.route(/\/events\/\d+(\?|$)/, (route) =>
