@@ -573,6 +573,16 @@ test.describe("Planning calendar", () => {
     await expect(dialog.getByText(/Codes de soins/i)).toBeVisible();
   });
 
+  test("report field is read-only (server-derived combined view)", async ({
+    page,
+  }) => {
+    await page.goto("/#/planning/calendar");
+    await page.locator(".fc-event").first().click({ timeout: 15000 });
+    const dialog = page.getByRole("dialog");
+    const report = dialog.getByLabel(/Rapport de soin/i);
+    await expect(report).toHaveJSProperty("readOnly", true);
+  });
+
   test("mandatory: Done state requires a report (client-side block)", async ({
     page,
   }) => {

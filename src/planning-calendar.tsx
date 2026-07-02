@@ -1666,7 +1666,8 @@ const EventEditDialog: React.FC<{
       time_start: form.time_start ? `${form.time_start}:00` : undefined,
       time_end: form.time_end ? `${form.time_end}:00` : undefined,
       notes: form.notes,
-      event_report: form.event_report,
+      // event_report is a server-derived combined view (rebuilt from per-author
+      // EventReport rows) — read-only in the UI, never sent back.
       event_address: form.event_address,
       requires_parameters: form.requires_parameters,
       required_parameter_types: form.required_parameter_types,
@@ -1962,13 +1963,13 @@ const EventEditDialog: React.FC<{
                 <TextField
                   fullWidth
                   size="small"
-                  label="Rapport de soin"
+                  label="Rapport de soin (combiné · lecture seule)"
                   required={fieldReq.report}
                   multiline
                   minRows={2}
                   value={form.event_report}
-                  onChange={(e) => set("event_report", e.target.value)}
-                  helperText="Requis pour passer l'état à « Fait » ou « Non fait »."
+                  InputProps={{ readOnly: true }}
+                  helperText="Vue combinée des rapports par soignant (rédigés côté mobile). Requis pour passer à « Fait » ou « Non fait »."
                 />
               </Grid>
             </Grid>
